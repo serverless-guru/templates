@@ -1,0 +1,36 @@
+service: sls-antipatterns-shareddatabase-1
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+          - dynamodb:Query
+          - dynamodb:GetItem
+          - dynamodb:PutItem
+          - dynamodb:UpdateItem
+          - dynamodb:DeleteItem
+      Resource: '*'
+  
+functions:
+  add:
+    handler: src/handler.add
+    events:
+      - http:
+          path: add
+          method: post
+
+resources:
+  Resources:
+      productsTable:
+          Type: AWS::DynamoDB::Table
+          Properties:
+              TableName: ${self:service}-${opt:stage, self:provider.stage}
+              AttributeDefinitions:
+                  - AttributeName: PK
+                    AttributeType: S
+              KeySchema:
+                  - AttributeName: PK
+                    KeyType: HASH
+              BillingMode: PAY_PER_REQUEST

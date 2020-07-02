@@ -1,0 +1,8 @@
+node_modules
+
+# Serverless directories
+.serverless
+
+coverage
+
+.env

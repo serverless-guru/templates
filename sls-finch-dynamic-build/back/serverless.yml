@@ -1,0 +1,32 @@
+service: sls-finch-example-back
+org: YOUR_ORG
+app: YOUR_APP
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+
+custom:
+  stage: ${opt:stage, self:provider.stage}
+  region: ${opt:region, self:provider.region}
+
+functions:
+  hello:
+    handler: handler.hello
+    events:
+     - http:
+         path: /
+         method: get
+         cors: true
+  second:
+    handler: handler.hello
+    events:
+     - http:
+         path: /two
+         method: get
+         cors: true
+
+
+outputs:
+  ENDPOINT: { "Fn::Join" : ["", [" https://", { "Ref" : "ApiGatewayRestApi" }, ".execute-api.${self:custom.region}.amazonaws.com/${self:custom.stage}" ] ]  }
+  KEY: example123

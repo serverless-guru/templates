@@ -1,0 +1,6 @@
+node_modules
+.env
+.env*
+.serverless
+.DS_Store
+backup/

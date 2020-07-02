@@ -1,0 +1,19 @@
+{
+  "name": "xray",
+  "version": "1.0.0",
+  "description": "",
+  "main": "handler.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "serverless-pseudo-parameters": "^2.5.0"
+  },
+  "dependencies": {
+    "aws-xray-sdk": "^2.5.0",
+    "node-fetch": "^2.6.0"
+  }
+}

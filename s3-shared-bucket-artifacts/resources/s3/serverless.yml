@@ -1,0 +1,27 @@
+org: serverlessguru
+app: patterns
+service: ${self:app}-shared-bucket-artifacts
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stage: ${opt:stage, "dev"}
+  region: ${opt:region, "us-west-2"}
+  profile: ${opt:profile, "default"}
+
+custom:
+  basename: ${self:service}-${self:provider.stage}
+  bucketname: ${self:custom.basename}-${self:provider.region}-artifacts
+
+resources:
+  Resources:
+    S3SharedBucketArtifacts:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:custom.bucketname}
+
+outputs:
+  S3SharedBucketArtifactsName:
+    Ref: S3SharedBucketArtifacts
+  S3SharedBucketArtifactsArn:
+    Fn::GetAtt: S3SharedBucketArtifacts.Arn

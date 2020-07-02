@@ -1,0 +1,55 @@
+service: sls-general
+
+plugins:
+  - serverless-pseudo-parameters
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  environment:
+    TABLE: ${self:service}-${opt:stage, self:provider.stage}
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+          - dynamodb:Query
+          - dynamodb:GetItem
+          - dynamodb:PutItem
+      Resource: 'arn:aws:dynamodb:#{AWS::Region}:#{AWS::AccountId}:table/${self:service}-${opt:stage, self:provider.stage}'
+  
+package:
+  include:
+    - node_modules/**
+    - src/helpers/**
+    - src/io/**
+    - src/handler.js
+  exclude:
+      - src/**
+      - .gitignore
+      - .eslintrc.js
+      - .eslintignore
+
+functions:
+  hello:
+    handler: ./src/handler.handler
+    events:
+      - http:
+          path: retreive-seats/
+          method: post
+
+resources:
+  Resources:
+      productsTable:
+          Type: AWS::DynamoDB::Table
+          Properties:
+              TableName: ${self:service}-${opt:stage, self:provider.stage}
+              AttributeDefinitions:
+                  - AttributeName: PK
+                    AttributeType: S
+                  - AttributeName: SK
+                    AttributeType: S
+              KeySchema:
+                  - AttributeName: PK
+                    KeyType: HASH
+                  - AttributeName: SK
+                    KeyType: RANGE
+              BillingMode: PAY_PER_REQUEST

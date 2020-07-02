@@ -1,0 +1,65 @@
+org: serverlessguru
+app: component-app
+component: aws-cloudformation
+name: sls-appsync-example-iam-role
+
+inputs:
+  stackName: ${name}-${stage}
+  capabilities:
+    - CAPABILITY_IAM
+    - CAPABILITY_NAMED_IAM
+  template:
+    AWSTemplateFormatVersion: '2010-09-09'
+    Description: AWS IAM role
+    Resources:
+      IAMRole:
+        Type: 'AWS::IAM::Role'
+        Properties: 
+          RoleName: ${name}-${stage}
+          AssumeRolePolicyDocument: 
+            Version: '2012-10-17'
+            Statement: 
+              - Effect: 'Allow'
+                Principal:
+                  Service: 
+                    - 'lambda.amazonaws.com'
+                Action: 
+                  - 'sts:AssumeRole'
+          ManagedPolicyArns: 
+            - 'arn:aws:iam::aws:policy/AWSLambdaFullAccess'
+            - 'arn:aws:iam::aws:policy/AmazonVPCCrossAccountNetworkInterfaceOperations'
+            - 'arn:aws:iam::aws:policy/AmazonElastiCacheFullAccess'
+            - 'arn:aws:iam::aws:policy/AmazonDynamoDBReadOnlyAccess'
+            - 'arn:aws:iam::aws:policy/AmazonVPCReadOnlyAccess'
+            - 'arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole'
+            - 'arn:aws:iam::aws:policy/SecretsManagerReadWrite'
+            - 'arn:aws:iam::aws:policy/AmazonAPIGatewayInvokeFullAccess'
+            - 'arn:aws:iam::aws:policy/service-role/AWSLambdaRole'
+          Policies:
+            - PolicyName: KinesisAccess
+              PolicyDocument: 
+                Version: '2012-10-17'
+                Statement: 
+                  - Effect: Allow
+                    Action: "kinesis:*"
+                    Resource: "*"
+    Outputs:
+      iamRoleArn:
+        Description: IAM Role Arn
+        Value:
+          Fn::GetAtt:
+            - IAMRole
+            - Arn
+        Export:
+          Name: ${name}-${stage}-arn
+
+
+# **** This is the component version ****
+
+# component: aws-iam-role
+
+# inputs:
+#   service: lambda.amazonaws.com
+#   policy:
+#     arn: arn:aws:iam::aws:policy/AdministratorAccess
+#   region: us-east-1

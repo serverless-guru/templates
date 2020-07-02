@@ -1,0 +1,25 @@
+service: SES-Templates
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stage: ${opt:stage, "dev"}
+  region: ${opt:region, "us-west-2"}
+  profile: ${opt:profile, "serverlessguru-internal"}
+  environment:
+    SLS_DEBUG: '*'
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - "ses:*"
+      Resource: "*"
+
+functions:
+  send-test:
+    handler: src/index.handler
+
+resources:
+  Resources:
+    ExampleTemplate:
+      Type: AWS::SES::Template
+      Properties:
+        Template: ${file(src/templates/example.yml)}

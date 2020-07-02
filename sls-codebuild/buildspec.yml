@@ -1,0 +1,20 @@
+version: 0.2
+phases:
+  install:
+    runtime-versions:
+      nodejs: 10
+    commands:
+      - npm install serverless -g
+      - serverless -v
+      - cd sls-codebuild    # <-- this would be relevant to your code structure
+      - npm install
+  build:
+    commands:
+      - npm run jest
+      - if [[ $? == 1 ]]; then exit; fi
+      - echo "SUCCESSFULLY PASSED TESTS!"
+      - export SERVERLESS_ACCESS_KEY=${SERVERLESS_ACCESS_KEY}
+      - sls deploy --stage ${STAGE} --region ${REGION} -v
+  post_build:
+    commands:
+      - echo "POST_BUILD STEP"

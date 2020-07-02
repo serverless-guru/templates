@@ -1,0 +1,20 @@
+service: refactorService
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+
+functions:
+  restFunction:
+    handler: ./src/handler.restFunction
+    events:
+     - http:
+         path: rest/get
+         method: get
+
+  httpFunction:
+    handler: ./src/handler.httpFunction
+    events:
+      - httpApi:
+          method: GET
+          path: /http/get

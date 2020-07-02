@@ -1,0 +1,20 @@
+{
+  "version": "0.0.1",
+  "description": "A load generator function implementation",
+  "repository": "n/a",
+  "license": "Apache-2.0",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "deploy": "slsart deploy --stage test1",
+    "run": "slsart invoke --stage test1",
+    "remove": "slsart remove --stage test1"
+  },
+  "dependencies": {
+    "artillery": "git+https://github.com/Nordstrom/artillery.git#25852a11f5f559fc11076314c086ae40ee129348",
+    "artillery-plugin-cloudwatch": "0.0.2",
+    "js-yaml": "^3.13.1",
+    "lodash.merge": "^4.6.2",
+    "lodash.omit": "^4.5.0",
+    "util-promisify": "^2.1.0"
+  }
+}

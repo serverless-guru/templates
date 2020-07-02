@@ -1,0 +1,26 @@
+{
+  "name": "sls-test-pyramid",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test-unit": "jest --config=jest-unit.config.json",
+    "test-int": "jest --config=jest-int.config.json",
+    "test-e2e": "ENDPOINT=$(sls --stage=dev info | grep /test/add) jest --config=jest-e2e.config.json",
+
+    "ci-test-unit": "npm run test-unit",
+    "ci-test-int": "npm run test-int",
+    "ci-test-e2e": "ENDPOINT=$(sls --stage=test info | grep /test/add) jest --config=jest-e2e.config.json"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "serverless-pseudo-parameters": "^2.5.0"
+  },
+  "devDependencies": {
+    "aws-sdk": "^2.630.0",
+    "jest": "^25.1.0",
+    "supertest": "^4.0.2"
+  }
+}

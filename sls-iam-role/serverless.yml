@@ -1,0 +1,11 @@
+org: serverlessguru
+app: component-app
+name: lambda-role
+component: aws-iam-role
+
+inputs:
+  name: my-lambda-role-name
+  service: lambda.amazonaws.com
+  policy:
+    arn: arn:aws:iam::aws:policy/AdministratorAccess
+  region: us-east-1

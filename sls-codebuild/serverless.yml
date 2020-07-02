@@ -1,0 +1,35 @@
+org: serverlessguru
+app: serverless-app
+service: serverless-app-api
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stage: ${opt:stage, "dev"}
+  region: ${opt:region, "us-west-2"}
+
+custom:
+  base: ${self:service}-${self:provider.stage}
+
+functions:
+  test:
+    name: ${self:custom.base}-test
+    handler: index.handler
+    description: Returns dummy response
+    events:
+      - http:
+          path: /test
+          method: any
+          cors: true
+outputs:
+  ApiEndpoint:
+    Fn::Join:
+      - ''
+      - - https://
+        - Ref: ApiGatewayRestApi
+        - .execute-api.${self:provider.region}.amazonaws.com/${self:provider.stage}
+  ApiId:
+    Ref: ApiGatewayRestApi
+  ApiResourceId:
+    Fn::GetAtt:
+    - ApiGatewayRestApi
+    - RootResourceId 

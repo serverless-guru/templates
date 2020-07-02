@@ -1,0 +1,25 @@
+version: 0.2
+env:
+  variables:
+    REGION: "us-west-2"
+    STAGE: "dev"
+phases:
+  install:
+    runtime-versions:
+      nodejs: 10
+    commands:
+      - npm install serverless -g
+      - npm install newman -g
+      - cd newman-codebuild
+      - npm install
+      - serverless -v
+      - newman -v
+  build:
+    commands:
+      - sls offline start --exec "newman run test.postman_collection.json"
+      - if [ $? == 1 ]; then exit; fi
+      - echo "SUCCESSFULLY PASSED TESTS!"
+      - sls deploy --stage ${STAGE} --region ${REGION} -v
+  post_build:
+    commands:
+      - echo "POST_BUILD STEP"

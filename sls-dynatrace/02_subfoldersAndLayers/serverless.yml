@@ -1,0 +1,28 @@
+service: serviceAllInOne
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  environment: 
+    DT_LAMBDA_OPTIONS: "***"
+    DT_TAGS: "***"
+    DT_CUSTOM_PROP: "***"
+
+functions:
+  hello:
+    handler: /opt/node_modules/@dynatrace/oneagent/index.handler
+    environment:
+      DT_LAMBDA_HANDLER: "src/handlers/serviceA/index.handler"
+    layers:
+      - { Ref: DynatraceLambdaLayer }
+
+    events:
+      - http:
+          path: /
+          method: get
+
+layers:
+  dynatrace:
+    name: dynatraceLayer
+    path: layerDynatrace
+    description: "Dynatrace Layer"

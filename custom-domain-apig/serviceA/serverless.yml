@@ -1,0 +1,32 @@
+org: serverlessguru
+app: patterns
+service: ${self:app}-service-a
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stage: ${opt:stage, "dev"}
+  region: ${opt:region, "us-east-2"}
+
+  apiGateway:
+    restApiId: ${output:${self:app}-api.ApiId}
+    restApiRootResourceId: ${output:${self:app}-api.ApiResourceId}
+    
+
+custom:
+  base: ${self:service}-${self:provider.stage}
+
+functions:
+  test:
+    name: ${self:custom.base}-test2
+    handler: index.handler
+    description: test2 function for initial API deployment
+    timeout: 30
+    memory: 256
+    events:
+      - http:
+          path: /test2
+          method: any
+          cors: true
+          private: true
+          # authorizer:
+          #   arn: ${output:${self:app}-auth.UserPoolArn}

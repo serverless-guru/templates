@@ -1,0 +1,50 @@
+org: serverlessguru
+app: patterns
+service: ${self:app}-cdn
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stage: ${opt:stage, "dev"}
+  region: ${opt:region, "us-east-2"}
+
+custom:
+  base: ${self:service}-${self:provider.stage}
+
+  # Serverless Framework Pro params (formerly template.yml Mappings by stage (e.g. dev, prod, etc.))
+  params:
+    HostedZoneId: ${param:HostedZoneId} # XYZ123XYZ123
+    CDNCertArn: ${param:CDNCertARN}  # arn:aws:acm:us-east-2:0000000000:certificate/xajdlkajdkajdlkadjladkadadakldj
+    CDNDomainName: ${param:CDNDomainName}  # dev.example.com
+
+resources:
+  Resources:
+    # **** CUSTOM DOMAIN **** #
+    # Custom Domain Name for API Gateway
+    CustomDomainName:
+      DependsOn: ApiGatewayRestApi
+      Type: AWS::ApiGateway::DomainName
+      Properties: 
+        CertificateArn: ${self:custom.params.CDNCertArn}
+        DomainName: ${self:custom.params.CDNDomainName}
+        EndpointConfiguration:
+          Types:
+            - EDGE
+
+    # # Route53 Record Set
+    RecordSet:
+      DependsOn: ApiGatewayRestApi
+      Type: AWS::Route53::RecordSet
+      Properties:
+        HostedZoneId: ${self:custom.params.HostedZoneId}
+        Name: ${self:custom.params.CDNDomainName}
+        Type: A
+        AliasTarget:
+          HostedZoneId:
+            Fn::GetAtt:
+              - CustomDomainName
+              - DistributionHostedZoneId
+          DNSName:
+            Fn::GetAtt:
+              - CustomDomainName
+              - DistributionDomainName
+    # **** CUSTOM DOMAIN **** #

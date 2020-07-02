@@ -1,0 +1,151 @@
+org: serverlessguru
+app: sg-shared-resources
+service: ${self:app}-codepipeline
+provider:
+  name: aws
+custom:
+  base: ${self:service}-${self:provider.stage}
+
+  # Serverless Framework Pro params
+  params:
+    SERVERLESS_ACCESS_KEY: ${param:SERVERLESS_ACCESS_KEY}
+    GITHUB_OWNER: ${param:GITHUB_OWNER}              # <-- serverless-guru
+    GIHUB_REPO_NAME: ${param:GIHUB_REPO_NAME}        # <-- templates
+    GITHUB_OAUTH_TOKEN: ${param:GITHUB_OAUTH_TOKEN}  # <-- created in GitHub console
+
+resources:
+  Resources:
+    CodeBuildRole:
+      Type: AWS::IAM::Role
+      Properties:
+        RoleName: ${self:custom.base}-${self:provider.region}-codebuild-role
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            Effect: Allow
+            Principal:
+              Service: codebuild.amazonaws.com
+            Action: sts:AssumeRole
+        Policies:
+          - PolicyName: ${self:custom.base}-${self:provider.region}-codebuild-policy
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - logs:CreateLogGroup
+                    - logs:CreateLogStream
+                    - logs:PutLogEvents
+                    - logs:DescribeLogGroups
+                    - logs:FilterLogEvents
+                    - logs:DescribeLogStreams
+                    - logs:DeleteLogGroup
+                    - s3:putObject
+                    - s3:getObject
+                    - codebuild:*
+                  Resource: '*'
+
+    CodePipelineRole:
+      Type: AWS::IAM::Role
+      Properties:
+        RoleName: ${self:custom.base}-${self:provider.region}-role
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            Effect: Allow
+            Principal:
+              Service: codepipeline.amazonaws.com
+            Action: sts:AssumeRole
+        Policies:
+          - PolicyName: ${self:custom.base}-${self:provider.region}-pipeline-policy
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - logs:CreateLogGroup
+                    - logs:CreateLogStream
+                    - logs:PutLogEvents
+                    - s3:putObject
+                    - s3:getObject
+                    - codebuild:*
+                  Resource: '*'
+
+    S3Artifacts:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:custom.base}-${self:provider.region}-artifacts
+
+    BuildDeploy:
+      Type: AWS::CodeBuild::Project
+      Properties:
+        Name: ${self:provider.stage}builddeploy
+        ServiceRole:
+          Ref: CodeBuildRole
+        TimeoutInMinutes: 5
+        Source:
+          Type: CODEPIPELINE
+          BuildSpec: buildspec.yml
+        Environment:
+          Type: LINUX_CONTAINER"
+          ComputeType: BUILD_GENERAL1_SMALL
+          Image: aws/codebuild/nodejs:10.1.0
+          SERVERLESS_ACCESS_KEY: ${self:custom.params.SERVERLESS_ACCESS_KEY}
+          STAGE: ${self:provider.stage}
+          REGION: ${self:provider.region}
+        Artifacts:
+          Type: CODEPIPELINE
+
+    Pipeline:
+      Type: "AWS::CodePipeline::Pipeline"
+      Properties:
+        Name: ${self:custom.base}-cicd-pipeline
+        ArtifactStore:
+          Location:
+            Ref: S3Artifacts
+          Type: S3
+        RestartExecutionOnUpdate: true
+        RoleArn:
+          Fn::Join:
+            - ""
+            - - "arn:aws:iam::"
+              - Ref: AWS::AccountId 
+              - ":role/"
+              - Ref: CodePipelineRole
+        Stages:
+          # Grab code from GitHub
+          - Name: Source
+            Actions:
+              - Name: SourceAction
+                RunOrder: 1
+                ActionTypeId:
+                  Category: Source
+                  Owner: ThirdParty
+                  Provider: GitHub
+                  Version: 1
+                Configuration:
+                  Owner: ${self:custom.params.GITHUB_OWNER}       
+                  Repo: ${self:custom.params.GIHUB_REPO_NAME}     
+                  Branch: ${self:provider.stage}
+                  PollForSourceChanges: true
+                  OAuthToken: ${self:custom.params.GITHUB_OAUTH_TOKEN}
+                OutputArtifacts:
+                  - Name: ClonedCode
+
+          # Build and deploy our Serverless Framework app
+          - Name: BuildDeploy
+            Actions:
+              - Name: BuildDeploy
+                RunOrder: 1
+                InputArtifacts:
+                  - Name: ClonedCode
+                ActionTypeId:
+                  Category: Build
+                  Owner: AWS
+                  Provider: CodeBuild
+                  Version: 1
+                Configuration:
+                  ProjectName:
+                    Ref: BuildDeploy
+                OutputArtifacts:
+                  - Name: DeployedArtifacts

@@ -1,0 +1,14 @@
+org: serverlessguru
+app: component-app
+name: sls-appsync-example-lambda
+component: aws-lambda
+
+inputs:
+  name: ${name}-${stage}
+  src: ./src
+  handler: index.handler
+  roleArn: ${output:${app}:${stage}:sls-appsync-example-iam-role.Outputs.iamRoleArn}
+  env:
+    CACHE_TIMEOUT: '600' # example env var
+  layers:
+    - ${output:${app}:${stage}:${name}-layer.arnVersion}

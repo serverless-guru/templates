@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aws-auth
+  namespace: kube-system
+data:
+  mapUsers: |
+    - userarn: arn:aws:iam::xxxxxxx:user/xxx
+      username: xxxxxx
+      groups:
+        - system:masters
+    - userarn: arn:aws:iam::xxxxxxx:user/xxxxxx
+      username: xxxxxx
+      groups:
+        - system:masters
+  mapRoles: |
+    - rolearn: arn:aws:iam::xxxxxxxxxxx:role/xxxxxx-fargatepodexecutionrole
+      username: system:node:{{SessionName}}
+      groups:
+        - system:bootstrappers
+        - system:nodes
+        - system:node-proxier

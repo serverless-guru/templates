@@ -1,0 +1,166 @@
+org: YOUR_COMPANY
+app: YOUR_APP
+service: vpc-old
+provider:
+  name: aws
+  stage: ${opt:stage, "int"}
+  region: ${opt:region, "us-east-2"}
+
+  stackTags:
+    ENVIRONMENT: ${self:provider.stage}
+
+custom:
+  base: ${self:service}-${self:provider.stage}
+  CIDRMap:
+    VPC:
+      CIDR: 10.0.0.0/16
+    SubnetA:
+      CIDR: 10.0.2.0/24
+    SubnetB:
+      CIDR: 10.0.3.0/24
+    SubnetC:
+      CIDR: 10.0.4.0/24
+resources:
+  Resources:
+    VPC:
+      Type: AWS::EC2::VPC
+      Properties:
+        CidrBlock: ${self:custom.CIDRMap.VPC.CIDR}
+        EnableDnsSupport: true
+        EnableDnsHostnames: true
+        InstanceTenancy: default
+        Tags:
+          - Key: Name
+            Value: ${self:custom.base}
+    InternetGateway:
+      Type: AWS::EC2::InternetGateway
+      Properties:
+        Tags:
+          - Key: Name
+            Value: ${self:custom.base}
+    VPCGatewayAttachment:
+      Type: AWS::EC2::VPCGatewayAttachment
+      Properties:
+        VpcId:
+          Ref: VPC
+        InternetGatewayId:
+          Ref: InternetGateway
+    SubnetA:
+      Type: AWS::EC2::Subnet
+      Properties:
+        AvailabilityZone: ${self:provider.region}a
+        VpcId:
+          Ref: VPC
+        CidrBlock: ${self:custom.CIDRMap.SubnetA.CIDR}
+        MapPublicIpOnLaunch: true
+    SubnetB:
+      Type: AWS::EC2::Subnet
+      Properties:
+        AvailabilityZone: ${self:provider.region}b
+        VpcId:
+          Ref: VPC
+        CidrBlock: ${self:custom.CIDRMap.SubnetB.CIDR}
+        MapPublicIpOnLaunch: false
+    SubnetC:
+      Type: AWS::EC2::Subnet
+      Properties:
+        AvailabilityZone: ${self:provider.region}c
+        VpcId:
+          Ref: VPC
+        CidrBlock: ${self:custom.CIDRMap.SubnetC.CIDR}
+        MapPublicIpOnLaunch: false
+    RouteTable:
+      Type: AWS::EC2::RouteTable
+      Properties:
+        VpcId:
+          Ref: VPC
+    RouteTableForNATG:
+      Type: AWS::EC2::RouteTable
+      Properties:
+        VpcId:
+          Ref: VPC
+    InternetRoute:
+      Type: AWS::EC2::Route
+      DependsOn: VPCGatewayAttachment
+      Properties:
+        DestinationCidrBlock: 0.0.0.0/0
+        GatewayId:
+          Ref: InternetGateway
+        RouteTableId:
+          Ref: RouteTable
+    SubnetARouteTableAssociation:
+      Type: AWS::EC2::SubnetRouteTableAssociation
+      Properties:
+        RouteTableId:
+          Ref: RouteTable
+        SubnetId:
+          Ref: SubnetA
+    SubnetBRouteTableAssociation:
+      Type: AWS::EC2::SubnetRouteTableAssociation
+      Properties:
+        RouteTableId:
+          Ref: RouteTableForNATG
+        SubnetId:
+          Ref: SubnetB
+    SubnetCRouteTableAssociation:
+      Type: AWS::EC2::SubnetRouteTableAssociation
+      Properties:
+        RouteTableId:
+          Ref: RouteTableForNATG
+        SubnetId:
+          Ref: SubnetC
+    SecurityGroup:
+      Type: AWS::EC2::SecurityGroup
+      Properties:
+        GroupName: 'Internet Group'
+        GroupDescription: 'SSH traffic in, all traffic out.'
+        VpcId:
+          Ref: VPC
+        SecurityGroupIngress:
+          - IpProtocol: -1
+            CidrIp: 0.0.0.0/0
+        SecurityGroupEgress:
+          - IpProtocol: -1
+            CidrIp: 0.0.0.0/0
+    EIP:
+      Type: 'AWS::EC2::EIP'
+      Properties:
+        Domain: vpc
+      DependsOn: VPCGatewayAttachment
+    NatGateway:
+      Type: 'AWS::EC2::NatGateway'
+      Properties:
+        AllocationId:
+          Fn::GetAtt:
+            - EIP
+            - AllocationId
+        SubnetId:
+          Ref: SubnetA
+    Route:
+      Type: 'AWS::EC2::Route'
+      Properties:
+        RouteTableId:
+          Ref: RouteTableForNATG
+        DestinationCidrBlock: '0.0.0.0/0'
+        NatGatewayId:
+          Ref: NatGateway
+    DatabaseSubnetGroup:
+      Type: AWS::RDS::DBSubnetGroup
+      Properties:
+        DBSubnetGroupDescription: CloudFormation managed DB subnet group.
+        SubnetIds:
+          - Ref: SubnetA
+          - Ref: SubnetB
+outputs:
+  VPCId:
+    Ref: VPC
+  SubnetA:
+    Ref: SubnetA
+  SubnetB:
+    Ref: SubnetB
+  SubnetC:
+    Ref: SubnetC
+  DatabaseSubnetGroup:
+    Ref: DatabaseSubnetGroup
+  VPCSecurityGroup:
+    Ref: SecurityGroup

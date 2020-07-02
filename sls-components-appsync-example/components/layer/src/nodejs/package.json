@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "@dynatrace/oneagent": "^1.181.167-1.0.0",
+    "aws-xray-sdk": "^2.5.0",
+    "lokijs": "^1.5.8",
+    "md5": "^2.2.1"
+  }
+}

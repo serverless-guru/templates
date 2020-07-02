@@ -1,0 +1,13 @@
+org: YOUR_ORG
+app: integration-demo
+component: aws-dynamodb
+name: db-integration-example
+inputs:
+    name: db-integration-example-${stage}
+    attributeDefinitions:
+        - AttributeName: PK
+          AttributeType: S
+    keySchema:
+        - KeyType: HASH
+          AttributeName: PK
+    region: us-east-1

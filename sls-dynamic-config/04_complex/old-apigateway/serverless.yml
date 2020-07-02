@@ -1,0 +1,32 @@
+org: YOUR_COMPANY
+app: YOUR_APP
+service: apigateway-old
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  region: ${opt:region, "us-east-2"}
+
+functions:
+  hello:
+    handler: handler.hello
+    events:
+      - http:
+            path: /test
+            method: get
+
+outputs:
+  ApiEndpoint:
+    Fn::Join:
+      - ''
+      - - https://
+        - Ref: ApiGatewayRestApi
+        - .execute-api.${self:provider.region}.amazonaws.com/${self:provider.stage}
+  
+  ApiId:
+    Ref: ApiGatewayRestApi
+    
+  ApiResourceId:
+    Fn::GetAtt:
+    - ApiGatewayRestApi
+    - RootResourceId 

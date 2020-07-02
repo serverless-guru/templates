@@ -1,0 +1,2 @@
+base: ${self:service}-${self:provider.stage}-${self:provider.region}
+s3BucketName: ${self:custom.base}-website

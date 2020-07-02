@@ -1,0 +1,25 @@
+{
+  "name": "e2eAppsync",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test-unit": "jest --config=jest-unit.config.json",
+    "test-int": "jest --config=jest-int.config.json",
+    "test-e2e": "ENDPOINT=$(sls info | grep /product) jest --config=jest-e2e.config.json",
+    "ci-test-unit": "npm run test-unit",
+    "ci-test-int": "npm run test-int",
+    "ci-test-e2e": "ENDPOINT=$(sls info --stage=test | grep /product) jest --config=jest-e2e.config.json"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "aws-sdk": "^2.639.0",
+    "dotenv": "^8.2.0",
+    "jest": "^25.1.0"
+  },
+  "dependencies": {
+    "supertest": "^4.0.2"
+  }
+}

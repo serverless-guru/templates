@@ -1,0 +1,20 @@
+image: node:10.15.3
+
+pipelines:
+  branches:
+    master:
+      - step:
+          caches:
+            - node
+          script:
+            - npm install
+            - npm test
+    release:
+      - step:
+          caches:
+            - node
+          script:
+            - npm install
+            - npm test
+            - echo "//registry.npmjs.org/:_authToken=\${NPM_TOKEN}" >> .npmrc
+            - npm publish

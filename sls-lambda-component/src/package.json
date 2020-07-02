@@ -1,0 +1,9 @@
+{
+    "devDependencies": {
+        "aws-sdk": "^2.466.0"
+    },
+    "dependencies": {
+        "md5": "^2.2.1",
+        "redis": "^2.8.0"
+    }
+}

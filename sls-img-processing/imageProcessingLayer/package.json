@@ -1,0 +1,15 @@
+{
+    "name": "imglayer",
+    "version": "1.0.0",
+    "description": "",
+    "main": "handler.js",
+    "scripts": {
+        "installforlambda": "npm install --arch=x64 --platform=linux sharp"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "sharp": "^0.25.3"
+    }
+}

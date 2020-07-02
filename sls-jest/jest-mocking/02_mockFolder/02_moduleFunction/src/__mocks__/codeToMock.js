@@ -1,0 +1,3 @@
+exports.method = () => {
+    return 'MOCK'
+}

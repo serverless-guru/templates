@@ -1,0 +1,9 @@
+org: serverlessguru
+app: components-app
+component: aws-lambda
+name: monolith-api
+stage: dev
+inputs:
+  name: ${app}-${name}-${stage} # this references the stage property above
+  src: ./src
+  handler: api.handler

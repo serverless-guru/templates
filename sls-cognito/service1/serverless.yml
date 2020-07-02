@@ -1,0 +1,25 @@
+org: YOUR_ORG
+app: YOUR_APP
+service: service-1
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  apiGateway:
+    restApiId: ${output:sls-cognito-api.ApiId}
+    restApiRootResourceId: ${output:sls-cognito-api.ApiResourceId}
+
+functions:
+  hello:
+    timeout: 30
+    handler: handler.hello
+    events:
+      - http:
+          path: /back1
+          method: get
+          cors: true
+          authorizer:
+            type: COGNITO_USER_POOLS
+            authorizerId: ${output:sls-cognito-api.AuthorizorId}
+
+

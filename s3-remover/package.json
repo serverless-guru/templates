@@ -1,0 +1,5 @@
+{
+  "devDependencies": {
+    "serverless-s3-remover": "^0.6.0"
+  }
+}

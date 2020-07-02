@@ -1,0 +1,6 @@
+{
+  "scripts": {
+    "deploy": "bash ./scripts/deploy.bash",
+    "setup": "bash ./scripts/setup.bash"
+  }
+}

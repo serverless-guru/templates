@@ -1,0 +1,24 @@
+service: serviceA
+app: YOUR_APP
+org: YOUR_ORG
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  iamRoleStatements:
+    - Effect: 'Allow'
+      Action:
+        - 's3:*'
+      Resource:
+        - '*'
+
+functions:
+  hello:
+    handler: handler.handler
+    events:
+      - http: 
+          path: /
+          method: GET
+    layers:
+      - ${output:imageprocessinglayer.Arn}
+

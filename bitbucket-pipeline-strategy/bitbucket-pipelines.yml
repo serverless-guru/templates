@@ -1,0 +1,45 @@
+image: node:10.15.3
+
+pipelines:
+  branches:
+    master:
+      - step:
+          name: Build
+          caches:
+            - node
+            - globalnode
+          script:
+            - npm install -g serverless
+            - /bin/sh deploy.bash         
+            - export SLS_DEBUG=*
+            - sls package --stage=dev --package=artifact/dev 
+            - sls package --stage=staging --package=artifact/staging
+
+          artifacts:
+            - artifact/**
+
+      - step:
+          name: Deploy to dev
+          trigger: manual
+          caches:
+            - node
+            - globalnode
+          script:      
+            - npm install -g serverless
+            - export SLS_DEBUG=*
+            - serverless deploy --stage=dev --package=artifact/dev
+
+      - step:
+          name: Deploy to staging
+          trigger: manual
+          caches:
+            - node
+            - globalnode
+          script:      
+            - npm install -g serverless
+            - export SLS_DEBUG=*
+            - serverless deploy --stage=staging --package=artifact/staging
+
+definitions:
+  caches:
+    globalnode: /usr/local/lib/node_modules

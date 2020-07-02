@@ -1,0 +1,11 @@
+apiGateway:
+    restApiId: ${output:${self:custom.apiStackName}.ApiId}
+    restApiRootResourceId: ${output:${self:custom.apiStackName}.ApiResourceId}
+
+vpc:
+    securityGroupIds: 
+        - ${output:${self:custom.vpcStackName}.VPCSecurityGroup}
+    subnetIds:
+        - ${output:${self:custom.vpcStackName}.SubnetB}
+        - ${output:${self:custom.vpcStackName}.SubnetC}
+        - ${output:${self:custom.vpcStackName}.SubnetA}

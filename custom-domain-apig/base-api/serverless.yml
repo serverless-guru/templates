@@ -1,0 +1,102 @@
+org: serverlessguru
+app: patterns
+service: ${self:app}-base-api
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stage: ${opt:stage, "dev"}
+  region: ${opt:region, "us-east-2"}
+
+  # API Key
+  apiKeys:
+    - ${self:custom.base}-api-key
+    
+
+custom:
+  base: ${self:service}-${self:provider.stage}
+
+  # Serverless Framework Pro params (formerly template.yml Mappings by stage (e.g. dev, prod, etc.))
+  params:
+    HostedZoneId: ${param:HostedZoneId} # XYZ123XYZ123
+    CDNCertArn: ${param:CDNCertARN}  # arn:aws:acm:us-east-2:0000000000:certificate/xajdlkajdkajdlkadjladkadadakldj
+    CDNDomainName: ${param:CDNDomainName}  # dev.example.com
+
+functions:
+  test:
+    name: ${self:custom.base}-test
+    handler: index.handler
+    description: test function for initial API deployment
+    timeout: 30
+    memory: 256
+    events:
+      - http:
+          path: /test
+          method: any
+          cors: true
+          private: true
+          # authorizer:
+          #   arn: ${output:${self:app}-auth.UserPoolArn}
+
+resources:
+  Resources:
+    # Creates an API Gateway Deployment
+    ApiGatewayDeployment:
+      Type: AWS::ApiGateway::Deployment
+      Properties:
+        Description: ${self:provider.stage} API Gateway Deployment
+        RestApiId:
+          Ref: ApiGatewayRestApi
+        StageName: ${self:provider.stage}
+      DependsOn:
+        - ApiGatewayMethodTestAny # (REQUIRED) This can be any Method on the API
+    
+    # Base Path Mapping
+    BasePathMapping:
+      DependsOn: ApiGatewayDeployment
+      Type: AWS::ApiGateway::BasePathMapping
+      Properties:
+        DomainName: ${self:custom.params.CDNDomainName}
+        RestApiId:
+          Ref: ApiGatewayRestApi
+        Stage: ${self:provider.stage}
+        BasePath: loyalty
+    
+    # **** GATEWAY CORS for 4XX + 5XX **** #
+    # CORS for 4XX (Relation: CORS)
+    GatewayResponseDefault4XX:
+      Type: AWS::ApiGateway::GatewayResponse
+      Properties:
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+        ResponseType: DEFAULT_4XX
+        RestApiId:
+          Ref: ApiGatewayRestApi
+      DependsOn: ApiGatewayRestApi
+
+    # CORS for 5XX (Relation: CORS)
+    GatewayResponseDefault5XX:
+      Type: AWS::ApiGateway::GatewayResponse
+      Properties:
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+        ResponseType: DEFAULT_5XX
+        RestApiId:
+          Ref: ApiGatewayRestApi
+      DependsOn: ApiGatewayRestApi
+    # **** GATEWAY CORS for 4XX + 5XX **** #
+
+outputs:
+  ApiEndpoint:
+    Fn::Join:
+      - ''
+      - - https://
+        - Ref: ApiGatewayRestApi
+        - .execute-api.${self:provider.region}.amazonaws.com/loyalty
+  ApiId:
+    Ref: ApiGatewayRestApi
+  ApiResourceId:
+    Fn::GetAtt:
+    - ApiGatewayRestApi
+    - RootResourceId

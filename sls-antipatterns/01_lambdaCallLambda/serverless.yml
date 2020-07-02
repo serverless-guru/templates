@@ -1,0 +1,23 @@
+service: sls-antipatterns-lambdacalls
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+          - lambda:*
+      Resource: '*'
+
+functions:
+  one:
+    handler: handler.one
+    timeout: 30
+
+  two:
+    handler: handler.two
+    timeout: 30
+
+  three:
+    handler: handler.three
+    timeout: 30

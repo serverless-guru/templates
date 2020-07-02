@@ -1,0 +1,12 @@
+image: node:11.13.0-alpine
+
+pipelines:
+  default:
+    - step:
+        caches:
+          - node
+        script:
+          - npm i -g serverless
+          - npm install
+          - serverless config credentials --provider aws --key ${AWS_KEY} --secret ${AWS_SECRET}
+          - serverless deploy 

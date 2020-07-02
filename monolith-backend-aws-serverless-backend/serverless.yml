@@ -1,0 +1,21 @@
+service: monolith-backend
+
+provider:
+  name: aws
+  runtime: nodejs10.x
+  profile: ${opt:profile, "default"}
+  stage: ${opt:stage, "dev"}
+  region: ${opt:region, "us-west-2"}
+
+functions:
+  api:
+    handler: src/handlers/api.handler
+    events:
+      - http:
+          path: /
+          method: ANY
+          cors: true
+      - http:
+          path: /{any+}
+          method: ANY
+          cors: true

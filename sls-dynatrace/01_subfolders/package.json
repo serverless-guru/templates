@@ -1,0 +1,16 @@
+{
+  "name": "sls-dynatrace",
+  "version": "1.0.0",
+  "description": "",
+  "main": "handler.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@dynatrace/oneagent": "^1.189.205-1.0.0",
+    "@dynatrace/serverless-oneagent": "^1.0.15"
+  }
+}

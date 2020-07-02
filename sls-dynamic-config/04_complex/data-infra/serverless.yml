@@ -1,0 +1,12 @@
+org: YOUR_COMPANY
+app: YOUR_APP
+service: aurora-sls
+provider:
+  name: aws
+  stage: ${opt:stage, "dev"}
+  region: ${opt:region, "us-east-2"}
+
+outputs:
+  DBHost: https://db-url-${opt:stage, "dev"}.com
+  DBPort: "3306"
+  DBName: db-${opt:stage, "dev"}

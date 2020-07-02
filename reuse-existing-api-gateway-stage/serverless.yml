@@ -1,0 +1,31 @@
+service: reuse-existing-api-gateway-stage
+org: serverlessguru  # <-- change out your org
+app: patterns   # <-- change out your app
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stage: ${opt:stage, "dev"}
+  region: ${opt:region, "us-east-1"}
+  apiGateway:
+    restApiId: ${self:custom.restApiId}
+    restApiRootResourceId: ${self:custom.restApiRootResourceId}
+custom:
+  restApiId: xyz # <-- Add your existing API Gateway REST API ID
+  restApiRootResourceId: xyz # <-- Add your existing API Gateway REST API Root Resource ID (e.g. path of / id)
+  restApiStageName: existing  # <-- change to your existing deployment stage name
+functions:
+  hello:
+    handler: handler.hello
+    events:
+      - http:
+          path: /hello
+          method: GET
+resources:
+  Resources:
+    StageDeployment:
+      DependsOn: ApiGatewayMethodHelloGet  # <-- replace based on your function method name which is created by serverless framework (found by searching for "ApiGatewayMethod" in .serverless/ folder)
+      Type: AWS::ApiGateway::Deployment
+      Properties:
+        RestApiId: ${self:custom.restApiId}
+        Description: Reuse ${self:custom.restApiStageName} deployment
+        StageName: ${self:custom.restApiStageName}

@@ -1,0 +1,17 @@
+service: monitoring-layer
+org: YOUR_ORG
+app: YOUR_APP
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+
+layers:
+  dynatrace:
+    name: dynatraceLayer
+    path: layerDynatrace
+    description: "Dynatrace Layer"
+
+outputs:
+  MonitoringLayer:
+    Ref: DynatraceLambdaLayer

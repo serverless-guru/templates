@@ -1,0 +1,14 @@
+{
+  "name": "src",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "devDependencies": {
+    "aws-sdk": "^2.610.0"
+  },
+  "scripts": {
+    "test-unit": "jest --config=jest-unit.config.json",
+    "test-int": "jest --config=jest-integration.config.json",
+    "ci-test": "npm run test-unit && npm run test-int"
+  }
+}

@@ -1,0 +1,70 @@
+
+service: cw-dashboard
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+
+resources:
+ Resources:
+    Dashboard:
+        Type: "AWS::CloudWatch::Dashboard"
+        Properties:
+            DashboardName: MyGeneratedDashboard
+            DashboardBody: '{
+    "widgets": [
+        {
+            "type": "metric",
+            "x": 0,
+            "y": 0,
+            "width": 18,
+            "height": 6,
+            "properties": {
+                "view": "timeSeries",
+                "stacked": false,
+                "metrics": [
+                    [
+                        "AWS/Lambda",
+                        "Invocations",
+                        "FunctionName",
+                        "artilery-simple-service-dev-hello",
+                        {
+                            "period": 86400,
+                            "stat": "Sum"
+                        }
+                    ]
+                ],
+                "region": "us-east-1",
+                "yAxis": {
+                    "left": {
+                        "min": 0
+                    }
+                }
+            }
+        },
+        {
+            "type": "metric",
+            "x": 18,
+            "y": 0,
+            "width": 4,
+            "height": 4,
+            "properties": {              
+                "metrics": [
+                    [ "serverless-artillery-myperftestservice-loadtest", "ResultLatency" ]
+                ],
+                "view": "singleValue",
+                "region": "us-east-1",
+                "stat": "Average",
+                "period": 604800,
+                "stacked": false
+            }
+
+
+
+
+
+    
+    
+        }
+    ]
+}'

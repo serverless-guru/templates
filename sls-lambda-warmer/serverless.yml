@@ -1,0 +1,27 @@
+# org: serverlessguru
+# app: components-app
+service: serverless-lambda-warmer
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stage: ${opt:stage, "dev"}
+  region: ${opt:region, "us-west-2"}
+  profile: ${opt:profile, "serverlessguru-internal"}
+  iamRoleStatements:
+    - Effect: 'Allow'
+      Action:
+        - 'lambda:InvokeFunction'
+      Resource: '*'
+  environment:
+    CONCURRENCY: ${self:custom.concurrency} 
+    REGION: ${self:provider.region}
+
+custom:
+  base: ${self:service}-${self:provider.stage}
+  concurrency: ${opt:concurrency, '1'} #Update default concurrency here
+
+functions:
+  warmer:
+    handler: src/index.handler
+    events:
+      - schedule: rate(15 minutes) #Update refresh rate here

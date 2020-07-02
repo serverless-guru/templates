@@ -1,0 +1,17 @@
+service: imageprocessinglayer
+app: YOUR_APP
+org: YOUR_ORG
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+
+layers:
+  imageprocessing:
+    name: imageProcessingLayer
+    path: ./
+    description: "imageProcessingLayer"
+
+outputs:
+  Arn:
+    Ref: ImageprocessingLambdaLayer

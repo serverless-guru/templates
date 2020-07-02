@@ -1,0 +1,11 @@
+image: node:10.15.3
+
+pipelines:
+  default:
+    - step:
+        caches:
+          - node
+        script:
+          - echo "//registry.npmjs.org/:_authToken=\${NPM_TOKEN}" >> .npmrc
+          - npm install
+          - npm test

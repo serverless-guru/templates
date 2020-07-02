@@ -1,0 +1,13 @@
+{
+    "scripts": {
+        "remove-performance-stage": "(cd ../service && sls remove --stage=performance)",
+        "deploy-to-performance-stage": "(cd ../service && sls deploy --stage=performance)",
+
+        "test-performance-seed": "(cd ./seeder && node seed.js)",
+        "test-performance-run": "(cd ./artillery && slsart invoke --stage=test1 --target=$(sls output get --name=ApiEndpoint --app=ac-test --service=artilery-simple-service --stage=performance --org=garysjennings))",
+        "test-performance-cleanup": "(cd ./seeder && node cleanup.js)",
+        "run-tests": "npm run test-performance-seed && npm run test-performance-run && npm run test-performance-cleanup",
+        
+        "everything": "npm run remove-performance-stage && npm run deploy-to-performance-stage && npm run run-tests"
+    }
+}

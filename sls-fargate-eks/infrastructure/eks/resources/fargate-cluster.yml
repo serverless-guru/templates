@@ -1,0 +1,25 @@
+# An example of ClusterConfig with a normal nodegroup and a Fargate profile.
+---
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: ${env:cluster_name}
+  region: ${env:region} # us-east-1
+
+fargateProfiles:
+  - name: fp-default
+    selectors:
+      # All workloads in the "default" Kubernetes namespace will be
+      # scheduled onto Fargate:
+      - namespace: default
+      # All workloads in the "kube-system" Kubernetes namespace will be
+      # scheduled onto Fargate:
+      - namespace: kube-system
+  - name: ${env:custom_namespace}
+    selectors:
+      # All workloads in the "${env:custom_namespace}" Kubernetes namespace will be
+      # scheduled onto Fargate:
+      - namespace: ${env:custom_namespace}
+        labels:
+          app: ${env:custom_namespace}

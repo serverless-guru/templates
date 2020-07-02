@@ -1,0 +1,15 @@
+service: blog
+
+provider:
+  name: aws
+  runtime: nodejs8.10
+  stage: ${opt:stage, "dev"}
+  region: ${opt:region, "us-west-2"}
+
+plugins:
+  - serverless-finch
+
+custom:
+  client:
+    bucketName: blog-${self:provider.stage}-${self:provider.region}-website
+    distributionFolder: public/

@@ -1,0 +1,80 @@
+service: sls-testing-example
+
+plugins:
+  - serverless-pseudo-parameters
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  environment:
+    SERVICE: ${self:service}
+    STAGE: ${opt:stage, self:provider.stage}
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+          - dynamodb:Query
+          - dynamodb:GetItem
+          - dynamodb:PutItem
+          - dynamodb:UpdateItem
+          - dynamodb:DeleteItem
+      Resource: 'arn:aws:dynamodb:#{AWS::Region}:#{AWS::AccountId}:table/${self:service}-pics-${opt:stage, self:provider.stage}'
+    - Effect: Allow
+      Action:
+          - dynamodb:Query
+          - dynamodb:GetItem
+          - dynamodb:PutItem
+          - dynamodb:UpdateItem
+          - dynamodb:DeleteItem
+      Resource: 'arn:aws:dynamodb:#{AWS::Region}:#{AWS::AccountId}:table/${self:service}-tweets-${opt:stage, self:provider.stage}'
+    - Effect: Allow
+      Action:
+          - dynamodb:Query
+          - dynamodb:GetItem
+          - dynamodb:PutItem
+          - dynamodb:UpdateItem
+          - dynamodb:DeleteItem
+      Resource: 'arn:aws:dynamodb:#{AWS::Region}:#{AWS::AccountId}:table/${self:service}-highlighted-${opt:stage, self:provider.stage}'
+  
+functions:
+  save:
+    handler: ./src/handler.save
+    events:
+      - http:
+          path: save
+          method: post
+
+resources:
+  Resources:
+      picsTable:
+          Type: AWS::DynamoDB::Table
+          Properties:
+              TableName: ${self:service}-pics-${opt:stage, self:provider.stage}
+              AttributeDefinitions:
+                  - AttributeName: PK
+                    AttributeType: S
+              KeySchema:
+                  - AttributeName: PK
+                    KeyType: HASH
+              BillingMode: PAY_PER_REQUEST
+      tweetsTable:
+          Type: AWS::DynamoDB::Table
+          Properties:
+              TableName: ${self:service}-tweets-${opt:stage, self:provider.stage}
+              AttributeDefinitions:
+                  - AttributeName: PK
+                    AttributeType: S
+              KeySchema:
+                  - AttributeName: PK
+                    KeyType: HASH
+              BillingMode: PAY_PER_REQUEST
+      highlightedTable:
+          Type: AWS::DynamoDB::Table
+          Properties:
+              TableName: ${self:service}-highlighted-${opt:stage, self:provider.stage}
+              AttributeDefinitions:
+                  - AttributeName: PK
+                    AttributeType: S
+              KeySchema:
+                  - AttributeName: PK
+                    KeyType: HASH
+              BillingMode: PAY_PER_REQUEST

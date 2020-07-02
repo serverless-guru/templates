@@ -1,0 +1,56 @@
+service: pipeline-standardization
+org: YOUR_ORG
+app: YOUR_APP
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  region: us-east-2
+  environment:
+    STAGE: ${opt:stage, "dev"}
+    TABLE: ${self:service}-${opt:stage, self:provider.stage}
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+          - dynamodb:Query
+          - dynamodb:GetItem
+          - dynamodb:PutItem
+          - dynamodb:UpdateItem
+          - dynamodb:DeleteItem
+      Resource: 'arn:aws:dynamodb:#{AWS::Region}:#{AWS::AccountId}:table/${self:service}-${opt:stage, self:provider.stage}'
+  
+
+plugins:
+  - serverless-pseudo-parameters
+
+
+functions:
+  endpointA:
+    name: ${self:service}-endpointA-${opt:stage, self:provider.stage}
+    handler: serviceA/handler.hello
+    events:
+      - http:
+          path: /a
+          method: get
+
+  endpointB:
+    name: ${self:service}-endpointB-${opt:stage, self:provider.stage}
+    handler: serviceB/handler.hello
+    events:
+      - http:
+          path: /b
+          method: get
+
+resources:
+  Resources:
+      productsTable:
+          Type: AWS::DynamoDB::Table
+          Properties:
+              TableName: ${self:service}-${opt:stage, self:provider.stage}
+              AttributeDefinitions:
+                  - AttributeName: PK
+                    AttributeType: S
+              KeySchema:
+                  - AttributeName: PK
+                    KeyType: HASH
+              BillingMode: PAY_PER_REQUEST

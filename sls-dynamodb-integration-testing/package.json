@@ -1,0 +1,23 @@
+{
+  "name": "sls-test-pyramid",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test-unit": "jest --config=jest-unit.config.json",
+    "test-int": "TABLE=sls-integration-testing-test jest --config=jest-int.config.json",
+    
+    "ci-test-unit": "npm run test-unit",
+    "ci-test-int": "npm run test-int"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "serverless-pseudo-parameters": "^2.5.0"
+  },
+  "devDependencies": {
+    "aws-sdk": "^2.630.0",
+    "jest": "^25.1.0"
+  }
+}

@@ -1,0 +1,29 @@
+org: serverlessguru
+app: test-service
+service: ${self:app}-api
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stage: ${opt:stage, "dev"}
+  region: ${opt:region, "us-west-2"}
+  timeout: 30  # <-- hard limit for API Gateway.
+# Package the lambda functions individually by subfolder
+package:
+  individually: true
+  exclude:
+    - ./**
+custom:
+  base: ${self:service}-${self:provider.stage}
+functions:
+  test:
+    name: ${self:custom.base}-test
+    handler: index.handler
+    description: test for ${self:custom.base}
+    package:
+      include:
+        - index.js
+    events:
+      - http:
+          path: /test
+          method: any
+          cors: true

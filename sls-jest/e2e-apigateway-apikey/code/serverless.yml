@@ -1,0 +1,17 @@
+service: e2eapigateway
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  apiKeys:
+    - ${self:service}-apiKey-${opt:stage, "dev"}
+
+functions:
+  endpoint:
+    handler: ./src/handler.endpoint
+    events:
+      - http:
+          path: /product
+          method: POST
+          cors: true
+          private: true

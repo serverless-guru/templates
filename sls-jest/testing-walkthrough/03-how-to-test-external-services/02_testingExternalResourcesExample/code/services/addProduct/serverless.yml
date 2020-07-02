@@ -1,0 +1,9 @@
+org: YOUR_ORG
+app: integration-demo
+name: integration-demo
+component: aws-lambda
+
+inputs:
+    name: ${name}-${stage}
+    src: ./src
+    handler: handler.create

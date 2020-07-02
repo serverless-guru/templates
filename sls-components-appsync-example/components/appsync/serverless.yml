@@ -1,0 +1,27 @@
+org: serverlessguru
+app: component-app
+component: aws-app-sync   # <-- @dev for beta changes, aws-app-sync for stable
+name: sls-appsync-example-api-3
+
+inputs:
+  name: ${name}-${stage}
+  src: ./src
+  authenticationType: 'API_KEY'
+  apiKeys:
+    - '1234'
+  dataSources:
+    - type: AWS_LAMBDA
+      name: exampleLambda
+      config:
+        lambdaFunctionArn: ${output:${app}:${stage}:sls-appsync-example-lambda.arn}
+  mappingTemplates:
+    - dataSource: exampleLambda
+      type: Query
+      field: getUsers
+      request: ./vtl/getUsers/request.vtl
+      response: ./vtl/response.vtl
+    - dataSource: exampleLambda
+      type: Query
+      field: getUsersById
+      request: ./vtl/getUsers/request.vtl
+      response: ./vtl/response.vtl

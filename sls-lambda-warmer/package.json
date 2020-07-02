@@ -1,0 +1,7 @@
+{
+  "name": "sls-lambda-warmer",
+  "dependencies": {
+    "aws-sdk": "^2.610.0"
+  },
+  "devDependencies": {}
+}

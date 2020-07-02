@@ -1,0 +1,11 @@
+{
+  "name": "generic-app",
+  "version": "1.0.0",
+  "description": "## Template",
+  "main": "index.js",
+  "scripts": {
+    "deploy": "bash ./scripts/deploy.bash"
+  },
+  "author": "",
+  "license": "ISC"
+}

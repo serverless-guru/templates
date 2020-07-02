@@ -1,0 +1,27 @@
+org: serverlessguru  # <-- change to your org
+app: sls-fargate-eks # <-- change to your app name
+service: ${self:app}-ecr
+provider:
+  name: aws
+  stage: ${opt:stage, "dev"}  # <-- change to your default stage
+  region: ${opt:region, "us-east-1"}
+custom:
+  base: ${self:service}-${self:provider.stage}
+  ecrName: ${self:custom.base}-repo
+resources:
+  Resources:
+    ECR:
+      Type: AWS::ECR::Repository
+      Properties: 
+        RepositoryName: ${self:custom.ecrName}
+outputs:
+  ECRArn:
+    Fn::GetAtt:
+      - ECR
+      - Arn
+  ECRName: ${self:custom.ecrName}
+  ECRUri:
+    Fn::Join:
+      - ""
+      - - Ref: "AWS::AccountId"
+        - ".dkr.ecr.${self:provider.region}.amazonaws.com/${self:custom.ecrName}"

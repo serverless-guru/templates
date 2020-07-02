@@ -1,0 +1,14 @@
+service: reactjs-app
+
+provider:
+  name: aws
+  runtime: nodejs8.10
+  stage: ${opt:stage, "dev"}
+  region: ${opt:region, "us-west-2"}
+  profile: default
+
+resources:
+  Resources: ${file(./resources/general.yml)}
+  Outputs: ${file(./resources/general-output.yml)}
+
+custom: ${file(./resources/custom.yml)}

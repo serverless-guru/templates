@@ -1,0 +1,39 @@
+org: serverlessguru
+app: github-mirror
+service: ${self:app}
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stage: ${opt:stage, "dev"}
+  region: ${opt:region, "us-west-2"}
+
+package:
+  individually: true
+  exclude:
+    - "./**"
+
+custom:
+  base: ${self:service}-${self:provider.stage}
+
+functions:
+  webhook:
+    name: ${self:custom.base}-bb-webhook
+    handler: index.handler
+    description: bitbucket webhook lambda
+    package:
+      include:
+        - node_modules/**
+        - index.js
+    events:
+      - http:
+          path: /webhook
+          method: any
+          cors: true
+    environment:
+      BITBUCKET_USERNAME: ${param:BITBUCKET_USERNAME}    # my-username
+      BITBUCKET_TOKEN: ${param:BITBUCKET_TOKEN}          # xyazafafkkfnakda
+      BITBUCKET_ORG_OR_USERNAME: ${param:BITBUCKET_ORG_OR_USERNAME}  # my-username or my-org
+      GITHUB_USERNAME: ${param:GITHUB_USERNAME}          # myemail@gmail.com
+      GITHUB_TOKEN: ${param:GITHUB_TOKEN}                # xyaknadladmlmmaxaagawjoaddadadm
+      GITHUB_ORG_OR_USERNAME: ${param:GITHUB_ORG_OR_USERNAME} # my-username or my-org

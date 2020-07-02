@@ -1,0 +1,44 @@
+{
+	"info": {
+		"_postman_id": "06334b27-bca7-4346-a8b1-357bfb7902f5",
+		"name": "test",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "http://localhost:3000/test",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "064d03f8-dbaa-4d11-a6e7-90dafc3ae148",
+						"exec": [
+              "pm.test('expect response to be 200', function () {",
+              "    pm.response.to.be.ok",
+              "})",
+							"pm.expect(pm.response.json()).to.have.property('status').and.equal('good')"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:3000/test",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"test"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"protocolProfileBehavior": {}
+}

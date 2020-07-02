@@ -1,0 +1,100 @@
+service: sls-dynamic-config
+app: YOUR_APP
+org: YOUR_ORG
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+
+custom:
+  resources:
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+    # Resources for Dev Stage
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+    dev: 
+      myTopic:
+        Type: AWS::SNS::Topic
+        Properties:
+            TopicName: my-topic-${opt:stage, self:provider.stage}
+      productsTable:
+        Type: AWS::DynamoDB::Table
+        Properties:
+            TableName: ${self:service}-${opt:stage, self:provider.stage}
+            AttributeDefinitions:
+                - AttributeName: PK
+                  AttributeType: S
+            KeySchema:
+                - AttributeName: PK
+                  KeyType: HASH
+            BillingMode: PROVISIONED
+            ProvisionedThroughput: 
+              ReadCapacityUnits: 1
+              WriteCapacityUnits: 1
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+    # Resources for Prod Stage
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+    prod:
+      myTopic:
+        Type: AWS::SNS::Topic
+        Properties:
+            TopicName: my-topic-${opt:stage, self:provider.stage}
+      productsTable:
+        Type: AWS::DynamoDB::Table
+        Properties:
+            TableName: ${self:service}-${opt:stage, self:provider.stage}
+            AttributeDefinitions:
+                - AttributeName: PK
+                  AttributeType: S
+            KeySchema:
+                - AttributeName: PK
+                  KeyType: HASH
+            BillingMode: PROVISIONED
+            ProvisionedThroughput: 
+              ReadCapacityUnits: 5
+              WriteCapacityUnits: 5
+      secondProductsTable:
+        Type: AWS::DynamoDB::Table
+        Properties:
+            TableName: ${self:service}-${opt:stage, self:provider.stage}-2
+            AttributeDefinitions:
+                - AttributeName: PK
+                  AttributeType: S
+            KeySchema:
+                - AttributeName: PK
+                  KeyType: HASH
+            BillingMode: PROVISIONED
+            ProvisionedThroughput: 
+              ReadCapacityUnits: 5
+              WriteCapacityUnits: 5
+
+  outputs:
+    dev:
+        event: 
+          Ref: myTopic
+        table1:
+          Fn::GetAtt: 
+          - productsTable
+          - Arn
+    prod:
+        event:
+          Ref: myTopic
+        table1:
+          Fn::GetAtt: 
+          - productsTable
+          - Arn
+        table2:
+          Fn::GetAtt: 
+          - secondProductsTable
+          - Arn
+
+functions:
+  hello:
+    handler: handler.hello
+
+resources:
+  Resources:
+    ${self:custom.resources.${opt:stage, self:provider.stage}}
+
+outputs:
+  ${self:custom.outputs.${opt:stage, self:provider.stage}}

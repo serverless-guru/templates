@@ -1,0 +1,28 @@
+{
+  "name": "sls-test-pyramid-vpc",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test-unit": "echo ComingSoon...",
+    "test-int": "jest --config=jest-int.config.json",
+    "test-e2e": "STAGE=development CREATE_ENDPOINT=$(sls info --stage=${STAGE} | grep /create) GET_ENDPOINT=$(sls info --stage=${STAGE} | grep /get) REMOVE_ENDPOINT=$(sls info --stage=${STAGE} | grep /remove) jest handler.e2e.test --runInBand --config=jest-e2e.config.json",
+    
+    "ci-test-unit": "npm run test-unit",
+    "ci-test-int": "npm run test-int",
+    "ci-test-e2e": "STAGE=test CREATE_ENDPOINT=$(sls info --stage=${STAGE} | grep /create) GET_ENDPOINT=$(sls info --stage=${STAGE} | grep /get) REMOVE_ENDPOINT=$(sls info --stage=${STAGE} | grep /remove) jest handler.e2e.test --runInBand --config=jest-e2e.config.json",
+    
+    "start-db": "docker run -d --publish 3306:3306 --name=sql-database projectname-mysql",
+    "stop-db": "docker stop sql-database && docker rm sql-database"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "mysql": "^2.18.1"
+  },
+  "devDependencies": {
+    "jest": "^25.1.0",
+    "supertest": "^4.0.2"
+  }
+}

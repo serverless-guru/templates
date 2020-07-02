@@ -1,0 +1,22 @@
+service: sls-finch-example-front
+org: YOUR_ORG
+app: YOUR_APP
+
+provider:
+    name: aws
+    stage: ${opt:stage, 'dev'}
+    runtime: nodejs12.x
+
+plugins:
+    - serverless-finch 
+
+custom:
+    client:
+        objectHeaders:
+            ALL_OBJECTS:
+                - name: Cache-Control
+                  value: max-age=0
+        bucketName: finch-example-${opt:stage, 'dev'}
+        distributionFolder: /dist
+        indexDocument: index.html
+        errorDocument: index.html

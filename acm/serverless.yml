@@ -1,0 +1,26 @@
+service: example-acm
+provider:
+  name: aws
+  stage: ${opt:stage, "dev"}
+  region: us-east-1
+  profile: ${opt:profile, "serverlessguru"}
+custom:
+  base: ${self:service}-${self:provider.stage}
+resources:
+  Resources:
+    SSLCert:
+      Type: AWS::CertificateManager::Certificate
+      Properties:
+        DomainName: "*.example.com"
+        DomainValidationOptions:
+          - DomainName: example.example.com
+            ValidationDomain: example.com
+        ValidationMethod: DNS
+  Outputs:
+    SSLCertArn:
+      Value:
+        Ref: SSLCertArn
+      Export:
+        Name: ${self:service}:${self:provider.stage}:SSLCertArn
+
+  

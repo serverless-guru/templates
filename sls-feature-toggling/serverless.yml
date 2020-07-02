@@ -1,0 +1,21 @@
+service: feature-toggling
+
+plugins:
+ - serverless-pseudo-parameters
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  iamRoleStatements:
+    - Effect: 'Allow'
+      Action: 'ssm:GetParameters'
+      Resource: 
+        - 'arn:aws:ssm:#{AWS::Region}:#{AWS::AccountId}:parameter/db'
+
+functions:
+  hello:
+    handler: handler.hello
+    events:
+      - http:
+         path: /
+         method: get

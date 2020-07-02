@@ -1,0 +1,33 @@
+org: serverlessguru
+app: patterns
+service: ${self:app}-serviceC
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stage: ${opt:stage, "dev"}
+  region: ${opt:region, "us-west-2"}
+  profile: ${opt:profile, "default"}
+  deploymentBucket:
+    name: ${self:custom.sharedBucketName}
+
+custom:
+  basename: ${self:service}-${self:provider.stage}
+  sharedBucketName: ${output:${self:app}-shared-bucket-artifacts.S3SharedBucketArtifactsName}
+
+package:
+  exclude:
+    - ./**
+  include:
+    - index.js
+
+functions:
+  test:
+    name: ${self:custom.basename}-test
+    handler: index.handler
+    description: Returns "Hello World". Dummy function for API deployment
+    events:
+      - http:
+          path: /test
+          method: any
+          cors: true

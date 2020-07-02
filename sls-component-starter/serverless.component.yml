@@ -1,0 +1,10 @@
+name: sample-component
+version: 0.0.1
+author: serverlessguru
+org: serverless-guru
+description: Sample Component Template to get started
+keywords: aws, serverless, component, template
+repo: https://github.com/serverless-guru/templates/tree/master/sls-component-starter
+readme: ''
+license: MIT
+main: ./src

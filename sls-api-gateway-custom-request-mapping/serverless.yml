@@ -1,0 +1,26 @@
+service: custom-request-mapping
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stage: ${opt:stage, "dev"}
+  region: ${opt:region, "us-west-2"}
+
+custom:
+  base: ${self:service}-${self:provider.stage}
+
+functions:
+  test:
+    handler: src/index.handler
+    events:
+      - http:
+          path: /test
+          method: GET
+          cors: true
+          integration: lambda
+          request:
+            template:
+              application/json: |
+                {
+                  "content": "$input.body"
+                }
+            passThrough: WHEN_NO_TEMPLATES

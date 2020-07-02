@@ -1,0 +1,47 @@
+# Kubernetes version 1.14
+# This will create EKS cluster "fargate-cluster" in "us-east-1" region 
+# 1 Fargate profile using existing VPC
+# 0 nodegroup stack(s)
+# 0 managed nodegroup stack(s)
+
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: fargate-cluster
+  region: us-east-1
+
+vpc:
+  id: "vpc-xxxxxxx"  # (must match VPC ID used for each subnet below)
+  subnets:
+    # must provide 'private' and/or 'public' subnets by availibility zone as shown
+    private:
+      us-east-1a:
+        id: "subnet-xxxxxxx"
+      us-east-1b:
+        id: "subnet-xxxxxxxxx"
+        
+    public:
+      us-east-1c:
+        id: "subnet-xxxxxxxxx"
+      us-east-1d:
+        id: "subnet-xxxxxxxxx"
+
+fargateProfiles:
+  # add array of profiles (dev, prod... etc)
+
+  - name: fp-default
+    selectors:
+      # All workloads in the "default" Kubernetes namespace will be
+      # scheduled onto Fargate:
+      - namespace: default
+      # All workloads in the "kube-system" Kubernetes namespace will be
+      # scheduled onto Fargate:
+      - namespace: kube-system
+  - name: express-api
+    selectors:
+      # All workloads in the "express-api" Kubernetes namespace will be
+      # scheduled onto Fargate:
+      - namespace: express-api
+        labels:
+          app: express-api

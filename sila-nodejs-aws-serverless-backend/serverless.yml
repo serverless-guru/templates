@@ -1,0 +1,12 @@
+service: sila-test
+
+provider:
+  name: aws
+  runtime: nodejs8.10
+  region: us-west-2
+  stage: dev
+  profile: serverlessguru
+
+functions:
+  main:
+    handler: main.handler

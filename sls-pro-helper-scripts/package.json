@@ -1,0 +1,13 @@
+{
+  "name": "sls-pro-insert-params",
+  "description": "",
+  "version": "0.1.0",
+  "dependencies": {
+    "axios": "^0.19.2",
+    "dotenv": "^8.2.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "deleteParams": "node -e 'require(\"./index\").deleteParams()'"
+  }
+}

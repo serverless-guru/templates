@@ -1,0 +1,30 @@
+org: serverlessguru  # <-- change to your org
+app: sls-fargate-eks # <-- change to your app name
+service: ${self:app}-vpc
+provider:
+  name: aws
+  stage: ${opt:stage, "dev"}  # <-- change to your default stage
+  region: ${opt:region, "us-east-1"}
+custom:
+  base: ${self:provider.stage}-${self:provider.region}
+
+resources:
+  - ${file(./resources/vpc.yml)}
+
+outputs:
+  # values from the reference.yml
+  VPCId:
+    Ref: VPC
+  SubnetPublicA:
+    Ref: SubnetPublicA
+  SubnetPublicB:
+    Ref: SubnetPublicB
+  SubnetPublicC:
+    Ref: SubnetPublicC
+  SubnetPrivateA:
+    Ref: SubnetPrivateA
+  SubnetPrivateB:
+    Ref: SubnetPrivateB
+  SubnetPrivateC:
+    Ref: SubnetPrivateC
+

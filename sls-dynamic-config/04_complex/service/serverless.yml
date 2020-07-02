@@ -1,0 +1,32 @@
+org: YOUR_COMPANY
+app: YOUR_APP
+service: ${self:app}-service
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stage: ${opt:stage, "dev"}
+  region: ${opt:region, "us-east-2"}
+  timeout: 30
+  environment:
+    STAGE:  ${opt:stage, "dev"}
+ 
+  apiGateway:
+    ${file(./resources/${opt:stage, 'dev'}.yml):apiGateway}
+
+  vpc:
+    ${file(./resources/${opt:stage, 'dev'}.yml):vpc}
+
+custom:
+  base: ${self:service}-${self:provider.stage}
+  apiStackName: ${self:app}:${self:provider.stage}:${self:provider.region}:apigateway
+  vpcStackName: ${self:app}:${self:provider.stage}:${self:provider.region}:vpc
+  databaseStackName: ${self:app}:${self:provider.stage}:${self:provider.region}:aurora-sls
+
+functions:
+  hello:
+    handler: handler.hello
+    events:
+      - http:
+            path: /feature
+            method: get

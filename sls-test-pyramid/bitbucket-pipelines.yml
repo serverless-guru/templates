@@ -1,0 +1,28 @@
+image: node:10.15.3
+
+pipelines:
+  default:
+    - step:
+        caches:
+          - node
+        script:
+          - cd ./code
+          - npm install
+
+          # Run Unit tests
+          - npm run ci-test-unit
+
+          # Setup Serverless Framework
+          - npm install -g serverless
+          - serverless config credentials --provider aws --key ${AWS_KEY} --secret ${AWS_SECRET}
+          - serverless deploy --stage test
+
+          # Run Integration Tests Against Test Stage
+          - npm run ci-test-int
+
+          # Run E2E Tests Against Test Stage
+          - npm run ci-test-e2e
+          
+          # Deploy to prod
+          - serverless deploy --stage prod
+

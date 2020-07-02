@@ -1,0 +1,9 @@
+# serverless.yml
+
+component: sample-component  # The name of the Component in the Registry
+org: example-org             # Your Serverless Framework Org
+app: example-app             # Your Serverless Framework App
+name: sample-component-sg    # The name of your instance of this Component
+stage: dev
+inputs:
+  bucket: ${app}-${name}-${stage}

@@ -1,0 +1,8 @@
+{
+    "globals": {
+        "TABLE":"sls-test-pyramid-test"
+    },
+    "testMatch": [
+        "**/?(*.)(int-test).js?(x)"
+    ]
+}

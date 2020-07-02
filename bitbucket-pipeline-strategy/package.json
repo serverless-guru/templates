@@ -1,0 +1,22 @@
+{
+  "name": "pipelinestandardization",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@bitbucket.org/garysjennings/pipelinestandardization.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "homepage": "https://bitbucket.org/garysjennings/pipelinestandardization#readme",
+  "dependencies": {
+    "npm": "^6.14.5",
+    "serverless-pseudo-parameters": "^2.5.0",
+    "test": "^0.6.0"
+  }
+}

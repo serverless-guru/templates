@@ -1,0 +1,13 @@
+service: refactorclient
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+
+functions:
+  main:
+    handler: handler.main
+    events:
+      - httpApi:
+          method: GET
+          path: /

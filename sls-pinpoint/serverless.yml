@@ -1,0 +1,20 @@
+org: serverlessguru
+app: patterns
+service: sls-pinpoint
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stage: ${opt:stage, "dev"}
+  region: ${opt:region, "us-west-2"}
+  # profile: ${opt:profile, "default"}
+
+custom:
+  base: ${self:app}-${self:service}-${self:provider.stage}
+
+# resources:
+#   Resources:
+#     # pinpoint resources here   
+
+# outputs:
+#   # pinpoint arn for re-use in other stacks

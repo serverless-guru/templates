@@ -1,0 +1,37 @@
+org: serverlessguru  # <-- replace with your org
+app: patterns        # <-- replace with your app
+service: sls-jest
+
+plugins:
+  - serverless-export-env
+
+package:
+  exclude:
+    - src/**
+    - .gitignore
+  include:
+    - src/handlers/**
+    - node_modules/**
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stage: ${opt:stage, "dev"}
+  region: ${opt:region, "us-west-2"}
+
+custom:
+  base: ${self:service}-${self:provider.stage}
+
+functions:
+  api:
+    name: ${self:custom.base}
+    handler: ./src/handlers/index.handler
+    description: Returns the length of a given message
+    events:
+      - http:
+          path: /countCharacters
+          method: POST
+          cors: true
+    environment:
+      REGION: ${self:provider.region}         # <-- example of a non-sls pro param env var
+      API_KEY: ${param:COUNT_CHARS_API_KEY}   # <-- example of sls pro param env var

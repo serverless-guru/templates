@@ -1,0 +1,17 @@
+service: sls-dynamic-config
+app: YOUR_APP
+org: YOUR_ORG
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+
+functions:
+  hello:
+    handler: handler.hello
+
+resources:
+  - ${file(./resources/${opt:stage, 'dev'}.yml):resources}
+
+outputs:
+  ${file(./resources/${opt:stage, 'dev'}.yml):outputs}

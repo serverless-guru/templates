@@ -1,0 +1,65 @@
+service: e2eappsync
+
+plugins:
+  - serverless-appsync-plugin
+  - serverless-pseudo-parameters
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+
+custom:
+  appSync:
+    name: e2e-appsync-${opt:stage, self:provider.stage}
+    authenticationType: AWS_IAM
+    schema: src/schema.graphql
+    mappingTemplates:
+      - dataSource: getProduct
+        type: Query
+        field: getProduct
+        request: request.vtl
+        response: response.vtl 
+
+    mappingTemplatesLocation: src/mapping-templates
+    serviceRole: AppSyncServiceRole-${opt:stage, self:provider.stage}
+    dataSources:
+      - type: AWS_LAMBDA
+        name: getProduct
+        description: gets products from database
+        config:
+          functionName: graphql
+          serviceRoleArn: { Fn::GetAtt: [AppSyncLambdaServiceRole, Arn] }
+          
+functions:
+  graphql:
+    handler: ./src/handler.graphql
+
+resources:
+  Resources:
+    AppSyncLambdaServiceRole:
+      Type: "AWS::IAM::Role"
+      Properties:
+        RoleName: "Lambda-${self:custom.appSync.serviceRole}"
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            -
+              Effect: "Allow"
+              Principal:
+                Service:
+                  - "appsync.amazonaws.com"
+              Action:
+                - "sts:AssumeRole"
+        Policies:
+          -
+            PolicyName: "Lambda-${self:custom.appSync.serviceRole}-Policy"
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                -
+                  Effect: "Allow"
+                  Action:
+                    - "lambda:invokeFunction"
+                  Resource:
+                    - "arn:aws:lambda:us-east-1:#{AWS::AccountId}:function:e2eappsync-${opt:stage, self:provider.stage}-graphql"
+                    - "arn:aws:lambda:us-east-1:#{AWS::AccountId}:function:e2eappsync-${opt:stage, self:provider.stage}-graphql:*"

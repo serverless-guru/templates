@@ -1,0 +1,62 @@
+service: artilery-simple-service
+org: garysjennings
+app: ac-test
+
+plugins:
+  - serverless-pseudo-parameters
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stage: ${opt:stage, 'dev'}
+  region: ${opt:region, "us-east-1"}
+  environment:
+    TABLE: ${self:service}-${opt:stage, self:provider.stage}
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+          - dynamodb:Query
+          - dynamodb:GetItem
+          - dynamodb:PutItem
+          - dynamodb:UpdateItem
+          - dynamodb:DeleteItem
+      Resource: 'arn:aws:dynamodb:#{AWS::Region}:#{AWS::AccountId}:table/${self:service}-${opt:stage, self:provider.stage}'
+  
+
+functions:
+  get:
+    handler: handler.get
+    events:
+      - httpApi:
+          method: GET
+          path: /
+
+  create:
+    handler: handler.create
+    events:
+      - httpApi:
+          method: POST
+          path: /
+
+resources:
+  Resources:
+      productsTable:
+          Type: AWS::DynamoDB::Table
+          Properties:
+              TableName: ${self:service}-${opt:stage, self:provider.stage}
+              AttributeDefinitions:
+                  - AttributeName: PK
+                    AttributeType: S
+              KeySchema:
+                  - AttributeName: PK
+                    KeyType: HASH
+              BillingMode: PAY_PER_REQUEST
+
+              # sls output get --name=ApiEndpoint --app=ac-test --service=artilery-simple-service
+outputs:
+  ApiEndpoint:
+    Fn::Join:
+      - ''
+      - - https://
+        - Ref: HttpApi
+        - .execute-api.${self:provider.region}.amazonaws.com/

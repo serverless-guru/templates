@@ -1,0 +1,30 @@
+org: serverlessguru
+app: patterns
+service: s3-remover
+provider:
+  name: aws
+  stage: ${opt:stage, "dev"}
+  region: ${opt:region, "us-west-2"}
+plugins:
+  - serverless-s3-remover
+custom:
+  base: ${self:service}-${self:provider.stage}
+  s3:
+    bucketA:
+      name: ${self:custom.base}-my-awesome-bucket
+    bucketB:
+      name: ${self:custom.base}-my-other-cool-bucket
+  remover:
+    buckets:
+      - ${self:custom.s3.bucketA.name}
+      - ${self:custom.s3.bucketB.name}
+resources:
+  Resources:
+    S3BucketA:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:custom.s3.bucketA.name}
+    S3BucketB:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:custom.s3.bucketB.name}

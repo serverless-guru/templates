@@ -1,0 +1,23 @@
+{
+  "name": "sls-front-example",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "ENDPOINT=$(npm run get-endpoint-dev  | grep https) webpack --watch",
+    "build-dev": "STAGE=dev bash buildWithEnv.bash",
+    "deploy-dev": "npm run build-dev && sls client deploy --no-confirm",
+    "ci-build-prod": "STAGE=prod /bin/sh buildWithEnv.bash",
+    "ci-deploy-prod": "npm run build-prod && sls client deploy --no-confirm"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "copy-webpack-plugin": "^6.0.2",
+    "html-webpack-plugin": "^4.0.4",
+    "serverless-finch": "^2.5.2",
+    "webpack": "^4.42.1",
+    "webpack-cli": "^3.3.11"
+  }
+}

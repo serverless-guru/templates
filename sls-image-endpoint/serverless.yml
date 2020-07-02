@@ -1,0 +1,47 @@
+service: sls-image-endpoint
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  apiGateway:
+    binaryMediaTypes:
+      - 'image/png'
+
+
+functions:
+  hello:
+    handler: handler.hello
+    events:
+      - http:
+          path: /
+          method: get
+
+  image:
+    handler: handler.image
+    events:
+      - http:
+          path: /image
+          method: get
+          contentHandling: CONVERT_TO_BINARY
+          cors: true
+          request:
+            template:
+              application/json: |
+                {
+                "arguments": $input.json('$'),
+                "request" : {
+                  "headers": {                    
+                    "Accept": "image/png"                    
+                  }
+                }
+              
+              image/png: |
+                {
+                "arguments": $input.json('$'),
+                "request" : {
+                  "headers": {                    
+                    "Accept": "image/png"                    
+                  }
+                }
+              
+      

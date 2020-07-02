@@ -1,0 +1,4 @@
+HtmlPart: "<p>Inline HTML variable test {{date}}<p/>"
+SubjectPart: "Successful test!"
+TemplateName: "Example"
+TextPart: "Inline text variable test {{date}}"

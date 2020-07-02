@@ -1,0 +1,11 @@
+org: serverlessguru
+app: component-app
+component: aws-lambda-layer
+name: sls-appsync-example-lambda-layer
+
+inputs:
+  name: ${name}-${stage}
+  src: ./src
+  runtimes:
+    - nodejs10.x
+    - nodejs12.x

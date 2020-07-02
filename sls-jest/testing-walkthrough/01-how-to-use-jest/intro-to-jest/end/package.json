@@ -1,0 +1,30 @@
+{
+    "name": "testing",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+      "test": "node_modules/.bin/jest --watch"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "devDependencies": {
+      "jest": "^25.1.0"
+    },
+    "jest": {
+      "collectCoverage": true,
+      "collectCoverageFrom": [
+        "./src/**/*.js"
+      ],
+      "coverageThreshold": {
+        "global": {
+            "branches": 20,
+            "functions": 10,
+            "lines": 10,
+            "statements": 10
+        }
+      }
+    }
+  }
+  

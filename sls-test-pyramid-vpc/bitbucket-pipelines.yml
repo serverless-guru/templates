@@ -1,0 +1,35 @@
+image: node:10.15.3
+
+pipelines:
+  default:
+    - step:
+        services:
+          - docker
+        caches:
+          - node
+        script:
+          # Run Unit Tests
+          - cd ./code
+          - npm install  
+          - npm run ci-test-unit
+
+          # Run Int Tests
+          - cd ../docker
+          - docker build -t projectname-mysql .
+          - cd ../code
+          - npm run start-db
+          - sleep 10 # Docker takes a few seconds to initialize
+          - npm run ci-test-int
+          - npm run stop-db
+
+          # Deploy To Test Stage
+          - npm install -g serverless
+          - serverless config credentials --provider aws --key ${AWS_KEY} --secret ${AWS_SECRET}
+          - serverless deploy --stage=test
+
+          # Run E2E Tests
+          - npm run ci-test-e2e
+          
+          #Deploy To Prod Stage
+          - serverless deploy --stage=prod
+

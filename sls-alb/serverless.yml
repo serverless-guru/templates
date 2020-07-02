@@ -1,0 +1,169 @@
+service: sls-alb
+
+provider:
+  name: aws
+  region: us-west-1
+  runtime: nodejs12.x
+
+custom:
+  VPC_CIDR: 10
+
+functions:
+  hello:
+    handler: handler.payment
+    timeout: 900
+    events:
+      - alb:
+          listenerArn: { Ref: HTTPListener }
+          priority: 1
+          conditions:
+            path: /payment
+            method:
+               - GET
+            
+resources:
+   Outputs:
+      LoadBalancerDNSName:
+         Value: !GetAtt LoadBalancer.DNSName
+   Resources:
+      # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+      # VPC config
+      # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+      ServerlessVPC:
+        Type: AWS::EC2::VPC
+        Properties:
+          CidrBlock: ${self:custom.VPC_CIDR}.0.0.0/16
+          EnableDnsSupport: true
+          EnableDnsHostnames: true
+          InstanceTenancy: default
+
+          
+
+      # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+      # InternetGateway Config
+      # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+      InternetGateway:
+        Type: AWS::EC2::InternetGateway
+        Properties:
+          Tags:
+            - Key: Name
+              Value: internetGateway
+
+      InternetGatewayAttachment:
+        Type: AWS::EC2::VPCGatewayAttachment
+        Properties:
+          InternetGatewayId:  { Ref: InternetGateway }
+          VpcId:  { Ref: ServerlessVPC }
+
+      PublicRouteTable:
+        Type: AWS::EC2::RouteTable
+        Properties:
+          VpcId: { Ref: ServerlessVPC }
+
+      DefaultPublicRoute:
+        Type: AWS::EC2::Route
+        DependsOn: InternetGatewayAttachment
+        Properties:
+          RouteTableId: { Ref: PublicRouteTable }
+          DestinationCidrBlock: 0.0.0.0/0
+          GatewayId: { Ref: InternetGateway }
+
+      PublicSubnet1RouteTableAssociation:
+        Type: AWS::EC2::SubnetRouteTableAssociation
+        Properties:
+          RouteTableId: { Ref: PublicRouteTable }
+          SubnetId: { Ref: ServerlessSubnetA }
+
+      PublicSubnet2RouteTableAssociation:
+        Type: AWS::EC2::SubnetRouteTableAssociation
+        Properties:
+          RouteTableId: { Ref: PublicRouteTable }
+          SubnetId: { Ref: ServerlessSubnetB }
+
+
+      # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+      # Subnet Config
+      # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+      ServerlessSubnetA:
+        DependsOn: ServerlessVPC
+        Type: AWS::EC2::Subnet
+        Properties:
+          VpcId:
+            Ref: ServerlessVPC
+          AvailabilityZone: ${self:provider.region}a
+          CidrBlock: ${self:custom.VPC_CIDR}.0.0.0/24
+          MapPublicIpOnLaunch: true
+      ServerlessSubnetB:
+        DependsOn: ServerlessVPC
+        Type: AWS::EC2::Subnet
+        Properties:
+          VpcId:
+            Ref: ServerlessVPC
+          AvailabilityZone: ${self:provider.region}b
+          CidrBlock: ${self:custom.VPC_CIDR}.0.1.0/24
+          MapPublicIpOnLaunch: true
+
+
+      # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+      # LOAD BALANCER CONFIG
+      # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+      SecurityGroup:
+         Type: 'AWS::EC2::SecurityGroup'
+         Properties:
+            GroupName: ${self:service}
+            GroupDescription: 'HTTPS/HTTPS inbound; Nothing outbound'
+            VpcId: { Ref: ServerlessVPC }
+            SecurityGroupIngress:
+               -
+                  IpProtocol: tcp
+                  FromPort: '80'
+                  ToPort: '80'
+                  CidrIp: 0.0.0.0/0
+               -
+                  IpProtocol: tcp
+                  FromPort: '443'
+                  ToPort: '443'
+                  CidrIp: 0.0.0.0/0
+            SecurityGroupEgress:
+               -
+                  IpProtocol: -1
+                  FromPort: '1'
+                  ToPort: '1'
+                  CidrIp: 127.0.0.1/32
+      LoadBalancer:
+         Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
+         Properties:
+            Type: 'application'
+            Name: ${self:service}
+            IpAddressType: 'ipv4'
+            Scheme: 'internet-facing'
+            LoadBalancerAttributes:
+               - { Key: 'deletion_protection.enabled', Value: false }
+               - { Key: 'routing.http2.enabled', Value: false }
+               - { Key: 'access_logs.s3.enabled', Value: false }
+            SecurityGroups:
+               - { Ref: SecurityGroup }
+            Subnets:
+               - { Ref: ServerlessSubnetA }
+               - { Ref: ServerlessSubnetB }
+      HTTPListener:
+         Type: 'AWS::ElasticLoadBalancingV2::Listener'
+         Properties:
+            LoadBalancerArn: { Ref: LoadBalancer }
+            Port: 80
+            Protocol: 'HTTP'
+            DefaultActions:
+               -
+                  Type: 'fixed-response'
+                  Order: 1
+                  FixedResponseConfig:
+                     StatusCode: 404
+                     ContentType: 'application/json'
+                     MessageBody: '{ "not": "found" }'
+      LoadBalancerParam:
+         Type: "AWS::SSM::Parameter"
+         Properties:
+            Name: "/${self:service}/${self:provider.stage}/LoadBalancerUrl"
+            Type: "String"
+            Value: !GetAtt LoadBalancer.DNSName
+            Description: "loadbalancer url"

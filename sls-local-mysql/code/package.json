@@ -1,0 +1,20 @@
+{
+  "name": "docker",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest",
+    "start-db": "docker run -d --publish 3306:3306 --name=sql-database projectname-mysql",
+    "stop-db": "docker stop sql-database && docker rm sql-database"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "mysql": "^2.18.1"
+  },
+  "devDependencies": {
+    "jest": "^25.1.0"
+  }
+}

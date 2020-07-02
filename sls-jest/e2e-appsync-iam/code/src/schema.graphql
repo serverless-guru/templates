@@ -1,0 +1,14 @@
+type Product {
+    id: String!
+    name: String!
+}
+
+type Query @aws_iam {
+    getProduct(
+        id: String!
+    ): Product!
+}
+
+schema {
+    query: Query
+}

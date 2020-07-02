@@ -1,0 +1,194 @@
+service: sls-mysql-example
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  region: us-east-1
+  environment:
+    AURORA_HOST: ${self:custom.AURORA.HOST}
+    AURORA_PORT: ${self:custom.AURORA.PORT}
+    AURORA_DB_NAME: ${self:custom.AURORA.DB_NAME}
+    AURORA_USERNAME: ${self:custom.AURORA.USERNAME}
+    AURORA_PASSWORD: ${self:custom.AURORA.PASSWORD}
+
+custom:
+  AURORA:
+    DB_NAME: aurora${opt:stage, self:provider.stage}
+    USERNAME: master
+    PASSWORD: password
+    HOST:
+      Fn::GetAtt: [AuroraRDSCluster, Endpoint.Address]
+    PORT:
+      Fn::GetAtt: [AuroraRDSCluster, Endpoint.Port]
+    VPC_CIDR: 10
+
+resources:
+  Resources:
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+    # IAM Role for Enhanced Monitoring
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+    ExampleRole:
+      Type: AWS::IAM::Role
+      Properties:
+        ManagedPolicyArns:
+          - 'arn:aws:iam::aws:policy/service-role/AmazonRDSEnhancedMonitoringRole'
+        AssumeRolePolicyDocument:
+            Version: '2008-10-17'
+            Statement:
+            - Effect: Allow
+              Principal:
+                Service: 'monitoring.rds.amazonaws.com'
+              Action: 'sts:AssumeRole'
+
+
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+    # VPC config
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+    ServerlessVPC:
+      Type: AWS::EC2::VPC
+      Properties:
+        CidrBlock: ${self:custom.AURORA.VPC_CIDR}.0.0.0/16
+        EnableDnsSupport: true
+        EnableDnsHostnames: true
+        InstanceTenancy: default
+    ServerlessSubnetA:
+      DependsOn: ServerlessVPC
+      Type: AWS::EC2::Subnet
+      Properties:
+        VpcId:
+          Ref: ServerlessVPC
+        AvailabilityZone: ${self:provider.region}a
+        CidrBlock: ${self:custom.AURORA.VPC_CIDR}.0.0.0/24
+    ServerlessSubnetB:
+      DependsOn: ServerlessVPC
+      Type: AWS::EC2::Subnet
+      Properties:
+        VpcId:
+          Ref: ServerlessVPC
+        AvailabilityZone: ${self:provider.region}b
+        CidrBlock: ${self:custom.AURORA.VPC_CIDR}.0.1.0/24
+    ServerlessSubnetC:
+      DependsOn: ServerlessVPC
+      Type: AWS::EC2::Subnet
+      Properties:
+        VpcId:
+          Ref: ServerlessVPC
+        AvailabilityZone: ${self:provider.region}c
+        CidrBlock: ${self:custom.AURORA.VPC_CIDR}.0.2.0/24
+        
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+    # Aurora DB config
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+    AuroraSubnetGroup:
+      Type: AWS::RDS::DBSubnetGroup
+      Properties:
+        DBSubnetGroupDescription: "Aurora Subnet Group"
+        SubnetIds:
+          - Ref: ServerlessSubnetA
+          - Ref: ServerlessSubnetB
+          - Ref: ServerlessSubnetC
+    AuroraRDSClusterParameter:
+      Type: AWS::RDS::DBClusterParameterGroup
+      Properties:
+        Description: Parameter group for the Serverless Aurora RDS DB.
+        Family: aurora-mysql5.7
+        Parameters:
+          character_set_database: "utf32"
+    AuroraRDSInstanceParameter:
+      Type: AWS::RDS::DBParameterGroup
+      Properties:
+        Description: Parameter group for the Serverless Aurora RDS DB.
+        Family: aurora-mysql5.7
+        Parameters:
+          sql_mode: IGNORE_SPACE
+          max_connections: 100
+          wait_timeout: 900
+          interactive_timeout: 900
+    AuroraRDSCluster:
+      Type: "AWS::RDS::DBCluster"
+      Properties:
+        MasterUsername: ${self:custom.AURORA.USERNAME}
+        MasterUserPassword: ${self:custom.AURORA.PASSWORD}
+        DBSubnetGroupName:
+          Ref: AuroraSubnetGroup
+        Engine: aurora-mysql
+        EngineVersion: "5.7.mysql_aurora.2.04.2" 
+        DatabaseName: ${self:custom.AURORA.DB_NAME}
+
+        # Setting backups to 1 day
+        BackupRetentionPeriod: 1
+
+        # Setting StorageEncrypted to true
+        StorageEncrypted: true
+
+        # Setting DeletionProtection to true
+        DeletionProtection: false
+
+        DBClusterParameterGroupName:
+          Ref: AuroraRDSClusterParameter
+        VpcSecurityGroupIds:
+          - Fn::GetAtt: ServerlessVPC.DefaultSecurityGroup
+    AuroraRDSInstance:
+      Type: "AWS::RDS::DBInstance"
+      Properties:
+
+        # Setting AutoMinorVersionUpgrade to true
+        AutoMinorVersionUpgrade: true 
+
+        # PerformanceInsights Enabled
+        EnablePerformanceInsights: true
+
+        # Configured Enhanced Monitoring
+        MonitoringInterval: '60'
+        MonitoringRoleArn:
+          Fn::GetAtt: 
+            - ExampleRole
+            - Arn
+
+        DBInstanceClass: db.r5.large
+        DBSubnetGroupName:
+          Ref: AuroraSubnetGroup
+        Engine: aurora-mysql
+        EngineVersion: "5.7.mysql_aurora.2.04.2"
+        PubliclyAccessible: false
+        DBInstanceIdentifier: ${self:service}-InstanceOne
+        DBParameterGroupName:
+          Ref: AuroraRDSInstanceParameter
+        DBClusterIdentifier:
+          Ref: AuroraRDSCluster
+
+    AuroraRDSInstanceTwo:
+      Type: "AWS::RDS::DBInstance"
+      Properties:
+
+       # Setting AutoMinorVersionUpgrade to true
+        AutoMinorVersionUpgrade: true 
+
+        # PerformanceInsights Enabled
+        EnablePerformanceInsights: true
+
+        # Configured Enhanced Monitoring
+        MonitoringInterval: '60'
+        MonitoringRoleArn:
+          Fn::GetAtt: 
+            - ExampleRole
+            - Arn
+
+        DBInstanceClass: db.r5.large
+        DBSubnetGroupName:
+          Ref: AuroraSubnetGroup
+        Engine: aurora-mysql
+        EngineVersion: "5.7.mysql_aurora.2.04.2"
+        PubliclyAccessible: false
+        DBInstanceIdentifier: ${self:service}-InstanceTwo
+        DBParameterGroupName:
+          Ref: AuroraRDSInstanceParameter
+        DBClusterIdentifier:
+          Ref: AuroraRDSCluster
+
+outputs:
+  endpoint1:
+    Fn::GetAtt: 
+    - AuroraRDSInstance
+    - Endpoint.Address

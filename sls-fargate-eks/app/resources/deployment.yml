@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ${env:custom_namespace} # express-api
+  namespace: ${env:custom_namespace} # express-api
+  labels:
+    app: ${env:custom_namespace} # express-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ${env:custom_namespace} # express-api
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: ${env:custom_namespace} # express-api
+    spec:
+      containers:
+      - name: ${env:custom_namespace} # express-api
+        image: ${env:ecr_repo_uri} # xxxxxxxxxxxxx.dkr.ecr.us-east-1.amazonaws.com/express-api:latest
+        ports:
+          - containerPort: 3000
+        resources: {}

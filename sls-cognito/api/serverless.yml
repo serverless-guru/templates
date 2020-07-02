@@ -1,0 +1,85 @@
+org: YOUR_ORG
+app: YOUR_APP
+service: sls-cognito-api
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+
+custom:
+  base: ${self:service}-${self:provider.stage}
+  stage: ${opt:stage, self:provider.stage}
+  region: ${opt:region, self:provider.region}
+  userPoolName: my-example-userpool
+
+functions:
+  test:
+    handler: handler.hello
+    events:
+      - http:
+            path: /test
+            method: get
+
+resources:
+  Resources:
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+    # Cognito User Pool Resources
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+    CognitoUserPool:
+      Type: AWS::Cognito::UserPool
+      Properties:
+        UserPoolName: ${self:custom.stage}-${self:custom.userPoolName}-user-pool
+        UsernameAttributes:
+          - email
+        AutoVerifiedAttributes:
+          - email
+
+    CognitoUserPoolClient:
+      Type: AWS::Cognito::UserPoolClient
+      Properties:
+        ClientName: ${self:custom.stage}-${self:custom.userPoolName}-user-pool-client
+        UserPoolId:
+          Ref: CognitoUserPool
+        ExplicitAuthFlows:
+          - ADMIN_NO_SRP_AUTH
+        GenerateSecret: false
+
+
+
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+    # ApiGateway Authorizer
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+    ApiGatewayAuthorizer:
+      DependsOn:
+      - ApiGatewayRestApi
+      Type: AWS::ApiGateway::Authorizer
+      Properties:
+        Name: cognito_auth
+        RestApiId: { "Ref" : "ApiGatewayRestApi" }
+        IdentitySource: method.request.header.Authorization
+        Type: COGNITO_USER_POOLS
+        ProviderARNs:
+        - Fn::GetAtt: [CognitoUserPool, Arn]
+
+
+outputs:
+  ApiEndpoint:
+    Fn::Join:
+      - ''
+      - - https://
+        - Ref: ApiGatewayRestApi
+        - .execute-api.${self:provider.region}.amazonaws.com/${self:provider.stage}
+  
+  ApiId:
+    Ref: ApiGatewayRestApi
+    
+  ApiResourceId:
+    Fn::GetAtt:
+    - ApiGatewayRestApi
+    - RootResourceId 
+
+  AuthorizorId: 
+    Ref: ApiGatewayAuthorizer
+  
+

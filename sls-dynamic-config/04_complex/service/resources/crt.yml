@@ -1,0 +1,10 @@
+apiGateway:
+    restApiId: ${param:RESTAPI_ID}
+    restApiRootResourceId: ${param:RESTAPIRESOURCE_ID}
+
+vpc:
+    securityGroupIds: 
+        - ${param:SECURITY_GROUP}        
+    subnetIds:
+        - ${param:SUBNET_B}
+        - ${param:SUBNET_C}

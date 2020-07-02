@@ -1,0 +1,13 @@
+## In order to print out the hosted domain via `serverless info` we need to define the DomainName output for CloudFormation
+WebAppCloudFrontDistributionDomainName:
+  Value:
+    Fn::GetAtt:
+      - WebAppCloudFrontDistribution
+      - DomainName
+  Export:
+    Name: ${self:service}:${self:provider.stage}:CloudFrontDomain
+WebAppCloudFrontDistributionId:
+  Value:
+    Ref: WebAppCloudFrontDistribution
+  Export:
+    Name: ${self:service}:${self:provider.stage}:CloudFrontId

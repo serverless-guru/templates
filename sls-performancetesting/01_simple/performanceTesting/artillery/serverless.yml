@@ -1,0 +1,103 @@
+# We're excited that this project has provided you enough value that you are looking at its code!
+#
+# This is a standard [Serverless Framework](https://www.serverless.com) project and you should
+# feel welcome to customize it to your needs and delight.
+#
+# If you do something super cool and would like to share the capability, please open a PR against
+# https://www.github.com/Nordstrom/serverless-artillery
+#
+# Thanks!
+
+# If the following value is changed, your service may be duplicated (this value is used to build the CloudFormation
+# Template script's name)
+service: serverless-artillery-cZv1j1WcMa
+
+provider:
+  name: aws
+  runtime: nodejs10.x
+  iamRoleStatements:
+    # This policy allows the function to invoke itself which is important if the script is larger than a single
+    # function can produce
+    - Effect: 'Allow'
+      Action:
+        - 'lambda:InvokeFunction'
+      Resource:
+        'Fn::Join':
+          - ':'
+          -
+            - 'arn:aws:lambda'
+            - Ref: 'AWS::Region'
+            - Ref: 'AWS::AccountId'
+            - 'function'
+            - '${self:service}-${opt:stage, self:provider.stage}-loadGenerator*' # must match function name
+    # This policy allows the function to publish notifications to the SNS topic defined below with logical ID monitoringAlerts
+    - Effect: 'Allow'
+      Action:
+        - 'sns:Publish'
+      Resource:
+        Ref: monitoringAlerts # must match the SNS topic's logical ID
+    - Effect: 'Allow'
+      Action:
+        - 'cloudwatch:PutMetricData'
+      Resource:
+        - '*'
+functions:
+  loadGenerator: # !!Do not edit this name!!
+    handler: handler.handler    # the serverlessArtilleryLoadTester handler() method can be found in the handler.js source file
+    timeout: 300                # set timeout to be 5 minutes (max for Lambda)
+    environment:
+      TOPIC_ARN:
+        Ref: monitoringAlerts
+      TOPIC_NAME:
+        'Fn::GetAtt':
+          - monitoringAlerts
+          - TopicName
+    events:
+      - schedule:
+          name: '${self:service}-${opt:stage, self:provider.stage}-monitoring' # !!Do not edit this name!!
+          description: The scheduled event for running the function in monitoring mode
+          rate: rate(1 minute)
+          ########################################################################################################################
+          ### !! BEFORE ENABLING... !!!
+          ### 0. Change `'>>': script.yml` below to reference the script you want to use for monitoring if that is not its name.
+          ###    The script must be in this directory or a subdirectory.
+          ### 1. Modify your `script.yml` to provide the details of invoking every important surface of your service, as per
+          ###    https://artillery.io/docs
+          ### 2. To receive alerts when errors exceed the budget:
+          ###    i.  Add a `match` clause to your requests, specifying your expectations of a successful request.  This relatively
+          ###        undocumented feature is implemented at: https://github.com/shoreditch-ops/artillery/blob/82bdcdfc32ce4407bb197deff2cee13b4ecbab3b/core/lib/engine_util.js#L318
+          ###        We would welcome the contribution of a plugin replacing this as discussed in https://github.com/Nordstrom/serverless-artillery/issues/116
+          ###    ii. Modify the `monitoringAlerts` SNS Topic below, uncommenting `Subscription` and providing subscriptions for any
+          ###        alerts that might be raised by the monitoring function.  (To help you out, we've provided commented-out examples)
+          ###        (After all, what good is monitoring if noone is listening?)
+          ### 3. Deploy your new assets/updated service using `slsart deploy`
+          ### 4. [As appropriate] approve the subscription verifications for the SNS topic that will be sent following its creation
+          ### 5. Re-deploy whenever you update your monitoring script
+          ########################################################################################################################
+          enabled: false
+          input:
+            '>>': script.yml
+            mode: monitoring
+resources:
+  Resources:
+    monitoringAlerts: # !!Do not edit this name!!
+      Type: 'AWS::SNS::Topic'
+      Properties:
+        DisplayName: '${self:service} Monitoring Alerts'
+        Subscription: # docs at https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-sns-subscription.html
+#          - Endpoint: http://<host>/<path> # the endpoint is an URL beginning with "http://"
+#            Protocol: http
+#          - Endpoint: https://<host>/<path> # the endpoint is a URL beginning with "https://"
+#            Protocol: https
+          - Endpoint: garysjennings@gmail.com # the endpoint is an email address
+            Protocol: email
+#          - Endpoint: <target>@<host> # the endpoint is an email address
+#            Protocol: email-json
+#          - Endpoint: <phone-number> # the endpoint is a phone number of an SMS-enabled device
+#            Protocol: sms
+#          - Endpoint: <sqs-queue-arn> # the endpoint is the ARN of an Amazon SQS queue
+#            Protocol: sqs
+#          - Endpoint: <endpoint-arn> # the endpoint is the EndpointArn of a mobile app and device.
+#            Protocol: application
+#          - Endpoint: <lambda-arn> # the endpoint is the ARN of an AWS Lambda function.
+#            Protocol: lambda

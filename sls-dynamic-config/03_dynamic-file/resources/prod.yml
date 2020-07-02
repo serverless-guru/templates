@@ -1,0 +1,47 @@
+resources:
+    Resources:
+        myTopic:
+            Type: AWS::SNS::Topic
+            Properties:
+                TopicName: my-topic-${opt:stage, self:provider.stage}
+        productsTable:
+            Type: AWS::DynamoDB::Table
+            Properties:
+                TableName: ${self:service}-${opt:stage, self:provider.stage}
+                AttributeDefinitions:
+                    - AttributeName: PK
+                      AttributeType: S
+                KeySchema:
+                    - AttributeName: PK
+                      KeyType: HASH
+                BillingMode: PROVISIONED
+                ProvisionedThroughput: 
+                    ReadCapacityUnits: 5
+                    WriteCapacityUnits: 5
+        secondProductsTable:
+            Type: AWS::DynamoDB::Table
+            Properties:
+                TableName: ${self:service}-${opt:stage, self:provider.stage}-2
+                AttributeDefinitions:
+                    - AttributeName: PK
+                      AttributeType: S
+                KeySchema:
+                    - AttributeName: PK
+                      KeyType: HASH
+                BillingMode: PROVISIONED
+                ProvisionedThroughput: 
+                    ReadCapacityUnits: 5
+                    WriteCapacityUnits: 5
+
+outputs:
+    event:
+        Ref: myTopic
+    table1:
+        Fn::GetAtt: 
+        - productsTable
+        - Arn
+    table2:
+        Fn::GetAtt: 
+        - secondProductsTable
+        - Arn
+            

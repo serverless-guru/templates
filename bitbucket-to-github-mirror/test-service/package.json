@@ -1,0 +1,8 @@
+{
+  "scripts": {
+    "test": "node_modules/.bin/jest"
+  },
+  "devDependencies": {
+    "jest": "^25.1.0"
+  }
+}

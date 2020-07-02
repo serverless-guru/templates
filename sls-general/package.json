@@ -1,0 +1,26 @@
+{
+  "name": "sls-general",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "lint": "./node_modules/.bin/eslint .",
+    "test-unit": "./node_modules/.bin/jest"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "node-fetch": "^2.6.0"
+  },
+  "devDependencies": {
+    "aws-sdk": "^2.644.0",
+    "eslint": "^6.8.0",
+    "husky": "^4.2.3",
+    "serverless-pseudo-parameters": "^2.5.0"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "npm run lint && npm run test-unit"
+    }
+  }
+}

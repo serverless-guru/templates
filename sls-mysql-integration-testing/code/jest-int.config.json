@@ -1,0 +1,5 @@
+{
+    "testMatch": [
+        "**/?(*.)(int-test).js?(x)"
+    ]
+}

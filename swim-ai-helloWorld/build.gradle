@@ -1,0 +1,46 @@
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'application'
+
+mainClassName = 'api.server'
+
+// tag::repositories[]
+repositories {
+    mavenCentral()
+}
+// end::repositories[]
+
+// tag::jar[]
+jar {
+    baseName = 'gs-gradle'
+    version =  '0.1.0'
+}
+// end::jar[]
+
+// tag::dependencies[]
+sourceCompatibility = 1.9
+targetCompatibility = 1.9
+
+dependencies {
+    compile group: 'org.swimos', name: 'swim-server', version: '3.10.2'
+    compile group: 'org.swimos', name: 'swim-api', version: '3.10.2'
+    compile group: 'org.swimos', name: 'swim-client', version: '3.10.2'
+    compile "joda-time:joda-time:2.2"
+    testCompile "junit:junit:4.12"
+}
+// end::dependencies[]
+
+// tag::wrapper[]
+// end::wrapper[]
+
+
+task runClient(type: JavaExec) {
+    classpath sourceSets.main.runtimeClasspath
+    main = "api.customClient"
+}
+
+task hello {
+    doLast {
+        println 'Hello world!'
+    }
+}

@@ -1,0 +1,161 @@
+org: serverlessguru
+app: sls-f-appsync-example
+service: sls-f-appsync-example
+
+plugins:
+  - serverless-appsync-plugin
+  - serverless-iam-roles-per-function
+  - serverless-pseudo-parameters
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  region: ${opt:region, "us-east-2"}
+  stage: ${opt:stage, "dev"}
+  timeout: 45
+
+custom:
+  base: ${self:service}-${self:provider.stage}
+  noteTableName: ${self:custom.base}-notes
+
+  role:
+    arn: arn:aws:iam::#{AWS::AccountId}:role
+    lambda:
+      name: ${self:custom.base}-Lambda-AppSyncServiceRole
+      arn: ${self:custom.role.arn}/${self:custom.role.lambda.name}
+    logging:
+      name: ${self:custom.base}-Logging-AppSyncServiceRole
+      arn:
+        Fn::GetAtt:
+          - AppSyncLoggingServiceRole
+          - Arn
+  
+  # Lambda namings
+  lambda:
+    base:
+      name: ${self:service}-${self:provider.stage}
+      arn: arn:aws:lambda:${self:provider.region}:#{AWS::AccountId}:function
+    notesLambda:
+      name: ${self:custom.lambda.base.name}-notes-lambda
+      arn: ${self:custom.lambda.base.arn}:${self:custom.lambda.notesLambda.name}
+
+  appSync:
+    name: ${self:custom.base}-api
+    authenticationType: AWS_IAM
+    logConfig:
+      loggingRoleArn:
+        Fn::GetAtt:
+          - AppSyncLoggingServiceRole
+          - Arn
+      level: ALL
+    mappingTemplates:
+      - dataSource: NotesLambda
+        type: Query
+        field: getNoteById
+        request: getNoteById/request.vtl
+        response: response.vtl
+      - dataSource: NotesLambda
+        type: Mutation
+        field: createNote
+        request: createNote/request.vtl
+        response: response.vtl
+      - dataSource: NotesLambda
+        type: Mutation
+        field: deleteNote
+        request: deleteNote/request.vtl
+        response: response.vtl
+      - dataSource: NotesLambda
+        type: Mutation
+        field: updateNote
+        request: updateNote/request.vtl
+        response: response.vtl
+      - dataSource: NotesLambda
+        type: Query
+        field: listNotes
+        request: listNotes/request.vtl
+        response: response.vtl
+      - dataSource: NotesLambda
+        type: Query
+        field: getNote
+        request: getNote/request.vtl
+        response: response.vtl
+    mappingTemplatesLocation: src/mapping-templates
+    serviceRole: AppSyncServiceRole
+    dataSources:
+      - type: AWS_LAMBDA
+        name: NotesLambda
+        description: Notes Lambda function
+        config:
+          functionName: ${self:custom.base}-notes-lambda
+          lambdaFunctionArn: ${self:custom.lambda.notesLambda.arn}
+          serviceRoleArn: ${self:custom.role.lambda.arn}
+
+# example of setting up a lambda function
+functions:
+  NotesLambda:
+    name: ${self:custom.base}-notes-lambda
+    handler: src/handlers/notes.handler
+    # example of lambda environment variables
+    environment:
+      CACHE_TIMEOUT: "600"
+    # example of function level permissions to SNS
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - sns:Publish
+        Resource: "*"
+
+# example of cloudformation resources
+resources:
+  Resources:
+    AppSyncLoggingServiceRole:
+      Type: "AWS::IAM::Role"
+      Properties:
+        RoleName: ${self:custom.role.logging.name}
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: "Allow"
+              Principal:
+                Service:
+                  - "appsync.amazonaws.com"
+              Action:
+                - "sts:AssumeRole"
+        Policies:
+          - PolicyName: ${self:custom.role.logging.name}-Policy
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - logs:CreateLogGroup
+                    - logs:CreateLogStream
+                    - logs:PutLogEvents
+                  Resource: "*"
+    # Gives permissions for AppSync to invoke our function
+    AppSyncLambdaServiceRole:
+      Type: "AWS::IAM::Role"
+      Properties:
+        RoleName: ${self:custom.role.lambda.name}
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            -
+              Effect: "Allow"
+              Principal:
+                Service:
+                  - "appsync.amazonaws.com"
+              Action:
+                - "sts:AssumeRole"
+        Policies:
+          - PolicyName: ${self:custom.base}-policy
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                -
+                  Effect: Allow
+                  Action:
+                    - lambda:invokeFunction
+                  Resource:
+                    - ${self:custom.lambda.notesLambda.arn}
+                    - ${self:custom.lambda.notesLambda.arn}:*

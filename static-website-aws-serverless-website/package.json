@@ -1,0 +1,13 @@
+{
+  "name": "aws-nodejs",
+  "description": "",
+  "version": "0.1.0",
+  "dependencies": {},
+  "devDependencies": {
+    "serverless-finch": "^2.3.2"
+  },
+  "scripts": {
+    "deploy": "bash ./scripts/deploy.bash",
+    "remove": "bash ./scripts/remove.bash"
+  }
+}

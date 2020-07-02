@@ -1,0 +1,27 @@
+service: retry-mechanism
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  environment:
+    ENDPOINT:
+      Fn::Join:
+        - ''
+        - - https://
+          - Ref: ApiGatewayRestApi
+          - .execute-api.${self:provider.region}.amazonaws.com/${self:provider.stage}
+
+functions:
+  start:
+    handler: src/handler.start
+    events:
+     - http:
+         path: /start
+         method: post
+
+  external:
+    handler: src/handler.external
+    events:
+     - http:
+         path: /external
+         method: post

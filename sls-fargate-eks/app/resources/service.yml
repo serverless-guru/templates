@@ -1,0 +1,13 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: ${env:custom_namespace} # express-api
+  namespace: ${env:custom_namespace} # express-api
+spec:
+  selector:
+    app: ${env:custom_namespace} # express-api
+  type: NodePort
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 3000
