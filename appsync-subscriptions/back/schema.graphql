@@ -1,33 +1,43 @@
-type Task {
+type Task @aws_api_key  {
 	PK: String!
 	SK: String!
 	status: String
 }
 
-input CreateTaskInput {
+type UpdatedTask @aws_iam  {
 	PK: String!
 	SK: String!
 	status: String
 }
 
-input UpdateTaskInput {
+input CreateTaskInput{
 	PK: String!
 	SK: String!
 	status: String
 }
+
+input UpdateTaskInput{
+	PK: String! 
+	SK: String!
+	status: String
+} 
 
 type Mutation {
 	createTask(input: CreateTaskInput!): Task
-	updateToComplete(input: UpdateTaskInput!): Task
+	@aws_api_key
+	updateToComplete(input: UpdateTaskInput!): UpdatedTask
+	@aws_api_key @aws_iam 
 }
 
 type Query {
 	listTasks: [Task]
+	@aws_api_key
 }
 
 type Subscription {
 	onCompleted(PK: String, SK: String, status: String): Task
 		@aws_subscribe(mutations: ["updateToComplete"])
+		@aws_api_key 
 }
 
 

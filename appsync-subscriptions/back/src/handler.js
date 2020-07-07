@@ -1,4 +1,17 @@
 const db = require('./utils/db')
+const emit = require('./utils/emit')
+const subscription = require('./utils/triggerSubscription')
+
+
+const io = {
+  snsInput: e => {
+    const snsMessage = e.Records[0].Sns
+    return JSON.parse(snsMessage.Message)
+  }
+}
+
+
+
 
 const listTasks = async event => {
   const res = await db.list({
@@ -14,14 +27,38 @@ const createTask = async data => {
     ...data,
     status: 'PROCESSING'
   })
+
+  await emit.processStarted({
+    ...data,
+    status: 'PROCESSING'
+  })
+
   return data
 }
 
-const updateToComplete = async data => {
+
+const longRunningFunction = async event => {
+  const data = io.snsInput(event)
+
   await db.set({
     ...data,
     status: 'COMPLETE'
   })
+
+  try {
+    const x = await subscription.triggerOnComplete(data)
+    if (x.errors) {
+
+      console.log(x.errors[0])
+
+    }
+    console.log('DONE - ', x)
+  } catch (e) {
+    console.log('HTTP ERR - ', e)
+  }
+}
+
+const updateToComplete = async data => {
   return data
 }
 
@@ -44,3 +81,5 @@ module.exports.main = async event => {
     return await updateToComplete(event.arguments.input)
   }
 }
+
+module.exports.longRunningFunction = longRunningFunction
