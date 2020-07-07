@@ -1,6 +1,6 @@
 # Appsync Subscription Pattern
-- [Video Walkthrough](https://www.loom.com/share/e3c934579160417eb3a5f2b2e14666bb)
-
+- [1. How Appsync Subscriptions work](https://www.loom.com/share/e3c934579160417eb3a5f2b2e14666bb)
+- [2. How to trigger a subscription from a Lambda function](https://www.loom.com/share/55fef05eb31a48a68bc5bbb19be97daa)
 
 ### AWS Demonstration of the same concept
 - [Video](https://youtu.be/KrmFAcucjzQ)

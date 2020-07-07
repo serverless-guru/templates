@@ -3,6 +3,7 @@ service: sls-f-appsync-example
 plugins:
   - serverless-appsync-plugin
   - serverless-pseudo-parameters
+  - serverless-iam-roles-per-function
 
 provider:
   name: aws
@@ -10,7 +11,19 @@ provider:
   region: ${opt:region, "us-east-2"}
   stage: ${opt:stage, "dev"}
   environment:
-    TABLE: ${self:service}-${opt:stage, self:provider.stage}
+    TABLE: ${self:service}-${opt:stage, self:provider.stage}    
+    STAGE: ${opt:stage, 'dev'}
+    REGION: ${opt:region, 'us-east-2'}
+    ACCOUNT_ID: '#{AWS::AccountId}'
+    APIKEY: 
+      Fn::GetAtt:
+      - GraphQlApiKeyDefault
+      - ApiKey 
+    ENDPOINT: 
+      Fn::GetAtt:
+      - GraphQlApi
+      - GraphQLUrl 
+  
   iamRoleStatements:
     - Effect: Allow
       Action:
@@ -19,12 +32,21 @@ provider:
           - dynamodb:PutItem
           - dynamodb:UpdateItem
           - dynamodb:DeleteItem
-      Resource: "*"
-  
+      Resource: 'arn:aws:dynamodb:#{AWS::Region}:#{AWS::AccountId}:table/${self:service}-${opt:stage, self:provider.stage}'
+    - Effect: Allow
+      Action:
+          - SNS:Publish
+          - SNS:Subscribe
+      Resource: 'arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:process-started-${self:custom.stage}'
+
 custom:
+  stage: ${opt:stage, self:provider.stage}
+  region: ${opt:region, self:provider.region}
   appSync:
     name: sls-f-appsync-example-api
-    authenticationType: API_KEY
+    authenticationType: AWS_IAM
+    additionalAuthenticationProviders:
+      - authenticationType: API_KEY
     mappingTemplates:
       - dataSource: lambda
         type: Query
@@ -52,13 +74,35 @@ custom:
           functionName: mainLambda-${opt:stage, "dev"}
           lambdaFunctionArn: { "Fn::GetAtt": ["MainLambdaFunction", "Arn" ] }
 
-
 functions:
   main:
     name: mainLambda-${opt:stage, "dev"}
     handler: src/handler.main
 
-
+  longRunningFunction:
+    name: longRunningFunction-${opt:stage, "dev"}
+    handler: src/handler.longRunningFunction
+    events:
+      - sns: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:process-started-${opt:stage, 'dev'}
+    
+    iamRoleStatements:
+        - Effect: Allow
+          Action:
+              - dynamodb:Query
+              - dynamodb:GetItem
+              - dynamodb:PutItem
+              - dynamodb:UpdateItem
+              - dynamodb:DeleteItem
+          Resource: 'arn:aws:dynamodb:#{AWS::Region}:#{AWS::AccountId}:table/${self:service}-${opt:stage, self:provider.stage}'
+        - Effect: "Allow"        
+          Action:
+            - appsync:GraphQL   
+          Resource:
+            Fn::Join:
+            - ''
+            - - Ref: GraphQlApi
+              - '/types/Mutation/fields/updateToComplete'
+        
 resources:
   Resources:
       productsTable:
@@ -76,3 +120,9 @@ resources:
                   - AttributeName: SK
                     KeyType: RANGE
               BillingMode: PAY_PER_REQUEST
+
+      processStarted:
+            Type: AWS::SNS::Topic
+            Properties:
+                TopicName: process-started-${self:custom.stage}
+

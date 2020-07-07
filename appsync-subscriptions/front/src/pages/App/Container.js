@@ -57,17 +57,21 @@ export default function App() {
 
     useEffect(() => {
         (async () => {
-            const getResult = await API.graphql(graphqlOperation(GET_ITEMS))
-            const items = getResult.data.listTasks
+            try {
+                const getResult = await API.graphql(graphqlOperation(GET_ITEMS))
+                const items = getResult.data.listTasks
 
-            if (items.length === 0) {
-                updateState('empty')
-                return
+                if (items.length === 0) {
+                    updateState('empty')
+                    return
+                }
+
+                updateState('loaded')
+                updateData(items)
+            } catch (e) {
+                console.log('err ', e)
+
             }
-
-            updateState('loaded')
-            updateData(items)
-
         })()
     }, [])
 
