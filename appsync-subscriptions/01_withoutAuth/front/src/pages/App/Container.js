@@ -49,7 +49,7 @@ const SUBSCRIPTION = `
 let userId = 'user_1234'
 let eventId = 'task_' + uuid()
 
-export default function App() {
+function App() {
     const [state, updateState] = useState('loading')
     const [data, updateData] = useState([])
     const [completedItem, updateCompletedItem] = useState([])
@@ -108,6 +108,7 @@ export default function App() {
         }))
     }
 
+
     if (state === 'loading') return <PresentationLoading />
     if (state === 'error') return <PresentationError />
     if ([...data, ...completedItem].length === 0) {
@@ -126,4 +127,4 @@ export default function App() {
     />
 }
 
-
+export default App

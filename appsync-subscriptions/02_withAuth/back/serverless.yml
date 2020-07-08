@@ -48,31 +48,37 @@ custom:
     additionalAuthenticationProviders:
       - authenticationType: API_KEY
     mappingTemplates:
-      - dataSource: lambda
+      - dataSource: lambdadatasource
         type: Query
         field: listTasks
-        request: request.vtl
-        response: response.vtl
-      - dataSource: lambda
+        request: lambda/request.vtl
+        response: lambda/response.vtl
+      - dataSource: lambdadatasource
         type: Mutation
         field: createTask
-        request: request.vtl
-        response: response.vtl
-      - dataSource: lambda
+        request: lambda/request.vtl
+        response: lambda/response.vtl
+      - dataSource: dbdatasource
         type: Mutation
         field: updateToComplete
-        request: request.vtl
-        response: response.vtl
+        request: db/request.vtl
+        response: db/response.vtl
       
     mappingTemplatesLocation: src/mapping-templates
     serviceRole: AppSyncServiceRole
     dataSources:
       - type: AWS_LAMBDA
-        name: lambda
-        description: Notes Lambda function
+        name: lambdadatasource
+        description: Main Lambda function
         config:
           functionName: mainLambda-${opt:stage, "dev"}
           lambdaFunctionArn: { "Fn::GetAtt": ["MainLambdaFunction", "Arn" ] }
+      - type: AMAZON_DYNAMODB
+        name: dbdatasource
+        description: Database for service
+        config:
+          tableName: { Ref: productsTable } 
+
 
 functions:
   main:
@@ -126,3 +132,22 @@ resources:
             Properties:
                 TopicName: process-started-${self:custom.stage}
 
+
+      CognitoUserPool:
+            Type: AWS::Cognito::UserPool
+            Properties:
+              UserPoolName: ${self:service}-${opt:stage, self:provider.stage}-user-pool
+              UsernameAttributes:
+                - email
+              AutoVerifiedAttributes:
+                - email
+
+      CognitoUserPoolClient:
+            Type: AWS::Cognito::UserPoolClient
+            Properties:
+              ClientName: ${self:service}-${opt:stage, self:provider.stage}-user-pool-client
+              UserPoolId:
+                Ref: CognitoUserPool
+              ExplicitAuthFlows:
+                - ADMIN_NO_SRP_AUTH
+              GenerateSecret: false

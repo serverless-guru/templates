@@ -10,11 +10,10 @@ Amplify.configure({
   "aws_appsync_region": process.env.REACT_APP_REGION,
   "aws_appsync_authenticationType": "API_KEY",
   "aws_appsync_apiKey": process.env.REACT_APP_API_KEY
-});
-
+})
 
 ReactDOM.render(
-  <App/>,
+  <App />,
   document.getElementById('root')
 );
 
