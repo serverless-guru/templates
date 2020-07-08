@@ -1,5 +1,32 @@
 # Serverless Webpack - Example Project
 
+## Commands
+
+### 1. Install
+
+```bash
+npm install
+```
+
+### 2. Local Invoke
+
+```bash
+cd services/exampleA
+sls invoke local -f hello -b '{}'
+```
+
+### 3. Deploy
+
+```bash
+sls deploy --stage dev -v
+```
+
+### 4. Invoke AWS Version
+
+```bash
+sls invoke -f hello -b '{}'
+```
+
 ## Folder Structure
 
 * core - shared files across services
