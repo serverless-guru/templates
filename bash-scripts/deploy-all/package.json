@@ -1,0 +1,7 @@
+{
+  "scripts": {
+    "deployAllResources": "bash ./deployAllResources.bash",
+    "deployAllServices": "bash ./deployAllServices.bash"
+  },
+  "name": "deploy-all"
+}
