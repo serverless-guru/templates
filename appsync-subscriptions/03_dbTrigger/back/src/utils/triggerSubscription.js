@@ -13,6 +13,7 @@ const signRequest = (data) => {
     const httpRequest = new AWS.HttpRequest(uri.href, process.env.REGION)
     httpRequest.headers.host = uri.host
     httpRequest.headers['Content-Type'] = 'application/json'
+    httpRequest.headers['x-api-key'] = process.env.APIKEY
     httpRequest.method = 'POST'
     httpRequest.body = JSON.stringify(data)
 
@@ -36,11 +37,17 @@ module.exports = {
                     updateToComplete (input: {	
                         PK: "${data.PK}",
                         SK: "${data.SK}",
-                        status: "COMPLETE"
+                        status: "${data.status}",
+                        favouriteColor: "${data.favouriteColor}",
+                        favouriteCity: "${data.favouriteCity}",
+                        lastUpdated: "${data.lastUpdated}"
                     }) {
                         PK,
                         SK,
-                        status
+                        status,
+                        favouriteColor,
+                        favouriteCity,
+                        lastUpdated
                     }
                 }`
         })

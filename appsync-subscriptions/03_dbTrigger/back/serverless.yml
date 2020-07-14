@@ -50,12 +50,12 @@ custom:
     mappingTemplates:
       - dataSource: lambdadatasource
         type: Query
-        field: listTasks
+        field: getProfile
         request: lambda/request.vtl
         response: lambda/response.vtl
       - dataSource: lambdadatasource
         type: Mutation
-        field: createTask
+        field: createProfile
         request: lambda/request.vtl
         response: lambda/response.vtl
       - dataSource: nonedatasource
@@ -81,27 +81,22 @@ custom:
       - type: NONE
         name: nonedatasource
 
-
 functions:
   main:
     name: mainLambda-${opt:stage, "dev"}
-    handler: src/handler.main
+    handler: src/handlers/appsyncFunctions.handler
 
-  longRunningFunction:
-    name: longRunningFunction-${opt:stage, "dev"}
-    handler: src/handler.longRunningFunction
+  triggerSubscription:
+    name: triggerSubscription-${opt:stage, "dev"}
+    handler: src/handlers/triggerSubscription.handler
     events:
-      - sns: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:process-started-${opt:stage, 'dev'}
-    
+      - stream:
+          type: dynamodb
+          arn:
+            Fn::GetAtt: [productsTable, StreamArn]
+          batchSize: 1
+
     iamRoleStatements:
-        - Effect: Allow
-          Action:
-              - dynamodb:Query
-              - dynamodb:GetItem
-              - dynamodb:PutItem
-              - dynamodb:UpdateItem
-              - dynamodb:DeleteItem
-          Resource: 'arn:aws:dynamodb:#{AWS::Region}:#{AWS::AccountId}:table/${self:service}-${opt:stage, self:provider.stage}'
         - Effect: "Allow"        
           Action:
             - appsync:GraphQL   
@@ -111,6 +106,13 @@ functions:
             - - Ref: GraphQlApi
               - '/types/Mutation/fields/updateToComplete'
         
+  longRunningFunction:
+    name: longRunningFunction-${opt:stage, "dev"}
+    handler: src/handlers/longRunningFunction.handler
+    timeout: 900
+    events:
+      - sns: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:process-started-${opt:stage, 'dev'}
+
 resources:
   Resources:
       productsTable:
@@ -128,7 +130,8 @@ resources:
                   - AttributeName: SK
                     KeyType: RANGE
               BillingMode: PAY_PER_REQUEST
-
+              StreamSpecification: 
+                  StreamViewType: NEW_IMAGE
       processStarted:
             Type: AWS::SNS::Topic
             Properties:

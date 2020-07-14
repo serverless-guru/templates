@@ -68,6 +68,17 @@ function App() {
 
                 updateState('loaded')
                 updateData(items)
+
+
+                API.graphql(
+                    graphqlOperation(SUBSCRIPTION, { PK: userId, SK: eventId })
+                ).subscribe({
+                    next: (todoData) => {
+                        console.log('SUBSCRIBED EVENT', todoData.value.data.onCompleted);
+                        updateCompletedItem([todoData.value.data.onCompleted])
+                        updateProcessingStatus('processed!')
+                    }
+                })
             } catch (e) {
                 console.log('err ', e)
 
@@ -75,17 +86,17 @@ function App() {
         })()
     }, [])
 
-    useEffect(() => {
-        API.graphql(
-            graphqlOperation(SUBSCRIPTION, { PK: userId, SK: eventId })
-        ).subscribe({
-            next: (todoData) => {
-                console.log('SUBSCRIBED EVENT', todoData.value.data.onCompleted);
-                updateCompletedItem([todoData.value.data.onCompleted])
-                updateProcessingStatus('processed!')
-            }
-        })
-    }, [data])
+    // useEffect(() => {
+    //     API.graphql(
+    //         graphqlOperation(SUBSCRIPTION, { PK: userId, SK: eventId })
+    //     ).subscribe({
+    //         next: (todoData) => {
+    //             console.log('SUBSCRIBED EVENT', todoData.value.data.onCompleted);
+    //             updateCompletedItem([todoData.value.data.onCompleted])
+    //             updateProcessingStatus('processed!')
+    //         }
+    //     })
+    // }, [data])
 
     const createItem = () => {
         updateProcessingStatus('processing...')

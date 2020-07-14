@@ -1,4 +1,4 @@
-type Task @aws_api_key  {
+type Task  {
 	PK: String!
 	SK: String!
 	status: String
@@ -24,20 +24,17 @@ input UpdateTaskInput{
 
 type Mutation {
 	createTask(input: CreateTaskInput!): Task
-	@aws_api_key
 	updateToComplete(input: UpdateTaskInput!): UpdatedTask
-	@aws_api_key @aws_iam 
+	@aws_iam 
 }
 
 type Query {
 	listTasks: [Task]
-	@aws_api_key
 }
 
 type Subscription {
 	onCompleted(PK: String, SK: String, status: String): Task
 		@aws_subscribe(mutations: ["updateToComplete"])
-		@aws_api_key 
 }
 
 

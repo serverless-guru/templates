@@ -15,10 +15,6 @@ provider:
     STAGE: ${opt:stage, 'dev'}
     REGION: ${opt:region, 'us-east-2'}
     ACCOUNT_ID: '#{AWS::AccountId}'
-    APIKEY: 
-      Fn::GetAtt:
-      - GraphQlApiKeyDefault
-      - ApiKey 
     ENDPOINT: 
       Fn::GetAtt:
       - GraphQlApi
@@ -44,9 +40,10 @@ custom:
   region: ${opt:region, self:provider.region}
   appSync:
     name: sls-f-appsync-example-api
-    authenticationType: AWS_IAM
-    additionalAuthenticationProviders:
-      - authenticationType: API_KEY
+    authenticationType: AMAZON_COGNITO_USER_POOLS
+    userPoolConfig:
+        defaultAction: DENY
+        userPoolId:  { Ref: CognitoUserPool }
     mappingTemplates:
       - dataSource: lambdadatasource
         type: Query

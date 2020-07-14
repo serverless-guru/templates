@@ -1,0 +1,54 @@
+type Profile @aws_api_key  {
+	PK: String!
+	SK: String!
+	status: String
+	favouriteColor: String
+	favouriteCity: String
+	lastUpdated: String
+}
+
+type UpdatedProfile @aws_iam  {
+	PK: String!
+	SK: String!
+	status: String
+	favouriteColor: String
+	favouriteCity: String
+	lastUpdated: String
+}
+
+input CreateProfileInput{
+	PK: String!
+	SK: String!
+	status: String
+}
+
+input UpdateProfileInput{
+	PK: String! 
+	SK: String!
+	status: String
+	favouriteColor: String
+	favouriteCity: String
+	lastUpdated: String
+} 
+
+type Mutation {
+	createProfile(input: CreateProfileInput!): Profile
+	@aws_api_key
+	updateToComplete(input: UpdateProfileInput!): UpdatedProfile
+	@aws_api_key @aws_iam 
+}
+
+type Query {
+	getProfile: Profile
+	@aws_api_key
+}
+
+type Subscription {
+	onCompleted(PK: String, SK: String, status: String): Profile
+		@aws_subscribe(mutations: ["updateToComplete"])
+		@aws_api_key 
+}
+
+
+
+
