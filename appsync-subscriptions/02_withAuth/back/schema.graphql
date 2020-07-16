@@ -1,0 +1,42 @@
+type Task  {
+	PK: String!
+	SK: String!
+	status: String
+}
+
+type UpdatedTask @aws_iam  {
+	PK: String!
+	SK: String!
+	status: String
+}
+
+input CreateTaskInput{
+	PK: String!
+	SK: String!
+	status: String
+}
+
+input UpdateTaskInput{
+	PK: String! 
+	SK: String!
+	status: String
+} 
+
+type Mutation {
+	createTask(input: CreateTaskInput!): Task
+	updateToComplete(input: UpdateTaskInput!): UpdatedTask
+	@aws_iam 
+}
+
+type Query {
+	listTasks: [Task]
+}
+
+type Subscription {
+	onCompleted(PK: String, SK: String, status: String): Task
+		@aws_subscribe(mutations: ["updateToComplete"])
+}
+
+
+
+

@@ -1,0 +1,150 @@
+service: sls-f-appsync-example
+
+plugins:
+  - serverless-appsync-plugin
+  - serverless-pseudo-parameters
+  - serverless-iam-roles-per-function
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  region: ${opt:region, "us-east-2"}
+  stage: ${opt:stage, "dev"}
+  environment:
+    TABLE: ${self:service}-${opt:stage, self:provider.stage}    
+    STAGE: ${opt:stage, 'dev'}
+    REGION: ${opt:region, 'us-east-2'}
+    ACCOUNT_ID: '#{AWS::AccountId}'
+    ENDPOINT: 
+      Fn::GetAtt:
+      - GraphQlApi
+      - GraphQLUrl 
+  
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+          - dynamodb:Query
+          - dynamodb:GetItem
+          - dynamodb:PutItem
+          - dynamodb:UpdateItem
+          - dynamodb:DeleteItem
+      Resource: 'arn:aws:dynamodb:#{AWS::Region}:#{AWS::AccountId}:table/${self:service}-${opt:stage, self:provider.stage}'
+    - Effect: Allow
+      Action:
+          - SNS:Publish
+          - SNS:Subscribe
+      Resource: 'arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:process-started-${self:custom.stage}'
+
+custom:
+  stage: ${opt:stage, self:provider.stage}
+  region: ${opt:region, self:provider.region}
+  appSync:
+    name: sls-f-appsync-example-api
+    authenticationType: AMAZON_COGNITO_USER_POOLS
+    userPoolConfig:
+        defaultAction: DENY
+        userPoolId:  { Ref: CognitoUserPool }
+    mappingTemplates:
+      - dataSource: lambdadatasource
+        type: Query
+        field: listTasks
+        request: lambda/request.vtl
+        response: lambda/response.vtl
+      - dataSource: lambdadatasource
+        type: Mutation
+        field: createTask
+        request: lambda/request.vtl
+        response: lambda/response.vtl
+      - dataSource: dbdatasource
+        type: Mutation
+        field: updateToComplete
+        request: db/request.vtl
+        response: db/response.vtl
+      
+    mappingTemplatesLocation: src/mapping-templates
+    serviceRole: AppSyncServiceRole
+    dataSources:
+      - type: AWS_LAMBDA
+        name: lambdadatasource
+        description: Main Lambda function
+        config:
+          functionName: mainLambda-${opt:stage, "dev"}
+          lambdaFunctionArn: { "Fn::GetAtt": ["MainLambdaFunction", "Arn" ] }
+      - type: AMAZON_DYNAMODB
+        name: dbdatasource
+        description: Database for service
+        config:
+          tableName: { Ref: productsTable } 
+
+
+functions:
+  main:
+    name: mainLambda-${opt:stage, "dev"}
+    handler: src/handler.main
+
+  longRunningFunction:
+    name: longRunningFunction-${opt:stage, "dev"}
+    handler: src/handler.longRunningFunction
+    events:
+      - sns: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:process-started-${opt:stage, 'dev'}
+    
+    iamRoleStatements:
+        - Effect: Allow
+          Action:
+              - dynamodb:Query
+              - dynamodb:GetItem
+              - dynamodb:PutItem
+              - dynamodb:UpdateItem
+              - dynamodb:DeleteItem
+          Resource: 'arn:aws:dynamodb:#{AWS::Region}:#{AWS::AccountId}:table/${self:service}-${opt:stage, self:provider.stage}'
+        - Effect: "Allow"        
+          Action:
+            - appsync:GraphQL   
+          Resource:
+            Fn::Join:
+            - ''
+            - - Ref: GraphQlApi
+              - '/types/Mutation/fields/updateToComplete'
+        
+resources:
+  Resources:
+      productsTable:
+          Type: AWS::DynamoDB::Table
+          Properties:
+              TableName: ${self:service}-${opt:stage, self:provider.stage}
+              AttributeDefinitions:
+                  - AttributeName: PK
+                    AttributeType: S
+                  - AttributeName: SK
+                    AttributeType: S
+              KeySchema:
+                  - AttributeName: PK
+                    KeyType: HASH
+                  - AttributeName: SK
+                    KeyType: RANGE
+              BillingMode: PAY_PER_REQUEST
+
+      processStarted:
+            Type: AWS::SNS::Topic
+            Properties:
+                TopicName: process-started-${self:custom.stage}
+
+
+      CognitoUserPool:
+            Type: AWS::Cognito::UserPool
+            Properties:
+              UserPoolName: ${self:service}-${opt:stage, self:provider.stage}-user-pool
+              UsernameAttributes:
+                - email
+              AutoVerifiedAttributes:
+                - email
+
+      CognitoUserPoolClient:
+            Type: AWS::Cognito::UserPoolClient
+            Properties:
+              ClientName: ${self:service}-${opt:stage, self:provider.stage}-user-pool-client
+              UserPoolId:
+                Ref: CognitoUserPool
+              ExplicitAuthFlows:
+                - ADMIN_NO_SRP_AUTH
+              GenerateSecret: false
