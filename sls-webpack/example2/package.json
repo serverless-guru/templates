@@ -1,9 +1,10 @@
 {
+  "dependencies": {
+    "axios": "^0.19.2",
+    "uuid": "^8.2.0"
+  },
   "devDependencies": {
     "serverless-webpack": "^5.3.2",
     "webpack": "^4.43.0"
-  },
-  "dependencies": {
-    "axios": "^0.19.2"
   }
 }

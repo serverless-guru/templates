@@ -1,46 +1,73 @@
 # Serverless Webpack - Example Project
 
-## Commands
+## Purpose
 
-### 1. Install
+Reduce the size of your lambda package sizes.
 
-```bash
-npm install
-```
+## Steps
 
-### 2. Local Invoke
+### Install
 
 ```bash
-cd services/exampleA
-sls invoke local -f hello -b '{}'
+npm i --save-dev serverless-webpack webpack
 ```
 
-### 3. Deploy
+### Update serverless.yml file in plugins section
+
+```yaml
+provider:
+    name: aws
+    ...
+plugins:
+    - serverless-webpack
+```
+
+### Create webpack.config.js file
+
+```js
+const slsw = require('serverless-webpack');
+module.exports = {
+  target: 'node',
+  entry: slsw.lib.entries,
+  mode: slsw.lib.webpack.isLocal ? 'development' : 'production',
+  node: false,
+  optimization: {
+    minimize: false,
+  },
+  devtool: 'inline-cheap-module-source-map',
+};
+```
+
+### Package
 
 ```bash
-sls deploy --stage dev -v
+sls package
 ```
 
-### 4. Invoke AWS Version
+### Review .zip file, it should be much smaller
 
-```bash
-sls invoke -f hello -b '{}'
+### Additional Optimization, add package: individually: true
+
+```yaml
+provider:
+    name: aws
+    ...
+package:
+    individually: true
+plugins:
+    - serverless-webpack
 ```
 
-## Folder Structure
+## Warning
 
-* core - shared files across services
+Trying to use `include/exclude` pattern will no longer work. You can't do this when using `serverless-webpack` plugin.
 
-    * lib/users/helper.js - pulls in from root `node_modules/` and imported from `services/exampleA` service
+```yaml
+package:
+    include:
+        - file
+    exclude:
+        - file
+```
 
-* services - logical groupings of functionality by domain
-
-    * exampleA - example service with simple Lambda, pulls in `core/` and uses root `node_modules/`
-
-        * core - symlink version of root `core/`
-
-        * src - lambda business logic
-    
-    * webpack.config.js - serverless-webpack configuration reused by all services
-
-* node_modules - root level `node_modules/` with both dev dependencies and regular dependencies
+If you need to bundle any other files that `serverless-webpack` doesn't automatically pick up you will need to do that in the `webpack.config.js` file.

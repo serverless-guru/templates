@@ -1,21 +1,19 @@
 org: serverlessguru
 app: patterns
-service: examplea
+service: billing
 
 provider:
   name: aws
   runtime: nodejs12.x
   stage: ${opt:stage, "dev"}
   region: ${opt:region, "us-west-2"}
-  # profile: serverlessguru
 
 plugins:
   - serverless-webpack
 
 custom:
   webpack:
-    webpackConfig: ../webpack.config.js   # Name of webpack configuration file
-    # includeModules: true
+    webpackConfig: ../webpack.config.js
 
 functions:
   hello:
