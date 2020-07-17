@@ -1,0 +1,19 @@
+org: serverlessguru
+app: patterns
+service: prune-plugin
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+
+plugins:
+  - serverless-prune-plugin
+
+custom:
+  prune:
+    automatic: true
+    number: 1
+
+functions:
+  hello:
+    handler: index.handler

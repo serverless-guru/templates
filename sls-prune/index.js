@@ -1,0 +1,1 @@
+module.exports.handler = (event) => { return 'hello' };

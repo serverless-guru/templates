@@ -1,0 +1,16 @@
+org: serverlessguru
+app: patterns
+service: example1
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stage: ${opt:stage, "dev"}
+  region: ${opt:region, "us-west-2"}
+
+plugins:
+  - serverless-webpack
+
+functions:
+  hello:
+    handler: index.handler
