@@ -21,8 +21,8 @@ sls prune -n 1
 ```yaml
 custom:
     prune:
-    automatic: true
-    number: 1
+        automatic: true
+        number: 1
 ```
 
 Then when you run `sls deploy` it will automatically prune versions for you.
