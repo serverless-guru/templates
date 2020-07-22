@@ -67,6 +67,28 @@ module.exports = {
 
 This will package all the files or folders underneath the `lib/templates` directory using the glob or `**` pattern. Any additional paths can be added underneath the `patterns` array.
 
+The two main sections added:
+
+```js
+const CopyPlugin = require('copy-webpack-plugin');
+```
+
+Importing the copy plugin and adding paths under `patterns` array:
+
+```js
+plugins: [
+    new CopyPlugin({
+      patterns: [
+        'lib/templates/**'
+      ]
+    }),
+],
+```
+
+The patterns section is what we use to specify our paths for webpack. These paths are what files to add with the zip file. Notice the usage of `**` this glob pattern will grab all files/folders under a directory.
+
+#### Here is an example of the output of packaging with the copy plugin
+
 <img src="./copy-plugin-zip.png">
 
 ### Package
