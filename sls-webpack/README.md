@@ -9,7 +9,7 @@ Reduce the size of your lambda package sizes.
 ### Install
 
 ```bash
-npm i --save-dev serverless-webpack webpack
+npm i --save-dev serverless-webpack webpack copy-webpack-plugin
 ```
 
 ### Update serverless.yml file in plugins section
@@ -20,6 +20,8 @@ provider:
     ...
 plugins:
     - serverless-webpack
+package:
+    individually: true
 ```
 
 ### Create webpack.config.js file
@@ -37,6 +39,35 @@ module.exports = {
   devtool: 'inline-cheap-module-source-map',
 };
 ```
+
+#### If you need to package other files in your lambda zip
+
+```js
+const slsw = require('serverless-webpack');
+const CopyPlugin = require('copy-webpack-plugin');
+
+module.exports = {
+  target: 'node',
+  entry: slsw.lib.entries,
+  mode: slsw.lib.webpack.isLocal ? 'development' : 'production',
+  node: false,
+  optimization: {
+    minimize: false,
+  },
+  devtool: 'inline-cheap-module-source-map',
+  plugins: [
+    new CopyPlugin({
+      patterns: [
+        'lib/templates/**'
+      ]
+    }),
+  ],
+};
+```
+
+This will package all the files or folders underneath the `lib/templates` directory using the glob or `**` pattern. Any additional paths can be added underneath the `patterns` array.
+
+<img src="./copy-plugin-zip.png">
 
 ### Package
 
@@ -70,4 +101,4 @@ package:
         - file
 ```
 
-If you need to bundle any other files that `serverless-webpack` doesn't automatically pick up you will need to do that in the `webpack.config.js` file.
+If you need to bundle any other files that `serverless-webpack` doesn't automatically pick up you will need to do that in the `webpack.config.js` file. Please review [this section](#If-you-need-to-package-other-files-in-your-lambda-zip) for how to do this.
