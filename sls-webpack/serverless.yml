@@ -11,6 +11,9 @@ provider:
 plugins:
   - serverless-webpack
 
+package:
+  individually: true
+
 functions:
   hello:
     handler: index.handler
