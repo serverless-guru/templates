@@ -1,0 +1,16 @@
+{
+  "devDependencies": {
+    "aws-sdk": "^2.610.0"
+  },
+  "dependencies": {
+    "aws-xray-sdk": "^2.5.0",
+    "lokijs": "^1.5.8",
+    "md5": "^2.2.1",
+    "zlib": "^1.0.5",
+    "dateformat": "^3.0.3",
+    "request": "^2.88.2",
+    "moment": "^2.24.0",
+    "request-promise": "^4.2.5",
+    "serverless-mysql": "^1.5.3"
+  }
+}

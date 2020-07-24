@@ -1,0 +1,29 @@
+{
+  "name": "servicec",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "dependencies": {
+    "airport-timezone": "^1.1.0",
+    "aws-sdk": "^2.648.0",
+    "aws-xray-sdk": "^2.5.0",
+    "camelcase": "^6.0.0",
+    "dateformat": "^3.0.3",
+    "fs": "0.0.1-security",
+    "jsonpath": "^1.0.2",
+    "lokijs": "^1.5.8",
+    "md5": "^2.2.1",
+    "moment": "^2.24.0",
+    "moment-timezone": "^0.5.31",
+    "request": "^2.88.2",
+    "request-promise": "^4.2.5",
+    "serverless-mysql": "^1.5.3",
+    "zlib": "^1.0.5"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}

@@ -1,0 +1,22 @@
+{
+  "name": "serviced",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "aws-sdk": "^2.623.0",
+    "aws-xray-sdk": "^2.5.0",
+    "fs": "0.0.1-security",
+    "mysql": "^2.18.1",
+    "serverless-mysql": "^1.5.3",
+    "util": "^0.12.2",
+    "lokijs": "^1.5.8",
+    "md5": "^2.2.1",
+    "zlib": "^1.0.5"
+  }
+}

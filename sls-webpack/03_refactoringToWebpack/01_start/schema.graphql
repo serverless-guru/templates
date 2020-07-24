@@ -1,0 +1,11 @@
+schema {
+    query: Query
+}
+type Query {
+    mainQuery: Response
+}
+
+type Response {
+    statusCode: String
+    body: String
+}

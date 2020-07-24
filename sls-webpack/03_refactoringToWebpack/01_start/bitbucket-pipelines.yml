@@ -1,0 +1,19 @@
+image: node:11.13.0-alpine
+ 
+steps:
+  - step: Deploy
+      name: Deploy App
+      caches:
+        - node
+      script:
+        - npm install -g serverless
+        - (cd src/handlers/commonfiles && npm i)
+        - (cd src/handlers/query && npm i)
+        - (cd src/handlers/serviceA && npm i)
+        - (cd src/handlers/serviceB && npm i)
+        - (cd src/handlers/serviceC && npm i)
+        - (cd src/handlers/serviceD && npm i)
+        - npm install
+        - export $SERVERLESS_ACCESS_KEY            
+        - export SLS_DEBUG=*
+        - serverless deploy

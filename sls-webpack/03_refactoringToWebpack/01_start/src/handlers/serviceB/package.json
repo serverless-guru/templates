@@ -1,0 +1,25 @@
+{
+  "name": "serviceb",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "aws-sdk": "^2.643.0",
+    "aws-xray-sdk": "^2.5.0",
+    "jsonpath": "^1.0.2",
+    "lokijs": "^1.5.8",
+    "md5": "^2.2.1",
+    "moment": "^2.24.0",
+    "request-promise": "^4.2.5",
+    "serverless-mysql": "^1.5.3",
+    "zlib": "^1.0.5"
+  },
+  "devDependencies": {
+    "jest": "^25.5.4"
+  }
+}

@@ -1,0 +1,73 @@
+service: webpack-refactor
+
+plugins:
+  - serverless-iam-roles-per-function
+  - serverless-pseudo-parameters
+  - serverless-appsync-plugin
+  - serverless-offline
+package:
+  individually: true
+  exclude:
+    - ./**
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  region: ${opt:region, "us-east-2"}
+  stage: ${opt:stage, "int"}
+
+custom:
+  appSync:
+    name: webpack-refactor
+    authenticationType: API_KEY
+    mappingTemplates: 
+      - dataSource: Retrieve 
+        type: Query 
+        field: mainQuery
+        request: request.vtl
+        response: response.vtl
+    mappingTemplatesLocation: src/mapping-templates
+    dataSources:
+      - type: AWS_LAMBDA
+        name: Retrieve 
+        description: retreive
+        config:
+          functionName: appsync-${opt:stage, "dev"}
+          lambdaFunctionArn: { "Fn::GetAtt": ["RetrieveLambdaFunction", "Arn" ] }
+
+functions:
+  Retrieve:
+    handler: src/handlers/query/src/index.handler 
+    package:
+      include:
+        - src/handlers/commonfiles/**
+        - src/handlers/query/**
+  
+  serviceA:
+    handler: src/handlers/serviceA/index.handler
+    package:
+      include:
+        - src/handlers/commonfiles/**
+        - src/handlers/serviceA/**
+
+  serviceB:
+    handler: src/handlers/serviceB/src/index.handler
+    package:
+      include:
+        - src/handlers/commonfiles/**
+        - src/handlers/serviceB/**
+
+  serviceC:
+    handler: src/handlers/serviceC/index.handler
+    package:
+      include:
+        - src/handlers/commonfiles/**
+        - src/handlers/serviceC/**
+ 
+  serviceD:
+    handler: src/handlers/serviceD/index.handler
+    package:
+      include:
+        - src/handlers/commonfiles/**
+        - src/handlers/serviceD/**
+ 
