@@ -25,8 +25,6 @@ const ui = {
     finalStatus: (x) => {
         if (x.status === 'COMPLETE') {
             appendChild('status', 'Success: ' + JSON.stringify(x.data))
-        } else if (x.status === 'COMPELTE') {
-            appendChild('status', 'Success: ' + JSON.stringify(x.data))
         } else if (x.status === 'ERROR') {
             appendChild('status', 'Error: ' + JSON.stringify(x.data))
         } else {

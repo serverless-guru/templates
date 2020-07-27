@@ -19,17 +19,38 @@ provider:
 
 custom:
   webpack:
-    webpackConfig: ../webpack.config.js
+    webpackConfig: ./webpack.config.js
   appSync:
     name: webpack-refactor
     authenticationType: API_KEY
+    mappingTemplatesLocation: src/mapping-templates
     mappingTemplates: 
       - dataSource: Retrieve 
         type: Query 
-        field: mainQuery
+        field: retrieve
         request: request.vtl
         response: response.vtl
-    mappingTemplatesLocation: src/mapping-templates
+      - dataSource: serviceA 
+        type: Query 
+        field: serviceA
+        request: request.vtl
+        response: response.vtl
+      - dataSource: serviceB 
+        type: Query 
+        field: serviceB
+        request: request.vtl
+        response: response.vtl
+      - dataSource: serviceC 
+        type: Query 
+        field: serviceC
+        request: request.vtl
+        response: response.vtl
+      - dataSource: serviceD 
+        type: Query 
+        field: serviceD
+        request: request.vtl
+        response: response.vtl
+
     dataSources:
       - type: AWS_LAMBDA
         name: Retrieve 
@@ -37,7 +58,30 @@ custom:
         config:
           functionName: appsync-${opt:stage, "dev"}
           lambdaFunctionArn: { "Fn::GetAtt": ["RetrieveLambdaFunction", "Arn" ] }
-
+      - type: AWS_LAMBDA
+        name: serviceA 
+        description: retreive
+        config:
+          functionName: appsync-serviceA-${opt:stage, "dev"}
+          lambdaFunctionArn: { "Fn::GetAtt": ["ServiceALambdaFunction", "Arn" ] }
+      - type: AWS_LAMBDA
+        name: serviceB
+        description: retreive
+        config:
+          functionName: appsync-serviceB-${opt:stage, "dev"}
+          lambdaFunctionArn: { "Fn::GetAtt": ["ServiceBLambdaFunction", "Arn" ] }
+      - type: AWS_LAMBDA
+        name: serviceC 
+        description: retreive
+        config:
+          functionName: appsync-serviceC-${opt:stage, "dev"}
+          lambdaFunctionArn: { "Fn::GetAtt": ["ServiceCLambdaFunction", "Arn" ] }
+      - type: AWS_LAMBDA
+        name: serviceD 
+        description: retreive
+        config:
+          functionName: appsync-serviceD-${opt:stage, "dev"}
+          lambdaFunctionArn: { "Fn::GetAtt": ["ServiceDLambdaFunction", "Arn" ] }
 functions:
   Retrieve:
     handler: src/handlers/query/src/index.handler 
