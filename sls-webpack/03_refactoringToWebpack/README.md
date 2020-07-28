@@ -20,9 +20,7 @@ folders and managing npm modules per function. This also makes referencing util 
 handler folder much easier
 
 ## When to use Private NPM Modules
-NPM modules are great for sharing utils and reusable business logic. Often these npm modules are 
-
-Some important notes about NPM modules
+NPM modules are great for sharing utils and reusable business logic in your organization. Some important notes about NPM modules
 - You can include as many as you like in a package.json file
 - The code in an NPM modules is included when packaging your Lambda Function Artifact
 
@@ -40,9 +38,9 @@ contained in the Layer, Layers are great for very large amounts of code. Some go
 - Monitoring Layer (Dynatrace is another example of a heavy npm module)
 
 (It should be noted that webpack often solves the npm module size issue by optimizing what gets packaged. We recommend using webpack first before reaching
-for Lambda Layers to solve this issue. Lambda Layers are a good solution when yoru code must use all of the very large NPM module)
+for Lambda Layers to solve this issue. Lambda Layers are a good solution when your code must use all of the very large NPM module)
 
 ### Summary
-- Webpack will always help with package size, and is a tool we always recommend you use (Always)
-- NPM modules are great for code reuse of business logic (Often)
-- Lambda Layers are great when your service requires the use of very big node modules or binaries. (Less Often)
+- Webpack is something we always recommend
+- NPM modules are great for sharing reusable business logic or utils among many services
+- Lambda Layers are great for more specialized scenarios such as binaries or large npm module that will not be optimized with the webpack plugin
