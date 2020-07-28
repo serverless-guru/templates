@@ -43,4 +43,4 @@ for Lambda Layers to solve this issue. Lambda Layers are a good solution when yo
 ### Summary
 - Webpack is something we always recommend
 - NPM modules are great for sharing reusable business logic or utils among many services
-- Lambda Layers is great when both both Webpack and NPM Modules do not solve your problem. This is rare, but is the case when you are working binaries or very large wrapper agents like Dynatrace which are not used as normal NPM moduels are used in code
+- Lambda Layers is great when both Webpack and NPM Modules do not solve your problem. This is rare, but is the case when you are working binaries or very large wrapper agents such as Dynatrace which are not used as normal NPM modules
