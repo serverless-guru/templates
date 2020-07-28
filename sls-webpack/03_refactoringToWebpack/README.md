@@ -1,7 +1,6 @@
 # Refactoring to Webpack
 
 - [Walkthrough Video](https://www.loom.com/share/3b32f103e0314f3d9485b851919ece8e)
-- [Discussion about Webpack, Private NPM Modules, and Lambda Layers, and when to use each](https://www.loom.com/share/f543f3c54a564be2afba22fbd5ca8716)
 
 # Which tool does the best job
 The following tools:
