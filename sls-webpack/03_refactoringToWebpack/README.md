@@ -43,22 +43,11 @@ contained in the Layer, Layers are create for very large amounts of code. Some g
   these is a great way to keep Lambda Functions light)
 - Monitoring Layer (Dynatrace is another example of a heavy npm module)
 
-Because you can only have 5, we encourage you to make large categories of Lambda Layers, rather than small utility 
-Lambda Layers. What we dont encourage is the following:
-
-- Dynatrace Layer
-- CloudWatchLogger Layer
-- ServiceA Layer
-- ServiceB Layer
-
-All of these are too small and specific. Instead, we should make a general Monitoring Layer which contains both
-dynatrace and any custom code that is related to monitoring. ServiceA and ServiceB are too specific in terms of
-their ability to be reused. Instead, those Layers should be broken up 
-- 1. If they are business logic, break into small private NPM modules which can 
-be used by many services
-- 2. If they are very big third party NPM modules or binaries, add them to a Lambda Layer that represents a large
-category or usecase.
+It should be noted that if a large node module is used in layers because of its size, using webpack plugin might possibly solve that issue by only
+including the narrow bit of functionality you are using from that package. 
 
 ### Summary
-Lambda Layers should represent big categories that everyone can use. NPM modules should represent small utilities or
-bussiness logic modules that can be mixed and matched per service to fit its needs. 
+- Webpack is always worth using
+- NPM modules is great for code reuse of business logic
+- Lambda Layers is great when both both Webpack and NPM Modules do not solve your problem. This is rare, but is the case when you are working binaries or very large
+wrapper agents like Dynatrace which are not used as normal NPM moduels are used in code
