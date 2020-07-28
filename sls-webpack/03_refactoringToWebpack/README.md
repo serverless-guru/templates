@@ -16,8 +16,7 @@ Are tools that are often used to solve 2 different problems:
 ## When to use Webpack
 In this pattern we are using webpack to solve the problem of npm module size. Optimizing the size of npm modules
 is something we suggest you always do. This removes the need to have individual `package.json` files in handler
-folders and managing npm modules per function. This also makes referencing util and helper files outside of the
-handler folder much easier
+folders and managing npm modules per function.
 
 ## When to use Private NPM Modules
 NPM modules are great for sharing utils and reusable business logic in your organization. Some important notes about NPM modules
