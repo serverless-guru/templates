@@ -20,14 +20,10 @@ folders and managing npm modules per function. This also makes referencing util 
 handler folder much easier
 
 ## When to use Private NPM Modules
-Private NPM modules are great for sharing business logic amount many services. Business logic usually is not
-very big. For reference, a 300 line node js file is roughly 10kb. Although they are not big, they represent a lot
-of work and a lot of thinking and testing. To keep our services clean and to keep developers from recreating the 
-wheel and spending lots of time building the same thing, it is great to instead create private NPM modules
-that the organization can share and reuse in services. 
+NPM modules are great for sharing utils and reusable business logic. Often these npm modules are 
 
 Some important notes about NPM modules
-- You can have as many as you want
+- You can include as many as you like in a package.json file
 - The code in an NPM modules is included when packaging your Lambda Function Artifact
 
 ## When to use Lambda Layers
@@ -36,18 +32,17 @@ Lambda Layers are another way to include already written code for your Lambda Fu
 - Code included in the Lambda Layer is not included in your Lambda Function Artifact
 
 Because you have a limited number of Layers to use, and because they enable your function to be deployed without code
-contained in the Layer, Layers are create for very large amounts of code. Some good use cases:
+contained in the Layer, Layers are great for very large amounts of code. Some good use cases:
 
 - Swift Runtime Layer (make a Lambda Layer with a Swift runtime so you can write Lambda Functions with Swift)
 - Image Processing Layer (sharp is a very large npm module. Making a general Image Processing layer for dependencies like
   these is a great way to keep Lambda Functions light)
 - Monitoring Layer (Dynatrace is another example of a heavy npm module)
 
-It should be noted that if a large node module is used in layers because of its size, using webpack plugin might possibly solve that issue by only
-including the narrow bit of functionality you are using from that package. 
+(It should be noted that webpack often solves the npm module size issue by optimizing what gets packaged. We recommend using webpack first before reaching
+for Lambda Layers to solve this issue. Lambda Layers are a good solution when yoru code must use all of the very large NPM module)
 
 ### Summary
-- Webpack is always worth using
-- NPM modules is great for code reuse of business logic
-- Lambda Layers is great when both both Webpack and NPM Modules do not solve your problem. This is rare, but is the case when you are working binaries or very large
-wrapper agents like Dynatrace which are not used as normal NPM moduels are used in code
+- Webpack will always help with package size, and is a tool we always recommend you use (Always)
+- NPM modules are great for code reuse of business logic (Often)
+- Lambda Layers are great when your service requires the use of very big node modules or binaries. (Less Often)
