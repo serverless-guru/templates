@@ -19,7 +19,7 @@ is something we suggest you always do. This removes the need to have individual 
 folders and managing npm modules per function.
 
 ## When to use Private NPM Modules
-NPM modules are great for sharing utils and reusable business logic in your organization. Reusable utils and common business logic are often small in comparison to the public npm modules we include in our projects. For reference, a 300 line node.js file is roughly 10kb). Some important notes about NPM modules
+NPM modules are great for sharing utils and reusable business logic in your organization. Reusable utils and common business logic are often small in comparison to the public npm modules we include in our projects. For reference, a 300 line node.js file is roughly 10kb. Some important notes about NPM modules
 - You can include as many as you like in a package.json file
 - The code in an NPM modules is included when packaging your Lambda Function Artifact
 
