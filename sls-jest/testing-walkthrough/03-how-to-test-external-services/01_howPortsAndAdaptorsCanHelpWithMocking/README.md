@@ -1,6 +1,6 @@
 # Ports and Adaptors
 
-Ports and Adaptors is an architecture pattern which helps you decouple your codebase. A decoupled codebase makes testing much more straighforward. So what is the idea behind ports and adatopr?
+Ports and Adaptors is an architecture pattern which helps you decouple your codebase. A decoupled codebase makes testing much more straightforward. So what is the idea behind ports and adators?
 
 ### What is Ports and Adaptors
 ![1](./assets/paa-concept-1.png)
@@ -31,7 +31,7 @@ Within our domain tests, we can instead plugin a Mock IO object, which will allo
 ### High Level Overview of Ports and Adaptors
 ![3](./assets/paa-1.png)
 
-If we were to zoom out of a project and take a overview, we could imagine a handler file (represented as green in the above image). This handler file will connect the real IO to the domain. We have our domain layer (which is represented as blue in the image above) which sites in the center. We can also have many kinds of IO (represented in purple)
+If we were to zoom out of a project and take a overview, we could imagine a handler file (represented as green in the above image). This handler file will connect the real IO to the domain. We have our domain layer (which is represented as blue in the image above) which sits in the center. We can also have many kinds of IO (represented in purple)
 
 ![4](./assets/paa-2.png)
 
