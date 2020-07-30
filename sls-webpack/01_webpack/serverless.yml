@@ -16,4 +16,10 @@ package:
 
 functions:
   hello:
+    name: my-lambda-function-${self:provider.stage}
     handler: index.handler
+    #environment:
+      #API_KEY: ${param:API_KEY}
+
+#outputs:
+  #lambdaName: my-lambda-function-${self:provider.stage}
