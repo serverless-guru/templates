@@ -1,0 +1,178 @@
+org: serverlessguru
+app: patterns
+service: ddb-to-s3
+
+provider:
+  name: aws
+  stage: ${opt:stage, "dev"}
+  region: ${opt:region, "us-east-2"}
+
+custom:
+  base: ${self:service}-${self:provider.stage}
+  params:
+    TableName: my-table # ${param:TableName}
+    S3BucketName: my-bucket # ${param:S3BucketName}
+
+resources:
+  # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-datapipeline-pipeline.html
+  Resources:
+    DynamoDBInputS3OutputHive: 
+      Type: AWS::DataPipeline::Pipeline
+      Properties: 
+        Name: ${self:custom.base}-pipeline
+        Description: "Pipeline to backup DynamoDB data to S3"
+        Activate: true
+        ParameterObjects: 
+          - 
+            Id: "myDDBReadThroughputRatio"
+            Attributes: 
+              - 
+                Key: "description"
+                StringValue: "DynamoDB read throughput ratio"
+              - 
+                Key: "type"
+                StringValue: "Double"
+              - 
+                Key: "default"
+                StringValue: "0.2"
+          - 
+            Id: "myOutputS3Loc"
+            Attributes: 
+              - 
+                Key: "description"
+                StringValue: "S3 output bucket"
+              - 
+                Key: "type"
+                StringValue: "AWS::S3::ObjectKey"
+              - 
+                Key: "default"
+                StringValue: s3://${self:custom.params.S3BucketName}
+          - 
+            Id: "myDDBTableName"
+            Attributes: 
+              - 
+                Key: "description"
+                StringValue: "DynamoDB Table Name"
+              - 
+                Key: "type"
+                StringValue: "String"
+        ParameterValues: 
+          - 
+            Id: "myDDBTableName"
+            StringValue: ${self:custom.params.TableName}
+        PipelineObjects: 
+          - 
+            Id: "S3BackupLocation"
+            Name: "Copy data to this S3 location"
+            Fields: 
+              - 
+                Key: "type"
+                StringValue: "S3DataNode"
+              - 
+                Key: "dataFormat"
+                RefValue: "DDBExportFormat"
+              - 
+                Key: "directoryPath"
+                StringValue: "#{myOutputS3Loc}/#{format(@scheduledStartTime, 'YYYY-MM-dd-HH-mm-ss')}"
+          - 
+            Id: "DDBSourceTable"
+            Name: "DDBSourceTable"
+            Fields: 
+              - 
+                Key: "tableName"
+                StringValue: "#{myDDBTableName}"
+              - 
+                Key: "type"
+                StringValue: "DynamoDBDataNode"
+              - 
+                Key: "dataFormat"
+                RefValue: "DDBExportFormat"
+              - 
+                Key: "readThroughputPercent"
+                StringValue: "#{myDDBReadThroughputRatio}"
+          - 
+            Id: "DDBExportFormat"
+            Name: "DDBExportFormat"
+            Fields: 
+              - 
+                Key: "type"
+                StringValue: "DynamoDBExportDataFormat"
+          - 
+            Id: "TableBackupActivity"
+            Name: "TableBackupActivity"
+            Fields: 
+              - 
+                Key: "resizeClusterBeforeRunning"
+                StringValue: "true"
+              - 
+                Key: "type"
+                StringValue: "HiveCopyActivity"
+              - 
+                Key: "input"
+                RefValue: "DDBSourceTable"
+              - 
+                Key: "runsOn"
+                RefValue: "EmrClusterForBackup"
+              - 
+                Key: "output"
+                RefValue: "S3BackupLocation"
+          - 
+            Id: "DefaultSchedule"
+            Name: "RunOnce"
+            Fields: 
+              - 
+                Key: "occurrences"
+                StringValue: "1"
+              - 
+                Key: "startAt"
+                StringValue: "FIRST_ACTIVATION_DATE_TIME"
+              - 
+                Key: "type"
+                StringValue: "Schedule"
+              - 
+                Key: "period"
+                StringValue: "1 Day"
+          - 
+            Id: "Default"
+            Name: "Default"
+            Fields: 
+              - 
+                Key: "type"
+                StringValue: "Default"
+              - 
+                Key: "scheduleType"
+                StringValue: "cron"
+              - 
+                Key: "failureAndRerunMode"
+                StringValue: "CASCADE"
+              - 
+                Key: "role"
+                StringValue: "DataPipelineDefaultRole"
+              - 
+                Key: "resourceRole"
+                StringValue: "DataPipelineDefaultResourceRole"
+              - 
+                Key: "schedule"
+                RefValue: "DefaultSchedule"
+          - 
+            Id: "EmrClusterForBackup"
+            Name: "EmrClusterForBackup"
+            Fields: 
+              - 
+                Key: "terminateAfter"
+                StringValue: "2 Hours"
+              - 
+                Key: "amiVersion"
+                StringValue: "3.3.2"
+              - 
+                Key: "masterInstanceType"
+                StringValue: "m1.medium"
+              - 
+                Key: "coreInstanceType"
+                StringValue: "m1.medium"
+              - 
+                Key: "coreInstanceCount"
+                StringValue: "1"
+              - 
+                Key: "type"
+                StringValue: "EmrCluster"
