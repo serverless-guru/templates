@@ -1,0 +1,37 @@
+service: sls-cronjob
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  region: ${opt:region, "us-west-2"}
+  stage: ${opt:staging, "dev"}
+  profile: ${opt:profile, "serverlessguru-internal"}
+  environment:
+    SLS_DEBUG: "*"
+    REGION: ${self:provider.region}
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - ses:SendEmail
+        - ses:SendTemplatedEmail
+      Resource: arn:aws:ses:#{AWS::Region}:#{AWS::AccountId}:identity/nadtakan@serverlessguru.com
+    - Effect: Allow
+      Action:
+        - cloudformation:DescribeStackResourceDrifts
+      Resource: arn:aws:cloudformation:#{AWS::Region}:#{AWS::AccountId}:*
+
+plugins:
+  - serverless-pseudo-parameters
+
+package:
+  individually: true
+  exclude:
+    - ./**
+  include:
+    - src/index.js
+      
+functions:
+  cronjob:
+    handler: src/index.handler
+    events:
+      - schedule: cron(0 5 * * ? *) # schedule to run every day at 5 AM
