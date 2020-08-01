@@ -5,7 +5,7 @@ service: ddb-to-s3
 provider:
   name: aws
   stage: ${opt:stage, "dev"}
-  region: ${opt:region, "us-east-2"}
+  region: ${opt:region, "us-east-1"}
 
 custom:
   base: ${self:service}-${self:provider.stage}
