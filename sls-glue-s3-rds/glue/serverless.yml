@@ -1,0 +1,42 @@
+provider:
+  name: aws
+  stage: ${opt:stage, "dev"}
+  region: ${opt:region, "us-east-2"}
+
+plugins:
+  - serverless-pseudo-parameters # non-static aws account number
+
+custom:
+  base: ${self:service}-${self:provider.stage}
+
+  params:
+    CFNConnectionName: ${self:custom.base}-connection-mysql
+    CFNJDBCString: ${param:CFNJDBCString} # jdbc:mysql://xxx-mysql.yyyyyyyyyyyyyy.us-east-1.rds.amazonaws.com:3306/devdb
+    CFNJDBCUser: ${param:CFNJDBCUser} # master
+    CFNJDBCPassword: ${param:CFNJDBCPassword} # examplepw!
+    GLUE_SECURITY_GROUP_ID_1: ${param:GLUE_SECURITY_GROUP_ID_1} # sg-abc
+    GLUE_SECURITY_GROUP_ID_2: ${param:GLUE_SECURITY_GROUP_ID_2} # sg-xyz
+    GLUE_AZ: ${param:GLUE_AZ} # us-east-2a
+    GLUE_SUBNET_ID: ${param:GLUE_SUBNET_ID} # subnet-xyz
+
+resources:
+  CFNConnectionMySQL:
+    Type: AWS::Glue::Connection
+    Properties:
+      CatalogId: '{AWS::AccountId}'
+      ConnectionInput: 
+        Description: "Connect to MySQL database."
+        ConnectionType: "JDBC"
+        #MatchCriteria: none		
+        PhysicalConnectionRequirements:
+          AvailabilityZone: ${self:custom.params.GLUE_AZ}
+          SecurityGroupIdList: 
+           - ${self:custom.params.GLUE_SECURITY_GROUP_ID_1}
+           - ${self:custom.params.GLUE_SECURITY_GROUP_ID_2}
+          SubnetId: ${self:custom.params.GLUE_SUBNET_ID}
+        ConnectionProperties: {
+          "JDBC_CONNECTION_URL": ${self:custom.CFNJDBCString},
+          "USERNAME": ${self:custom.CFNJDBCUser},
+          "PASSWORD": ${self:custom.CFNJDBCPassword}
+        }
+        Name: ${self:custom.CFNConnectionName}
