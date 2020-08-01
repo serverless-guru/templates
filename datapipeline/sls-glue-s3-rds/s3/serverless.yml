@@ -1,0 +1,11 @@
+service: datapipeline-s3
+provider:
+  name: aws
+  stage: ${opt:stage, "dev"}
+  region: ${opt:region, "us-east-2"}
+
+plugins:
+  - serverless-pseudo-parameters # non-static aws account number
+
+custom:
+  base: ${self:service}-${self:provider.stage}

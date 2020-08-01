@@ -1,3 +1,4 @@
+service: datapipeline-glue
 provider:
   name: aws
   stage: ${opt:stage, "dev"}
