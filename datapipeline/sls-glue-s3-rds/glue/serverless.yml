@@ -24,10 +24,29 @@ custom:
     GLUE_SECURITY_GROUP_ID_1: ${param:GLUE_SECURITY_GROUP_ID_1} # sg-abc
     GLUE_AZ: ${param:GLUE_AZ} # us-east-1a
     GLUE_SUBNET_ID: ${param:GLUE_SUBNET_ID} # subnet-xyz
+    VPC_ENDPOINT_ROUTE_TABLE_ID: ${param:VPC_ENDPOINT_ROUTE_TABLE_ID} #rtb-xxxx
+    VPC_ENDPOINT_VPC_ID: ${param:VPC_ENDPOINT_VPC_ID} #vpc-xxxx
 
 
 resources:
   Resources:
+    VPCEndpoint: 
+      Type: AWS::EC2::VPCEndpoint
+      Properties: 
+        PolicyDocument: '{
+          "Version":"2012-10-17",
+          "Statement":[{
+            "Effect":"Allow",
+            "Principal": "*",
+            "Action":["*"],
+            "Resource":["*"]
+          }]
+        }'       
+        RouteTableIds: 
+          - ${self:custom.params.VPC_ENDPOINT_ROUTE_TABLE_ID}
+        ServiceName: 'com.amazonaws.us-east-1.s3'
+        VpcId: ${self:custom.params.VPC_ENDPOINT_VPC_ID}
+
     GLUECrawlerRole:
       Type: AWS::IAM::Role
       Properties:
