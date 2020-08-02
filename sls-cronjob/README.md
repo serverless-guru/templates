@@ -28,3 +28,8 @@ Replace sender email with email that you registered on Amazon Simple Email Servi
 4. Deploy
 ``` $ sls deploy -v ```
 
+5. Resources
+Schedule Expressions for Rules
+https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html
+
+
