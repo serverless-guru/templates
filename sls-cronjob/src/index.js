@@ -3,9 +3,11 @@ const AWS = require('aws-sdk');
 const region = process.env.REGION;
 const cloudformation = new AWS.CloudFormation({ region: region });
 const ses = new AWS.SES();
+const sourceAddress = process.env.SOURCE_ADDRESS
+const toAddress = process.env.TO_ADDRESSES
 
 const listStacks = async () => {
-	var params = {
+	const params = {
 		StackStatusFilter: [
 			'CREATE_FAILED',
 			'CREATE_COMPLETE',
@@ -39,12 +41,11 @@ const handler = async () => {
 			return el.StackName
 		})
 
+		const toAddressArr = toAddress.split(',');
 		// creating params
 		var params = {
 			Destination: { /* required */
-				ToAddresses: [
-					'nadtakan.jones@gmail.com',
-				]
+				ToAddresses: [...toAddressArr]
 			},
 			Message: { /* required */
 				Body: { /* required */
@@ -58,7 +59,7 @@ const handler = async () => {
 					Charset: 'UTF-8'
 				}
 			},
-			Source: 'nadtakan@serverlessguru.com' /* required */
+			Source: sourceAddress /* required */
 		};
 
 		// sending email
