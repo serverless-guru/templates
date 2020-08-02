@@ -12,6 +12,9 @@
     "aws-sdk": "^2.724.0"
   },
   "devDependencies": {
-    "serverless-pseudo-parameters": "^2.5.0"
+    "copy-webpack-plugin": "^6.0.3",
+    "serverless-pseudo-parameters": "^2.5.0",
+    "serverless-webpack": "^5.3.3",
+    "webpack": "^4.44.1"
   }
 }
