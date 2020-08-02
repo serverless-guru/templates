@@ -9,29 +9,40 @@ provider:
   environment:
     SLS_DEBUG: "*"
     REGION: ${self:provider.region}
+    SOURCE_ADDRESS: ${self:custom.source_address}
+    TO_ADDRESSES: "nadtakan@serverlessguru.com,ryan@serverlessguru.com,info@serverlessguru.com" # change this to distination emails
   iamRoleStatements:
     - Effect: Allow
       Action:
         - ses:SendEmail
         - ses:SendTemplatedEmail
-      Resource: arn:aws:ses:#{AWS::Region}:#{AWS::AccountId}:identity/nadtakan@serverlessguru.com
+      Resource: arn:aws:ses:#{AWS::Region}:#{AWS::AccountId}:identity/${self:custom.source_address}
     - Effect: Allow
       Action:
         - cloudformation:DescribeStackResourceDrifts
-      Resource: arn:aws:cloudformation:#{AWS::Region}:#{AWS::AccountId}:*
+        - cloudformation:ListStacks
+      Resource: arn:aws:cloudformation:#{AWS::Region}:#{AWS::AccountId}:stack/*/*
+    - Effect: Allow
+      Action: 
+        - lambda:InvokeFunction
+      Resource: arn:aws:events:#{AWS::Region}:#{AWS::AccountId}:rule/*
+
+custom:
+  source_address: nadtakan@serverlessguru.com # change this to sender email that verified on AWS SES console, see readme Configure 
+  schedule_name: drift-scheduled-rate-daily-reporting
 
 plugins:
   - serverless-pseudo-parameters
+  - serverless-webpack
 
 package:
   individually: true
-  exclude:
-    - ./**
-  include:
-    - src/index.js
       
 functions:
   cronjob:
     handler: src/index.handler
     events:
-      - schedule: cron(0 5 * * ? *) # schedule to run every day at 5 AM
+      - name: ${self:custom.schedule_name}
+      - description: 'running daily stack drift report'
+      - schedule: cron(0 12 * * ? *) # schedule to run every day at 5 AM
+
