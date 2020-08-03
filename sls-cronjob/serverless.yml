@@ -26,6 +26,12 @@ provider:
       Action: 
         - lambda:InvokeFunction
       Resource: arn:aws:events:#{AWS::Region}:#{AWS::AccountId}:rule/*
+                arn:aws:events:us-west-2:400887732624:rule/sls-cronjob-dev-CronjobEventsRuleSchedule1-1KV8C1ILZVK0A
+    - Effect: Allow
+      Action: 
+        - events:PutEvents
+        - events:listEventBuses
+      Resource: arn:aws:events:#{AWS::Region}:#{AWS::AccountId}:event-bus/*
 
 custom:
   source_address: nadtakan@serverlessguru.com # change this to sender email that verified on AWS SES console, see readme Configure 
