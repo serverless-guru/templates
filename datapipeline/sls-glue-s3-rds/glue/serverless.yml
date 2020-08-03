@@ -14,7 +14,8 @@ custom:
     Ref: 'AWS::AccountId'
 
   params:
-    S3_BUCKET_NAME: ${self:custom.base}-s3-bucket
+    S3_BUCKET_NAME: ${cf:datapipeline-s3-${self:provider.stage}.GlueS3BucketName}
+    S3_BUCKET_ARN: ${cf:datapipeline-s3-${self:provider.stage}.GlueS3BucketARN}
     
     GLUE_CRAWLER_ROLE_NAME: ${self:custom.base}IamRoleGlueCrawler
     GLUE_JOB_ROLE_NAME: ${self:custom.base}IamRoleGlueJob
@@ -83,11 +84,12 @@ resources:
                   Effect: "Allow"
                   Action: "*"
                   Resource:
-                    - Fn::GetAtt: [S3Bucket, Arn]
+                    - ${self:custom.params.S3_BUCKET_ARN}
                     - 'Fn::Join':
                       - '/'
-                      - - Fn::GetAtt: [S3Bucket, Arn]
+                      - - ${self:custom.params.S3_BUCKET_ARN}
                         - '*' 
+    
     GLUEJobRole:
       Type: AWS::IAM::Role
       Properties:
@@ -115,12 +117,6 @@ resources:
                   Action: "*"
                   Resource: "*"
 
-    S3Bucket:
-      Type: AWS::S3::Bucket
-      Properties:
-        BucketName: "${self:custom.params.S3_BUCKET_NAME}"
-        AccessControl: "BucketOwnerFullControl"
-
     GLUEDatabase:
       Type: AWS::Glue::Database
       Properties:
@@ -138,8 +134,7 @@ resources:
           Ref: GLUEDatabase
         Targets:
           S3Targets:
-            - Path:
-                Ref: S3Bucket
+            - Path: ${self:custom.params.S3_BUCKET_NAME}
   
     GLUEConnection:
       Type: AWS::Glue::Connection
@@ -179,3 +174,8 @@ resources:
         SourceSecurityGroupId:
           Ref: GlueConnectionSG
     
+  Outputs:
+    GlueConnectionSG:
+      Description: "Glue Connection SG"
+      Value:
+        Ref: GlueConnectionSG
