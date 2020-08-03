@@ -6,11 +6,12 @@ provider:
   name: aws
   stage: ${opt:stage, "dev"}
   region: ${opt:region, "us-east-1"}
-  accountId:
-    Ref: 'AWS::AccountId'
 
 custom:
   base: ${self:service}-${self:provider.stage}
+
+  accountId:
+    Ref: 'AWS::AccountId'
 
   params:
     S3_BUCKET_NAME: ${self:custom.base}-s3-bucket
@@ -48,7 +49,12 @@ resources:
         }'       
         RouteTableIds: 
           - ${self:custom.params.VPC_ENDPOINT_ROUTE_TABLE_ID}
-        ServiceName: 'com.amazonaws.us-east-1.s3'
+        ServiceName:
+          'Fn::Join':
+            - '.'
+            - - 'com.amazonaws'
+              - ${self:provider.region}
+              - s3
         VpcId: ${self:custom.params.VPC_ENDPOINT_VPC_ID}
 
     GLUECrawlerRole:
@@ -118,7 +124,7 @@ resources:
     GLUEDatabase:
       Type: AWS::Glue::Database
       Properties:
-        CatalogId: '${self:provider.accountId}'
+        CatalogId: '${self:custom.accountId}'
         DatabaseInput:
           Name: "${self:custom.params.GLUE_DB_NAME}"
 
@@ -138,7 +144,7 @@ resources:
     GLUEConnection:
       Type: AWS::Glue::Connection
       Properties:
-        CatalogId: '${self:provider.accountId}'
+        CatalogId: '${self:custom.accountId}'
         ConnectionInput: 
           Description: 'GLUE (JDBC) Connection to ${self:custom.params.GLUE_CONNECTION_DB} database.'
           ConnectionType: "JDBC"	
