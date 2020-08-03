@@ -9,7 +9,5 @@
   "author": "Serverless Guru",
   "license": "ISC",
   "dependencies": {},
-  "devDependencies": {
-    "serverless-pseudo-parameters": "^2.5.0"
-  }
+  "devDependencies": {}
 }

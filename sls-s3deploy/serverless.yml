@@ -4,11 +4,10 @@ provider:
   name: aws
   stage: ${opt:stage, "dev"}
   region: ${opt:region, "us-east-2"}
-  profile: ${opt:region, "slsguru"}
+  profile: ${opt:profile, "slsguru"}
 
 custom:
   base: ${self:service}-${self:provider.stage}
-  awsAccountId: "#{AWS::AccountId}"
   IPSetBucket: "slsguru-guarddutyip"
   IPSetTXTFile: "slsguruIPSet.txt"
   assets:
@@ -21,7 +20,6 @@ custom:
             globs: ${self:custom.IPSetTXTFile}
 
 plugins:
-  - serverless-pseudo-parameters
   - serverless-s3-deploy
 resources:
   Resources:

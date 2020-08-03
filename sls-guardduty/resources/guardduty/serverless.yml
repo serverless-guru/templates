@@ -4,17 +4,13 @@ provider:
   name: aws
   stage: ${opt:stage, "dev"}
   region: ${opt:region, "us-east-2"}
-  profile: ${opt:region, "slsguru"}
+  profile: ${opt:profile, "slsguru"}
 
 custom:
   base: ${self:service}-${self:provider.stage}
-  awsAccountId: "#{AWS::AccountId}"
-  IPSetBucket: ${cf:sls-bucket-deploy-dev.guarddutyIPSetBucket}
-  IPSetTXTFile: ${cf:sls-bucket-deploy-dev.guarddutyIPFile}
+  IPSetBucket: ${cf:sls-bucket-deploy-${self:provider.stage}.guarddutyIPSetBucket}
+  IPSetTXTFile: ${cf:sls-bucket-deploy-${self:provider.stage}.guarddutyIPFile}
   subscriptionEmailAddress: mohammed@serverlessguru.com
-
-plugins:
-  - serverless-pseudo-parameters
 
 resources:
   Resources:
@@ -29,9 +25,7 @@ resources:
       Properties:
         Activate: True
         DetectorId:
-            !Join
-              - ''
-              - - Ref: guardduty
+          Ref: guardduty
         Format: "TXT"
         Location: "https://s3-${self:provider.region}.amazonaws.com/${self:custom.IPSetBucket}/${self:custom.IPSetTXTFile}"
         Name: slsguruIPSet
@@ -57,9 +51,7 @@ resources:
               Resource:
                 - Ref: guarddutySNSTopic
         Topics:
-          - !Join
-            - ''
-            - - Ref: guarddutySNSTopic
+          - Ref: guarddutySNSTopic
     guarddutyEventRule:
       Type: "AWS::Events::Rule"
       Properties:
@@ -69,9 +61,7 @@ resources:
         Name: guardduty-event-rule
         State: ENABLED
         Targets:
-          - Arn: !Join
-              - ''
-              - - Ref: guarddutySNSTopic 
-            Id: !Join
-              - ''
-              - - Ref: guardduty
+          - Arn:
+              Ref: guarddutySNSTopic 
+            Id:
+              Ref: guardduty
