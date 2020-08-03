@@ -1,0 +1,77 @@
+service: sls-guardduty
+
+provider:
+  name: aws
+  stage: ${opt:stage, "dev"}
+  region: ${opt:region, "us-east-2"}
+  profile: ${opt:region, "slsguru"}
+
+custom:
+  base: ${self:service}-${self:provider.stage}
+  awsAccountId: "#{AWS::AccountId}"
+  IPSetBucket: ${cf:sls-bucket-deploy-dev.guarddutyIPSetBucket}
+  IPSetTXTFile: ${cf:sls-bucket-deploy-dev.guarddutyIPFile}
+  subscriptionEmailAddress: mohammed@serverlessguru.com
+
+plugins:
+  - serverless-pseudo-parameters
+
+resources:
+  Resources:
+    guardduty:
+      Type: AWS::GuardDuty::Detector
+      Properties:
+        Enable: True
+        FindingPublishingFrequency: FIFTEEN_MINUTES
+    guarddutyIPSet:
+      Type: AWS::GuardDuty::IPSet
+      DependsOn: guardduty
+      Properties:
+        Activate: True
+        DetectorId:
+            !Join
+              - ''
+              - - Ref: guardduty
+        Format: "TXT"
+        Location: "https://s3-${self:provider.region}.amazonaws.com/${self:custom.IPSetBucket}/${self:custom.IPSetTXTFile}"
+        Name: slsguruIPSet
+    guarddutySNSTopic:
+      Type: "AWS::SNS::Topic"
+      Properties:
+        Subscription:
+          - Endpoint: ${self:custom.subscriptionEmailAddress}
+            Protocol: email
+    guarddutySNSTopicPolicy:
+      Type: "AWS::SNS::TopicPolicy"
+      DependsOn: guarddutySNSTopic
+      Properties:
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Sid: Publish-SNS-topic
+              Effect: Allow
+              Principal:
+                Service: events.amazonaws.com
+              Action:
+                - sns:Publish
+              Resource:
+                - Ref: guarddutySNSTopic
+        Topics:
+          - !Join
+            - ''
+            - - Ref: guarddutySNSTopic
+    guarddutyEventRule:
+      Type: "AWS::Events::Rule"
+      Properties:
+        EventPattern:
+          source:
+            - aws.guardduty
+        Name: guardduty-event-rule
+        State: ENABLED
+        Targets:
+          - Arn: !Join
+              - ''
+              - - Ref: guarddutySNSTopic 
+            Id: !Join
+              - ''
+              - - Ref: guardduty
