@@ -1,0 +1,56 @@
+service: sls-web-acl-waf
+
+provider:
+  name: aws
+  stage: ${opt:stage, "dev"}
+  region: ${opt:region, "ca-central-1"}
+  profile: ${opt:profile, "serverlessguru-internal"}
+
+custom:
+  base: ${self:service}-${self:provider.stage}
+  apiStackName: sls-api-gateway-${self:provider.stage}
+  
+resources:
+  Resources:
+    WebACLWithAMR:
+      Type: AWS::WAFv2::WebACL
+      Properties:
+        Name: WebACLWithAMR
+        Scope: REGIONAL
+        Description: This is a demo
+        DefaultAction: 
+          Block: {}
+        VisibilityConfig:
+          SampledRequestsEnabled: true
+          CloudWatchMetricsEnabled: true
+          MetricName: MetricForWebACLWithAMR
+        Tags:
+          - Key: service
+            Value: ${self:custom.base}
+        Rules: 
+          - Name: AWS-AWSManagedRulesCommonRuleSet
+            Priority: 0
+            OverrideAction:
+              None: {}
+            VisibilityConfig:
+              SampledRequestsEnabled: true
+              CloudWatchMetricsEnabled: true
+              MetricName: MetricForAMRCRS
+            Statement:
+              ManagedRuleGroupStatement:
+                VendorName: AWS
+                Name: AWSManagedRulesCommonRuleSet
+                ExcludedRules:
+                  - Name: NoUserAgent_HEADER
+
+  Outputs:
+    WebACLWithAMRArn:
+      Description: The WebACLWithAMR Arn
+      Value:
+        Fn::GetAtt:
+          - WebACLWithAMR
+          - Arn
+      Export:
+        Name: ${self:custom.base}-WebACLWithAMRArn             
+    
+    

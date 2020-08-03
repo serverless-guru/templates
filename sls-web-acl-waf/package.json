@@ -1,0 +1,12 @@
+{
+  "name": "sls-web-acl-waf",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "deploy": "bash ./scripts/deploy.bash"
+  },
+  "author": "Serverless Guru",
+  "license": "ISC",
+  "dependencies": {}
+}

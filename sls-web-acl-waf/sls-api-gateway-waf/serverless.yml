@@ -1,0 +1,87 @@
+service: sls-api-gateway-waf
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  profile: ${opt:profile, "serverlessguru-internal"}
+  stage: ${opt:stage, "dev"}
+  region: ${opt:region, "ca-central-1"}
+  apiKeys:
+    - ${self:custom.base}-api-key
+
+custom:
+  base: ${self:service}-${self:provider.stage}
+
+plugins:
+  - serverless-webpack
+  - serverless-pseudo-parameters
+
+package:
+  individually: true
+
+functions:
+  TestLambda:
+    name: ${self:custom.base}-test
+    handler: src/handler.test
+    description: test function for initial API deployment
+    timeout: 30
+    memory: 256
+    events:
+      - http:
+          path: v1/test
+          method: any
+          cors: true
+          private: true
+
+resources:
+  Resources:
+    # ***** Creates API Gateway Deployment *****
+    ApiGatewayDeployment:
+      Type: AWS::ApiGateway::Deployment
+      Properties:
+        Description: ${self:provider.stage} API Gateway Deployment
+        RestApiId:
+          Ref: ApiGatewayRestApi
+        StageName: ${self:provider.stage}
+      DependsOn:
+        - ApiGatewayMethodV1TestAny # (REQUIRED) This can be any Method on the API
+    # ***** Creates API Gateway Deployment *****
+
+    # **** GATEWAY CORS for 4XX + 5XX **** #
+    # CORS for 4XX (Relation: CORS)
+    GatewayResponseDefault4XX:
+      Type: AWS::ApiGateway::GatewayResponse
+      Properties:
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+        ResponseType: DEFAULT_4XX
+        RestApiId:
+          Ref: ApiGatewayRestApi
+      DependsOn: ApiGatewayRestApi
+
+    # CORS for 5XX (Relation: CORS)
+    GatewayResponseDefault5XX:
+      Type: AWS::ApiGateway::GatewayResponse
+      Properties:
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+        ResponseType: DEFAULT_5XX
+        RestApiId:
+          Ref: ApiGatewayRestApi
+      DependsOn: ApiGatewayRestApi
+    # **** GATEWAY CORS for 4XX + 5XX **** #
+
+  Outputs:
+    ApiArn:
+      Description: The ApiArn
+      # https://stackoverflow.com/a/38809932
+      Value:
+        Fn::Join:
+          - ''
+          - - 'arn:aws:apigateway:#{AWS::Region}::/restapis/'
+            - Ref: ApiGatewayRestApi
+            - '/stages/${self:provider.stage}'
+      Export:
+        Name: ${self:custom.base}-ApiArn

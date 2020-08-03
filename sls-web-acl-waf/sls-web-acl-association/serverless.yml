@@ -1,0 +1,24 @@
+service: sls-web-acl-association
+
+provider:
+  name: aws
+  stage: ${opt:stage, "dev"}
+  region: ${opt:region, "ca-central-1"}
+  profile: ${opt:profile, "serverlessguru-internal"}
+
+custom:
+  base: ${self:service}-${self:provider.stage}
+  apiStackName: sls-api-gateway-waf-${self:provider.stage}
+  webaclStackName: sls-web-acl-waf-${self:provider.stage}
+
+resources:
+  Resources:
+    WebACLAssociation:
+      Type: AWS::WAFv2::WebACLAssociation
+      Properties:
+        WebACLArn:
+          - ${self:custom.webaclStackName}-WebACLWithAMRArn
+        ResourceArn: 
+          - ${self:custom.apiStackName}-ApiArn
+    
+    
