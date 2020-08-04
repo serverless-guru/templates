@@ -1,0 +1,20 @@
+{
+  "name": "sls-cloudtrail-pci-compliance",
+  "version": "1.0.0",
+  "description": "Template to create a CloudTrail trail to log, continuously monitor, and retain account activity related to actions across your AWS infrastructure. Apply the trail across the complete flow of cardholder data within aws infrastructure to meet PCI compliance standards.",
+  "author": "Serverless Guru",
+  "license": "ISC",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.725.0"
+  },
+  "devDependencies": {
+    "copy-webpack-plugin": "^6.0.3",
+    "serverless-pseudo-parameters": "^2.5.0",
+    "serverless-webpack": "^5.3.3",
+    "webpack": "^4.44.1"
+  }
+}
