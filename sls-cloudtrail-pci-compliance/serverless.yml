@@ -5,16 +5,17 @@ provider:
   runtime: nodejs12.x
   region: ${opt:region, "us-west-2"}
   staging: ${opt:stage, "dev"}
-  profile: ${opt:profile, "brillopez"}
+  profile: ${opt:profile}
 
 plugins:
   - serverless-pseudo-parameters
 
 custom:
+  Base: ${self:service}-${self:provider.staging}
   IncludeGlobalServiceEvents: ${opt:IncludeGlobalServiceEvents, "true"}
   IsMultiRegionTrail: ${opt:IsMultiRegionTrail, "true"}
-  RoleName: CloudTrailLogsS3AccessRole-${self:provider.staging}
-  BucketName: ${self:service}-${self:provider.staging}-logstoragebucket
+  RoleName: ${self:custom.Base}-CloudTrailLogsS3AccessRole
+  BucketName: ${self:custom.Base}-logstoragebucket
 
 resources:
   Resources:
@@ -68,7 +69,7 @@ resources:
         - CloudTrailKey
       Type: AWS::KMS::Alias
       Properties:
-        AliasName: alias/Cloudtrail-key-${self:provider.staging}
+        AliasName: alias/${self:custom.Base}-key
         TargetKeyId: 
           Fn::GetAtt: 
             - CloudTrailKey
@@ -131,57 +132,4 @@ resources:
             - CloudTrailKey
             - Arn
         S3BucketName: ${self:custom.BucketName}
-        TrailName: LogTrail-${self:provider.staging}
-
-    # - - - - - - - - - - - - - - - - - - 
-    # User Groups for Admin/View Cloudtrail Logs
-    # - - - - - - - - - - - - - - - - - - 
-    ViewCloudTrailLogsGroup:
-      DependsOn: 
-        - CloudTrailKeyAlias
-      Type: AWS::IAM::Group
-      Properties: 
-        GroupName: ViewCloudTrailLogs-${self:provider.staging}
-        Policies: 
-          - PolicyName: ViewCloudTrailLogs
-            PolicyDocument:
-              Version: "2012-10-17"
-              Statement:
-                - Effect: Allow
-                  Action:
-                    - "s3:ListBucket"
-                    - "s3:GetObject"
-                    - "s3:GetObjectAcl"
-                  Resource: arn:aws:s3:::${self:custom.BucketName}
-                  Condition:
-                    StringNotLike:
-                      s3:LocationConstraint: CloudTrail-Digest
-
-    AdminCloudTrailLogsGroup:
-      DependsOn: 
-        - LogStorageBucket
-      Type: AWS::IAM::Group
-      Properties: 
-        GroupName: AdminCloudTrailLogs-${self:provider.staging}
-        Policies: 
-          - PolicyName: ViewCloudTrailDigestLogs
-            PolicyDocument:
-              Version: "2012-10-17"
-              Statement:
-                - Effect: Allow
-                  Action: 
-                    - "s3:ListBucket"
-                    - "s3:GetObject"
-                    - "s3:GetObjectAcl"
-                  Resource: arn:aws:s3:::${self:custom.BucketName}/AWSLogs/#{AWS::AccountId}/CloudTrail-Digest
-          - PolicyName: CloudTrailLogsFullAccess
-            PolicyDocument:
-              Version: "2012-10-17"
-              Statement:
-                - Effect: Allow
-                  Action: 
-                    - "s3:*"
-                  Resource: arn:aws:s3:::${self:custom.BucketName}
-                  Condition:
-                    StringNotLike:
-                      s3:LocationConstraint: CloudTrail-Digest
+        TrailName: ${self:custom.Base}-LogTrail
