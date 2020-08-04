@@ -1,4 +1,4 @@
-# Code Challenge
+# Appsync Code Challenge
 
 #### Time: spend what you think is a "reasonable amount of time"
 
