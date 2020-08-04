@@ -8,5 +8,7 @@
   },
   "author": "Serverless Guru",
   "license": "ISC",
-  "dependencies": {}
+  "dependencies": {
+    "webpack": "^4.42.0"
+  }
 }

@@ -9,6 +9,7 @@
   "author": "Serverless Guru",
   "license": "ISC",
   "dependencies": {
+    "axios": "^0.19.2",
     "serverless-pseudo-parameters": "^2.5.0"
   }
 }
