@@ -63,7 +63,8 @@ const handler = async () => {
 		};
 
 		// sending email
-		ses.sendEmail(params).promise();
+		let data = ses.sendEmail(params).promise();
+		console.log(data);
 	} catch (e) {
 		console.log(e)
 	}

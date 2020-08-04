@@ -25,8 +25,7 @@ provider:
     - Effect: Allow
       Action: 
         - lambda:InvokeFunction
-      Resource: arn:aws:events:#{AWS::Region}:#{AWS::AccountId}:rule/*
-                arn:aws:events:us-west-2:400887732624:rule/sls-cronjob-dev-CronjobEventsRuleSchedule1-1KV8C1ILZVK0A
+      Resource: arn:aws:events:#{AWS::Region}:#{AWS::AccountId}:rule/${self:custom.schedule_name}
     - Effect: Allow
       Action: 
         - events:PutEvents
@@ -47,8 +46,11 @@ package:
 functions:
   cronjob:
     handler: src/index.handler
+    name: ${self:service}-${self:provider.stage}
     events:
-      - name: ${self:custom.schedule_name}
-      - description: 'running daily stack drift report'
-      - schedule: cron(0 12 * * ? *) # schedule to run every day at 5 AM
+      - schedule: 
+          name: ${self:custom.schedule_name}
+          description: 'running daily stack drift report'
+          rate: cron(0 12 * * ? *)
+      
 
