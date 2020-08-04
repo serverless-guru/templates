@@ -1,0 +1,166 @@
+service: cloudtrail-pattern
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  region: ${opt:region, "us-west-2"}
+  stage: ${opt:staging, "dev"}
+  profile: ${opt:profile, "brillopez"}
+
+plugins:
+  - serverless-pseudo-parameters
+
+custom:
+  IncludeGlobalServiceEvents: ${opt:IncludeGlobalServiceEvents, "true"}
+  IsMultiRegionTrail: ${opt:IsMultiRegionTrail, "true"}
+  LogFilePrefix: ${opt:LogFilePrefix, ""}
+  RoleName: CloudTrailLogsAccessRole
+  BucketName: ${self:custom.LogFilePrefix}${self:provider.region}-${self:service}-logstoragebucket
+
+resources:
+  Resources:
+    # - - - - - - - - - - - - - - - - - - 
+    # Role - Encryption Key - Alias
+    # - - - - - - - - - - - - - - - - - - 
+    CloudTrailLogsRole:
+      Type: AWS::IAM::Role
+      Properties:
+        RoleName: ${self:custom.RoleName}
+        AssumeRolePolicyDocument:
+          Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+          Version: '2012-10-17'
+
+    CloudTrailKey:
+      DependsOn:
+        - CloudTrailLogsRole
+      Type: AWS::KMS::Key
+      Properties:
+        Description: The KMS key used to encrypt the logs delivered by CloudTrail.
+        KeyPolicy:
+          Version: '2012-10-17'
+          Id: CloudTrailKey
+          Statement:
+          - Sid: Allow administration of the key
+            Effect: Allow
+            Principal:
+              AWS: arn:aws:iam::#{AWS::AccountId}:root
+              # Sets the AWS account root user as the principal key administrator.
+              # The IAM user, role, or service role creating the AWS CloudFormation stack must have IAM permissions to make the CreateKey and PutKeyPolicy API calls.
+            Action: kms:*
+            Resource: '*'
+          - Sid: Allow use of the key
+            Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Action:
+              - kms:Encrypt
+              - kms:Decrypt
+              - kms:GenerateDataKey
+              - kms:DescribeKey
+            Resource: '*'
+
+    CloudTrailKeyAlias:
+      DependsOn: 
+        - CloudTrailKey
+      Type: AWS::KMS::Alias
+      Properties:
+        AliasName: alias/Cloudtrail-key
+        TargetKeyId: 
+          Fn::GetAtt: 
+            - CloudTrailKey
+            - Arn
+
+    # - - - - - - - - - - - - - - - - - - 
+    # Bucket - Bucket Policy
+    # - - - - - - - - - - - - - - - - - - 
+    LogStorageBucket:
+      Type: AWS::S3::Bucket
+      Properties: 
+        BucketName: ${self:custom.BucketName}
+
+    LogStorageBucketPolicy:
+      Type: AWS::S3::BucketPolicy
+      Properties: 
+        Bucket: 
+          Ref: LogStorageBucket
+        PolicyDocument:
+          Statement:
+          - Sid: PrivateAccountAccessForGetBucketObjects
+            Effect: Allow
+            Principal: 
+              Service: cloudtrail.amazonaws.com
+              # AWS:
+              #   Fn::GetAtt: 
+              #     - CloudTrailLogsRole
+              #     - Arn
+            Action: 
+              - "s3:GetBucketAcl"
+            Resource: arn:aws:s3:::${self:custom.BucketName}
+          - Sid: AWSCloudTrailWriteAccess
+            Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Action: 
+              - "s3:PutObject"
+            Resource: arn:aws:s3:::${self:custom.BucketName}/*
+            Condition:
+              StringEquals: 
+                s3:x-amz-acl: bucket-owner-full-control
+
+    # - - - - - - - - - - - - - - - - - - 
+    # LogGroup - LogGroupPolicy
+    # - - - - - - - - - - - - - - - - - - 
+    LogGroup: 
+      Type: AWS::Logs::LogGroup
+      Properties:
+        RetentionInDays: 365
+
+    CloudTrailLogsPolicy:
+      Type: AWS::IAM::Policy
+      Properties:
+        PolicyDocument:
+          Statement:
+            - Action:
+              - logs:PutLogEvents
+              - logs:CreateLogStream
+              Effect: Allow
+              Resource:
+                Fn::GetAtt: 
+                  - LogGroup
+                  - Arn
+        PolicyName: CloudTrailLogsPolicy
+        Roles:
+          - Ref: CloudTrailLogsRole
+
+    # - - - - - - - - - - - - - - - - - - 
+    # CloudTrail Trail
+    # - - - - - - - - - - - - - - - - - - 
+    CloudTrail:
+      DependsOn: 
+        - CloudTrailKeyAlias
+        - LogStorageBucketPolicy
+      Type: AWS::CloudTrail::Trail
+      Properties:
+        CloudWatchLogsLogGroupArn:
+          Fn::GetAtt:
+          - LogGroup
+          - Arn
+        CloudWatchLogsRoleArn:
+          Fn::GetAtt:
+          - CloudTrailLogsRole
+          - Arn
+        EnableLogFileValidation: true
+        IncludeGlobalServiceEvents: ${self:custom.IncludeGlobalServiceEvents}
+        IsLogging: true
+        IsMultiRegionTrail: ${self:custom.IsMultiRegionTrail}
+        KMSKeyId:
+          Fn::GetAtt: 
+            - CloudTrailKey
+            - Arn
+        S3BucketName: ${self:custom.BucketName}
+        S3KeyPrefix: ${self:custom.LogFilePrefix}
+        TrailName: CloudTrail_Created_By_cloudtrail.template
