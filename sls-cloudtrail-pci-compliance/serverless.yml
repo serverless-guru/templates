@@ -1,0 +1,134 @@
+service: cloudtrail-pattern
+
+provider:
+  name: aws
+  region: ${opt:region, "us-west-2"}
+  stage: ${opt:stage, "dev"}
+  profile: ${opt:profile}
+
+plugins:
+  - serverless-pseudo-parameters
+
+custom:
+  Base: ${self:service}-${self:provider.stage}
+  IncludeGlobalServiceEvents: ${opt:IncludeGlobalServiceEvents, "true"}
+  IsMultiRegionTrail: ${opt:IsMultiRegionTrail, "true"}
+  RoleName: ${self:custom.Base}-CloudTrailLogsS3AccessRole
+  BucketName: ${self:custom.Base}-logstoragebucket
+
+resources:
+  Resources:
+    # - - - - - - - - - - - - - - - - - - 
+    # Role for CloudTrail- Encryption Key - Alias
+    # - - - - - - - - - - - - - - - - - - 
+    CloudTrailLogsRole:
+      Type: AWS::IAM::Role
+      Properties:
+        RoleName: ${self:custom.RoleName}
+        AssumeRolePolicyDocument:
+          Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+          Version: '2012-10-17'
+
+    CloudTrailKey:
+      DependsOn:
+        - CloudTrailLogsRole
+      Type: AWS::KMS::Key
+      DeletionPolicy : Retain
+      Properties:
+        Description: The KMS key used to encrypt the logs delivered by CloudTrail.
+        KeyPolicy:
+          Version: '2012-10-17'
+          Id: CloudTrailKey
+          Statement:
+          - Sid: Allow administration of the key
+            Effect: Allow
+            Principal:
+              AWS: arn:aws:iam::#{AWS::AccountId}:root
+              # Sets the AWS account root user as the principal key administrator.
+              # The IAM user, role, or service role creating the AWS CloudFormation stack must have IAM permissions to make the CreateKey and PutKeyPolicy API calls.
+            Action: kms:*
+            Resource: '*'
+          - Sid: Allow use of the key
+            Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Action:
+              - kms:Encrypt
+              - kms:Decrypt
+              - kms:GenerateDataKey
+              - kms:DescribeKey
+            Resource: '*'
+
+    CloudTrailKeyAlias:
+      DependsOn: 
+        - CloudTrailKey
+      Type: AWS::KMS::Alias
+      Properties:
+        AliasName: alias/${self:custom.Base}-key
+        TargetKeyId: 
+          Fn::GetAtt: 
+            - CloudTrailKey
+            - Arn
+
+    # - - - - - - - - - - - - - - - - - - 
+    # Bucket - Bucket Policy
+    # - - - - - - - - - - - - - - - - - - 
+    LogStorageBucket:
+      DeletionPolicy: Retain
+      Type: AWS::S3::Bucket
+      Properties: 
+        BucketName: ${self:custom.BucketName}
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: true
+          BlockPublicPolicy: true
+          IgnorePublicAcls: true
+          RestrictPublicBuckets: true
+
+    LogStorageBucketPolicy:
+      Type: AWS::S3::BucketPolicy
+      Properties: 
+        Bucket: 
+          Ref: LogStorageBucket
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Sid: CloudTrailGetBucketAccess
+              Effect: Allow
+              Principal: 
+                Service: cloudtrail.amazonaws.com
+              Action: 
+                - "s3:GetBucketAcl"
+              Resource: arn:aws:s3:::${self:custom.BucketName}
+            - Sid: CloudTrailWriteAccess
+              Effect: Allow
+              Principal:
+                Service: cloudtrail.amazonaws.com
+              Action: 
+                - "s3:PutObject"
+              Resource: arn:aws:s3:::${self:custom.BucketName}/AWSLogs/#{AWS::AccountId}/*
+              Condition:
+                StringEquals: 
+                  s3:x-amz-acl: bucket-owner-full-control
+
+    # - - - - - - - - - - - - - - - - - - 
+    # CloudTrail Trail
+    # - - - - - - - - - - - - - - - - - - 
+    CloudTrail:
+      DependsOn: 
+        - LogStorageBucket
+      Type: AWS::CloudTrail::Trail
+      Properties:
+        EnableLogFileValidation: true
+        IncludeGlobalServiceEvents: ${self:custom.IncludeGlobalServiceEvents}
+        IsLogging: true
+        IsMultiRegionTrail: ${self:custom.IsMultiRegionTrail}
+        KMSKeyId:
+          Fn::GetAtt: 
+            - CloudTrailKey
+            - Arn
+        S3BucketName: ${self:custom.BucketName}
+        TrailName: ${self:custom.Base}-LogTrail
