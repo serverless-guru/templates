@@ -2,16 +2,15 @@ service: cloudtrail-pattern
 
 provider:
   name: aws
-  runtime: nodejs12.x
   region: ${opt:region, "us-west-2"}
-  staging: ${opt:stage, "dev"}
+  stage: ${opt:stage, "dev"}
   profile: ${opt:profile}
 
 plugins:
   - serverless-pseudo-parameters
 
 custom:
-  Base: ${self:service}-${self:provider.staging}
+  Base: ${self:service}-${self:provider.stage}
   IncludeGlobalServiceEvents: ${opt:IncludeGlobalServiceEvents, "true"}
   IsMultiRegionTrail: ${opt:IsMultiRegionTrail, "true"}
   RoleName: ${self:custom.Base}-CloudTrailLogsS3AccessRole
