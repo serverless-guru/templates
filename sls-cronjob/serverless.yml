@@ -25,7 +25,7 @@ provider:
     - Effect: Allow
       Action: 
         - lambda:InvokeFunction
-      Resource: arn:aws:events:#{AWS::Region}:#{AWS::AccountId}:rule/${self:custom.schedule_name}
+      Resource: arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:custom.function_name}
     - Effect: Allow
       Action: 
         - events:PutEvents
@@ -35,6 +35,7 @@ provider:
 custom:
   source_address: nadtakan@serverlessguru.com # change this to sender email that verified on AWS SES console, see readme Configure 
   schedule_name: drift-scheduled-rate-daily-reporting
+  function_name: ${self:service}-${self:provider.stage}
 
 plugins:
   - serverless-pseudo-parameters
@@ -46,7 +47,7 @@ package:
 functions:
   cronjob:
     handler: src/index.handler
-    name: ${self:service}-${self:provider.stage}
+    name: ${self:custom.function_name}
     events:
       - schedule: 
           name: ${self:custom.schedule_name}
