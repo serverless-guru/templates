@@ -11,7 +11,9 @@ High level instructions below.
 * [Bonus](#bonus)
 
 # Result
-* 
+
+
+* Everything deploys properly
 
 # Goal
 1. Build an AWS AppSync API which uses lambda and DynamoDB resolvers built using the Serverless Framework
