@@ -1,0 +1,19 @@
+image: node:12.17.0-alpine3.11
+
+pipelines:
+  default:
+    - step:
+        name: Setup SSH Key
+        script:
+          - apk update
+          - apk add git openssh
+          - mkdir -p ~/.ssh
+          - echo $MY_DEPLOY_KEY | base64 -d > ~/.ssh/deploy_key
+          - chmod 600 ~/.ssh/deploy_key
+          - ssh-keyscan -t rsa bitbucket.org >> ~/.ssh/known_hosts
+          - eval $(ssh-agent)
+          - ssh-add ~/.ssh/deploy_key
+    - step:
+      name: Install dependencies
+        script:
+          - npm install
