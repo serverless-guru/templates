@@ -26,7 +26,7 @@ Set up an SSH key and add the public key to your Github Account (steps [here](ht
 
 ### CI/CD reference
 
-> Bitbucket pipeline example in `bitbucket-pipelines.yml`
+> Bitbucket pipeline example in [bitbucket-pipelines.yml](https://github.com/serverless-guru/templates/blob/master/private-repositories/bitbucket-pipelines.yml)
 
 ```bash
 
