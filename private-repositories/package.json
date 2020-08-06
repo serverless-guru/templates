@@ -1,0 +1,12 @@
+{
+  "name": "private-repositories",
+  "version": "1.0.0",
+  "description": "Example of how to reference private repositories using SSH for authentication.",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "jest": "^26.2.2",
+    "private-dependency": "git+ssh://git@bitbucket.org/workspace-name/private-dependency.git"
+  }
+}
