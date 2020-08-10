@@ -1,0 +1,199 @@
+org: serverlessguru
+app: patterns
+service: api-with-authorizer
+provider:
+  name: aws
+  stage: ${opt:stage, "dev"}
+  region: ${opt:region, "us-west-2"}
+  runtime: nodejs12.x
+  apiKeys:
+    - ${self:custom.base}-api-key
+package:
+  individually: true
+custom:
+  base: ${self:service}-${self:provider.stage}
+
+  # pull in params for single stage
+  params: ${file(./params.yml):${self:provider.stage}}
+
+  # Auth Lambda Arn (due to compiling issues)
+  authLambdaName: ${self:custom.base}-authorizer
+  
+functions:
+  TestLambda:
+    name: ${self:custom.base}-test
+    handler: test.handler
+    description: test function for initial API deployment
+    timeout: 30
+    memory: 256
+    events:
+      - http:
+          path: v1/test
+          method: any
+          cors: true
+          private: true
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              Ref: RestApiAuthorizer
+  AuthLambda:
+    name: ${self:custom.authLambdaName}
+    handler: authorizer.handler
+    description: authorizer for API deployment
+    timeout: 5
+    memory: 1024
+    environment:
+      COGNITO_USERPOOL_ID: ${self:custom.params.COGNITO_USERPOOL_ID}
+      COGNITO_USERPOOL_REGION: ${self:custom.params.COGNITO_USERPOOL_REGION}
+
+resources:
+  Resources:
+    # ***** Creates API Gateway Deployment *****
+    ApiGatewayDeployment:
+      Type: AWS::ApiGateway::Deployment
+      Properties:
+        Description: ${self:provider.stage} API Gateway Deployment
+        RestApiId:
+          Ref: ApiGatewayRestApi
+        StageName: ${self:provider.stage}
+      DependsOn:
+        - ApiGatewayMethodV1TestAny # (REQUIRED) This can be any Method on the API
+    # ***** Creates API Gateway Deployment *****
+
+    # **** GATEWAY CORS for 4XX + 5XX **** #
+    # CORS for 4XX (Relation: CORS)
+    GatewayResponseDefault4XX:
+      Type: AWS::ApiGateway::GatewayResponse
+      Properties:
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+        ResponseType: DEFAULT_4XX
+        RestApiId:
+          Ref: ApiGatewayRestApi
+      DependsOn: ApiGatewayRestApi
+
+    # CORS for 5XX (Relation: CORS)
+    GatewayResponseDefault5XX:
+      Type: AWS::ApiGateway::GatewayResponse
+      Properties:
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+        ResponseType: DEFAULT_5XX
+        RestApiId:
+          Ref: ApiGatewayRestApi
+      DependsOn: ApiGatewayRestApi
+    # **** GATEWAY CORS for 4XX + 5XX **** #
+
+    # ***** Auth Lambda IAM Role *****
+    RestApiAuthorizerRole:
+      Type: AWS::IAM::Role
+      Properties:
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - apigateway.amazonaws.com
+              Action:
+                - sts:AssumeRole
+        Policies:
+          - PolicyName: lambda
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow
+                  Action: lambda:invokeFunction
+                  Resource:
+                    Fn::Join:
+                      - ""
+                      - - "arn:aws:lambda:${self:provider.region}:"
+                        - Ref: "AWS::AccountId"
+                        - ":function:${self:custom.authLambdaName}"
+    # ***** Auth Lambda IAM Role *****
+
+    # ***** REST API Authorizer *****
+    RestApiAuthorizer:
+      Type: AWS::ApiGateway::Authorizer
+      Properties:
+        AuthorizerCredentials:
+          Fn::GetAtt:
+            - RestApiAuthorizerRole
+            - Arn
+        AuthorizerResultTtlInSeconds: 0
+        AuthorizerUri:
+          Fn::Join:
+            - ""
+            - - "arn:aws:apigateway:${self:provider.region}"
+              - ":lambda:path/2015-03-31/functions/"
+              - "arn:aws:lambda:${self:provider.region}:"
+              - Ref: "AWS::AccountId"
+              - ":function:${self:custom.authLambdaName}"
+              - "/invocations"
+        IdentitySource: method.request.header.Authorization
+        # IdentityValidationExpression: "^[a-zA-Z0-9]{3,32}$"
+        Name: ${self:custom.base}-Lambda-Auth
+        RestApiId:
+          Ref: ApiGatewayRestApi
+        Type: TOKEN
+    # ***** REST API Authorizer *****
+
+  Outputs:
+    ApiArn:
+      Description: The ApiArn
+      Value:
+        Fn::Join:
+          - ''
+          - - 'arn:aws:apigateway:${self:provider.region}::/restapis/'
+            - Ref: ApiGatewayRestApi
+            - '/stages/${self:provider.stage}'
+      Export:
+        Name: ${self:custom.base}-ApiArn
+    ApiId:
+      Description: The ApiId
+      Value:
+        Ref: ApiGatewayRestApi
+      Export:
+        Name: ${self:custom.base}-ApiId
+    ApiResourceId:
+      Description: The ApiResourceId
+      Value:
+        Fn::GetAtt:
+          - ApiGatewayRestApi
+          - RootResourceId
+      Export:
+        Name: ${self:custom.base}-ApiResourceId
+    ApiGatewayResourceV1:
+      Description: The ApiGatewayResourceV1
+      Value:
+        Ref: ApiGatewayResourceV1
+      Export:
+        Name: ${self:custom.base}-ApiGatewayResourceV1
+    AuthLambdaArn:
+      Description: The AuthLambdaArn
+      Value:
+        Fn::Join:
+          - ""
+          - - "arn:aws:lambda:${self:provider.region}:"
+            - Ref: "AWS::AccountId"
+            - ":function:${self:custom.authLambdaName}"
+      Export:
+        Name: ${self:custom.base}-AuthLambdaArn
+    AuthorizerId:
+      Description: The AuthorizerId
+      Value:
+        Ref: RestApiAuthorizer
+      Export:
+        Name: ${self:custom.base}-AuthorizerId
+    ApiUrl:
+      Description: The ApiUrl
+      Value:
+        Fn::Join:
+        - ''
+        - - https://
+          - Ref: ApiGatewayRestApi
+          - .execute-api.${self:provider.region}.amazonaws.com/${self:provider.stage}
+      Export:
+        Name: ${self:custom.base}-ApiUrl

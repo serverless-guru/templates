@@ -1,0 +1,17 @@
+{
+  "name": "custom-lambda-authorizer",
+  "version": "1.0.0",
+  "description": "",
+  "main": "authorizer.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "jsonwebtoken": "^8.5.1",
+    "jwk-to-pem": "^2.0.4",
+    "request": "^2.88.2"
+  }
+}
