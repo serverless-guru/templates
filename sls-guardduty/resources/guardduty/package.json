@@ -1,0 +1,13 @@
+{
+  "name": "sls-guardduty",
+  "version": "1.0.0",
+  "description": "Deploy Guard duty service",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Serverless Guru",
+  "license": "ISC",
+  "dependencies": {},
+  "devDependencies": {}
+}

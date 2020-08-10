@@ -1,0 +1,56 @@
+    # Can be added to serverless.yml to create a view only access and a admin access user group for the cloudtrail logs.
+    # This is just to get started and requires making personal adjustments plus adding more restrictions to the s3 bucket.
+    
+    
+    # - - - - - - - - - - - - - - - - - - 
+    # User Groups for Admin/View Cloudtrail Logs
+    # - - - - - - - - - - - - - - - - - - 
+    # ViewCloudTrailLogsGroup:
+    #   DependsOn: 
+    #     - CloudTrailKeyAlias
+    #   Type: AWS::IAM::Group
+    #   Properties: 
+    #     GroupName: ViewCloudTrailLogs-${self:provider.staging}
+    #     Policies: 
+    #       - PolicyName: ViewCloudTrailLogs
+    #         PolicyDocument:
+    #           Version: "2012-10-17"
+    #           Statement:
+    #             - Effect: Allow
+    #               Action:
+    #                 - "s3:ListBucket"
+    #                 - "s3:GetObject"
+    #                 - "s3:GetObjectAcl"
+    #               Resource: arn:aws:s3:::${self:custom.BucketName}
+    #               # Condition:
+    #               #   StringNotLike:
+    #               #     s3:LocationConstraint: CloudTrail-Digest
+
+    # AdminCloudTrailLogsGroup:
+    #   DependsOn: 
+    #     - LogStorageBucket
+    #   Type: AWS::IAM::Group
+    #   Properties: 
+    #     GroupName: AdminCloudTrailLogs-${self:provider.staging}
+    #     Policies: 
+    #       - PolicyName: ViewCloudTrailDigestLogs
+    #         PolicyDocument:
+    #           Version: "2012-10-17"
+    #           Statement:
+    #             - Effect: Allow
+    #               Action: 
+    #                 - "s3:ListBucket"
+    #                 - "s3:GetObject"
+    #                 - "s3:GetObjectAcl"
+    #               Resource: arn:aws:s3:::${self:custom.BucketName}/AWSLogs/#{AWS::AccountId}/CloudTrail-Digest
+    #       - PolicyName: CloudTrailLogsFullAccess
+    #         PolicyDocument:
+    #           Version: "2012-10-17"
+    #           Statement:
+    #             - Effect: Allow
+    #               Action: 
+    #                 - "s3:*"
+    #               Resource: arn:aws:s3:::${self:custom.BucketName}
+    #               Condition:
+    #                 StringNotLike:
+    #                   s3:LocationConstraint: CloudTrail-Digest

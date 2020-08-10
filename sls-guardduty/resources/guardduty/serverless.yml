@@ -1,0 +1,67 @@
+service: sls-guardduty
+
+provider:
+  name: aws
+  stage: ${opt:stage, "dev"}
+  region: ${opt:region, "us-east-2"}
+  profile: ${opt:profile, "slsguru"}
+
+custom:
+  base: ${self:service}-${self:provider.stage}
+  IPSetBucket: ${cf:sls-bucket-deploy-${self:provider.stage}.guarddutyIPSetBucket}
+  IPSetTXTFile: ${cf:sls-bucket-deploy-${self:provider.stage}.guarddutyIPFile}
+  subscriptionEmailAddress: mohammed@serverlessguru.com
+
+resources:
+  Resources:
+    guardduty:
+      Type: AWS::GuardDuty::Detector
+      Properties:
+        Enable: True
+        FindingPublishingFrequency: FIFTEEN_MINUTES
+    guarddutyIPSet:
+      Type: AWS::GuardDuty::IPSet
+      DependsOn: guardduty
+      Properties:
+        Activate: True
+        DetectorId:
+          Ref: guardduty
+        Format: "TXT"
+        Location: "https://s3-${self:provider.region}.amazonaws.com/${self:custom.IPSetBucket}/${self:custom.IPSetTXTFile}"
+        Name: slsguruIPSet
+    guarddutySNSTopic:
+      Type: "AWS::SNS::Topic"
+      Properties:
+        Subscription:
+          - Endpoint: ${self:custom.subscriptionEmailAddress}
+            Protocol: email
+    guarddutySNSTopicPolicy:
+      Type: "AWS::SNS::TopicPolicy"
+      DependsOn: guarddutySNSTopic
+      Properties:
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Sid: Publish-SNS-topic
+              Effect: Allow
+              Principal:
+                Service: events.amazonaws.com
+              Action:
+                - sns:Publish
+              Resource:
+                - Ref: guarddutySNSTopic
+        Topics:
+          - Ref: guarddutySNSTopic
+    guarddutyEventRule:
+      Type: "AWS::Events::Rule"
+      Properties:
+        EventPattern:
+          source:
+            - aws.guardduty
+        Name: guardduty-event-rule
+        State: ENABLED
+        Targets:
+          - Arn:
+              Ref: guarddutySNSTopic 
+            Id:
+              Ref: guardduty

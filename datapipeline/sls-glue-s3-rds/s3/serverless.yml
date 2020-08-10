@@ -1,13 +1,31 @@
 org: serverlessguru
 app: patterns
 service: datapipeline-s3
+
 provider:
   name: aws
   stage: ${opt:stage, "dev"}
-  region: ${opt:region, "us-east-2"}
-
-plugins:
-  - serverless-pseudo-parameters # non-static aws account number
+  region: ${opt:region, "us-east-1"}
 
 custom:
   base: ${self:service}-${self:provider.stage}
+
+  params:
+    S3_BUCKET_NAME: ${self:custom.base}-s3-bucket
+  
+resources:
+  Resources:
+    S3Bucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: "${self:custom.params.S3_BUCKET_NAME}"
+        AccessControl: "BucketOwnerFullControl"
+
+  Outputs:
+    GlueS3BucketName:
+      Description: "Glue S3 Bucket name"
+      Value: ${self:custom.params.S3_BUCKET_NAME}
+    GlueS3BucketARN:
+      Description: "Glue S3 Bucket ARN"
+      Value:
+        Fn::GetAtt: [S3Bucket, Arn]

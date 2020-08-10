@@ -26,7 +26,7 @@ There are 3 ways to handle code that takes time, such as aws-sdk calls:
 - async await
 
 In the context of serverless backend lambda functions, we find async await can greatly increase the
-readablity of code and help us avoid what is known in the NodeJS communit as 'the pyramid of doom'. 
+readablity of code and help us avoid what is known in the NodeJS community as 'the pyramid of doom'. 
 
 ### What is the pyramid of doom?
 If we have 1 step our code with zero aws calls, our code straitforward:
@@ -38,7 +38,7 @@ will need the result of the first aws call, so all code will be inside of a call
 
 ![code with 1 callback](./assets/cb_02.png)
 
-If we have 4 aws calls in our function, we will need to intend 4 times:
+If we have 4 aws calls in our function, we will need to indent 4 times:
 
 ![code with 4 callbacks](./assets/cb_03.png)
 

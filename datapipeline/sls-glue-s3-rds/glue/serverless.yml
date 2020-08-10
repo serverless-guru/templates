@@ -1,45 +1,181 @@
 org: serverlessguru
 app: patterns
 service: datapipeline-glue
+
 provider:
   name: aws
   stage: ${opt:stage, "dev"}
-  region: ${opt:region, "us-east-2"}
-
-plugins:
-  - serverless-pseudo-parameters # non-static aws account number
+  region: ${opt:region, "us-east-1"}
 
 custom:
   base: ${self:service}-${self:provider.stage}
 
+  accountId:
+    Ref: 'AWS::AccountId'
+
   params:
-    CFNConnectionName: ${self:custom.base}-connection-mysql
-    CFNJDBCString: ${param:CFNJDBCString} # jdbc:mysql://xxx-mysql.yyyyyyyyyyyyyy.us-east-1.rds.amazonaws.com:3306/devdb
-    CFNJDBCUser: ${param:CFNJDBCUser} # master
-    CFNJDBCPassword: ${param:CFNJDBCPassword} # examplepw!
+    S3_BUCKET_NAME: ${cf:datapipeline-s3-${self:provider.stage}.GlueS3BucketName}
+    S3_BUCKET_ARN: ${cf:datapipeline-s3-${self:provider.stage}.GlueS3BucketARN}
+    
+    GLUE_CRAWLER_ROLE_NAME: ${self:custom.base}IamRoleGlueCrawler
+    GLUE_JOB_ROLE_NAME: ${self:custom.base}IamRoleGlueJob
+    GLUE_CRAWLER_NAME: ${self:custom.base}-crawler
+    GLUE_DB_NAME: ${self:custom.base}-db
+    GLUE_CONNECTION_NAME: ${self:custom.base}-${self:custom.params.GLUE_CONNECTION_DB}-db-connection
+    GLUE_CONNECTION_DB: ${param:GLUE_CONNECTION_DB} # devdb
+    GLUE_JDBC_URL: ${param:GLUE_JDBC_URL} # jdbc:mysql://xxx-mysql.yyyyyyyyyyyyyy.us-east-1.rds.amazonaws.com:3306/devdb
+    GLUE_JDBC_USERNAME: ${param:GLUE_JDBC_USERNAME} # master
+    GLUE_JDBC_PASSWORD: ${param:GLUE_JDBC_PASSWORD} # examplepw!
     GLUE_SECURITY_GROUP_ID_1: ${param:GLUE_SECURITY_GROUP_ID_1} # sg-abc
-    GLUE_SECURITY_GROUP_ID_2: ${param:GLUE_SECURITY_GROUP_ID_2} # sg-xyz
-    GLUE_AZ: ${param:GLUE_AZ} # us-east-2a
+    GLUE_AZ: ${param:GLUE_AZ} # us-east-1a
     GLUE_SUBNET_ID: ${param:GLUE_SUBNET_ID} # subnet-xyz
 
+    VPC_ENDPOINT_ROUTE_TABLE_ID: ${param:VPC_ENDPOINT_ROUTE_TABLE_ID} #rtb-xxxx
+    VPC_ENDPOINT_VPC_ID: ${param:VPC_ENDPOINT_VPC_ID} #vpc-xxxx
+
+
 resources:
-  CFNConnectionMySQL:
-    Type: AWS::Glue::Connection
-    Properties:
-      CatalogId: '{AWS::AccountId}'
-      ConnectionInput: 
-        Description: "Connect to MySQL database."
-        ConnectionType: "JDBC"
-        #MatchCriteria: none		
-        PhysicalConnectionRequirements:
-          AvailabilityZone: ${self:custom.params.GLUE_AZ}
-          SecurityGroupIdList: 
-           - ${self:custom.params.GLUE_SECURITY_GROUP_ID_1}
-           - ${self:custom.params.GLUE_SECURITY_GROUP_ID_2}
-          SubnetId: ${self:custom.params.GLUE_SUBNET_ID}
-        ConnectionProperties: {
-          "JDBC_CONNECTION_URL": ${self:custom.CFNJDBCString},
-          "USERNAME": ${self:custom.CFNJDBCUser},
-          "PASSWORD": ${self:custom.CFNJDBCPassword}
-        }
-        Name: ${self:custom.CFNConnectionName}
+  Resources:
+    VPCEndpoint: 
+      Type: AWS::EC2::VPCEndpoint
+      Properties: 
+        PolicyDocument: '{
+          "Version":"2012-10-17",
+          "Statement":[{
+            "Effect":"Allow",
+            "Principal": "*",
+            "Action":["*"],
+            "Resource":["*"]
+          }]
+        }'       
+        RouteTableIds: 
+          - ${self:custom.params.VPC_ENDPOINT_ROUTE_TABLE_ID}
+        ServiceName:
+          'Fn::Join':
+            - '.'
+            - - 'com.amazonaws'
+              - ${self:provider.region}
+              - s3
+        VpcId: ${self:custom.params.VPC_ENDPOINT_VPC_ID}
+
+    GLUECrawlerRole:
+      Type: AWS::IAM::Role
+      Properties:
+        RoleName: '${self:custom.params.GLUE_CRAWLER_ROLE_NAME}'
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            -
+              Effect: 'Allow'
+              Principal:
+                Service:
+                  - 'glue.amazonaws.com'
+              Action:
+                - 'sts:AssumeRole'
+        ManagedPolicyArns: 
+          - 'arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole'
+        Policies:
+          -
+            PolicyName: "S3BucketAccess"
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                -
+                  Effect: "Allow"
+                  Action: "*"
+                  Resource:
+                    - ${self:custom.params.S3_BUCKET_ARN}
+                    - 'Fn::Join':
+                      - '/'
+                      - - ${self:custom.params.S3_BUCKET_ARN}
+                        - '*' 
+    
+    GLUEJobRole:
+      Type: AWS::IAM::Role
+      Properties:
+        RoleName: '${self:custom.params.GLUE_JOB_ROLE_NAME}'
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            -
+              Effect: 'Allow'
+              Principal:
+                Service:
+                  - 'glue.amazonaws.com'
+              Action:
+                - 'sts:AssumeRole'
+        ManagedPolicyArns: 
+          - 'arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole'
+        Policies:
+          -
+            PolicyName: "RootAccess"
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                -
+                  Effect: "Allow"
+                  Action: "*"
+                  Resource: "*"
+
+    GLUEDatabase:
+      Type: AWS::Glue::Database
+      Properties:
+        CatalogId: '${self:custom.accountId}'
+        DatabaseInput:
+          Name: "${self:custom.params.GLUE_DB_NAME}"
+
+    GLUECrawler:
+      Type: AWS::Glue::Crawler
+      Properties:
+        Name: "${self:custom.params.GLUE_CRAWLER_NAME}"
+        Role: 
+          Fn::GetAtt: [GLUECrawlerRole, Arn]
+        DatabaseName:
+          Ref: GLUEDatabase
+        Targets:
+          S3Targets:
+            - Path: ${self:custom.params.S3_BUCKET_NAME}
+  
+    GLUEConnection:
+      Type: AWS::Glue::Connection
+      Properties:
+        CatalogId: '${self:custom.accountId}'
+        ConnectionInput: 
+          Description: 'GLUE (JDBC) Connection to ${self:custom.params.GLUE_CONNECTION_DB} database.'
+          ConnectionType: "JDBC"	
+          PhysicalConnectionRequirements:
+            AvailabilityZone: ${self:custom.params.GLUE_AZ}
+            SecurityGroupIdList: 
+             - ${self:custom.params.GLUE_SECURITY_GROUP_ID_1}
+             - Ref: GlueConnectionSG
+            SubnetId: ${self:custom.params.GLUE_SUBNET_ID}
+          ConnectionProperties: {
+            "JDBC_CONNECTION_URL": '${self:custom.params.GLUE_JDBC_URL}',
+            "USERNAME": '${self:custom.params.GLUE_JDBC_USERNAME}',
+            "PASSWORD": '${self:custom.params.GLUE_JDBC_PASSWORD}'
+          }
+          Name: ${self:custom.params.GLUE_CONNECTION_NAME}
+
+    GlueConnectionSG:
+      Type: AWS::EC2::SecurityGroup
+      Properties:
+        VpcId: ${self:custom.params.VPC_ENDPOINT_VPC_ID}
+        GroupDescription: 'Glue Connection SG'
+    
+    GlueConnectionSGIngress:
+      Type: AWS::EC2::SecurityGroupIngress
+      DependsOn: GlueConnectionSG
+      Properties:
+        GroupId:
+          Ref: GlueConnectionSG
+        IpProtocol: tcp
+        FromPort: '0'
+        ToPort: '65535'
+        SourceSecurityGroupId:
+          Ref: GlueConnectionSG
+    
+  Outputs:
+    GlueConnectionSG:
+      Description: "Glue Connection SG"
+      Value:
+        Ref: GlueConnectionSG

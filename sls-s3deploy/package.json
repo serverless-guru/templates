@@ -1,0 +1,15 @@
+{
+  "name": "slsguru_s3deploy",
+  "version": "1.0.0",
+  "description": "Create S3 bucket and add files to bucket",
+  "main": "index.js",
+  "dependencies": {},
+  "devDependencies": {
+    "serverless-s3-deploy": "^0.9.0"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Serverless Guru",
+  "license": "ISC"
+}

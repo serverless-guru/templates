@@ -1,0 +1,65 @@
+org: serverlessguru
+app: patterns
+service: sls-file-deploy
+
+provider:
+  name: aws
+  stage: ${opt:stage, "dev"}
+  region: ${opt:region, "us-east-2"}
+  #profile: ${opt:profile, "slsguru"}
+
+custom:
+  base: ${self:service}-${self:provider.stage}
+  BucketName: "slsguru-guarddutyip"
+  IPSetTXTFile: "slsguruIPSet.txt"
+  assets:
+    auto: true
+    targets:
+      - bucket:
+          Ref: S3Bucket
+        files:
+          - source: ./
+            globs: ${self:custom.IPSetTXTFile}
+  #assets:
+    #auto: true
+    #targets:
+      #- bucket:
+          #Ref: S3Bucket
+        #files:
+          #- source: ./
+            #globs: yararules.zip
+
+plugins:
+  - serverless-s3-deploy
+resources:
+  Resources:
+    S3Bucket:
+        Type: AWS::S3::Bucket
+        Properties:
+          BucketName: ${self:custom.BucketName}
+    S3BucketPolicy:
+      Type: AWS::S3::BucketPolicy
+      DependsOn: guarddutyIPSetBucket
+      Properties:
+        Bucket: ${self:custom.BucketName}
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Sid: Guardduty-S3-Read
+              Effect: Allow
+              Principal:
+                Service: guardduty.amazonaws.com
+              Action:
+                - s3:GetObject
+              Resource: !Join
+                - ''
+                - - 'arn:aws:s3:::'
+                  - Ref: guarddutyIPSetBucket
+                  - /*
+  Outputs:
+    guarddutyIPSetBucket:
+      Description: "Guard duty IPSet bucket"
+      Value: ${self:custom.BucketName}
+    guarddutyIPFile:
+      Description: "Guard duty IP File"
+      Value: ${self:custom.IPSetTXTFile}
