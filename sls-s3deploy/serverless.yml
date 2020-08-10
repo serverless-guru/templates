@@ -27,7 +27,7 @@ custom:
           #Ref: S3Bucket
         #files:
           #- source: ./
-            #globs: *.yar
+            #globs: yararules.zip
 
 plugins:
   - serverless-s3-deploy
