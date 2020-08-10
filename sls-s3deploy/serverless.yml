@@ -1,37 +1,47 @@
-service: sls-bucket-deploy
+org: serverlessguru
+app: patterns
+service: sls-file-deploy
 
 provider:
   name: aws
   stage: ${opt:stage, "dev"}
   region: ${opt:region, "us-east-2"}
-  profile: ${opt:profile, "slsguru"}
+  #profile: ${opt:profile, "slsguru"}
 
 custom:
   base: ${self:service}-${self:provider.stage}
-  IPSetBucket: "slsguru-guarddutyip"
+  BucketName: "slsguru-guarddutyip"
   IPSetTXTFile: "slsguruIPSet.txt"
   assets:
     auto: true
     targets:
       - bucket:
-          Ref: guarddutyIPSetBucket
+          Ref: S3Bucket
         files:
           - source: ./
             globs: ${self:custom.IPSetTXTFile}
+  #assets:
+    #auto: true
+    #targets:
+      #- bucket:
+          #Ref: S3Bucket
+        #files:
+          #- source: ./
+            #globs: *.yar
 
 plugins:
   - serverless-s3-deploy
 resources:
   Resources:
-    guarddutyIPSetBucket:
+    S3Bucket:
         Type: AWS::S3::Bucket
         Properties:
-          BucketName: ${self:custom.IPSetBucket}
-    guarddutyIPSetBucketPolicy:
+          BucketName: ${self:custom.BucketName}
+    S3BucketPolicy:
       Type: AWS::S3::BucketPolicy
       DependsOn: guarddutyIPSetBucket
       Properties:
-        Bucket: ${self:custom.IPSetBucket}
+        Bucket: ${self:custom.BucketName}
         PolicyDocument:
           Version: '2012-10-17'
           Statement:
@@ -49,7 +59,7 @@ resources:
   Outputs:
     guarddutyIPSetBucket:
       Description: "Guard duty IPSet bucket"
-      Value: ${self:custom.IPSetBucket}
+      Value: ${self:custom.BucketName}
     guarddutyIPFile:
       Description: "Guard duty IP File"
       Value: ${self:custom.IPSetTXTFile}
