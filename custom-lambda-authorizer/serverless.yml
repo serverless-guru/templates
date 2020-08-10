@@ -1,6 +1,6 @@
 org: serverlessguru
 app: patterns
-service: api-with-authorizer
+service: shared-api
 provider:
   name: aws
   stage: ${opt:stage, "dev"}
@@ -18,33 +18,71 @@ custom:
 
   # Auth Lambda Arn (due to compiling issues)
   authLambdaName: ${self:custom.base}-authorizer
+
+plugins:
+  - serverless-webpack # improved packaging
+  - serverless-offline # local testing
+  - serverless-prune-plugin # reduce versions
+  - serverless-api-gateway-caching # API Gateway caching settings
+  - serverless-iam-roles-per-function # scope down iam permissions to single function
   
 functions:
-  TestLambda:
-    name: ${self:custom.base}-test
+  TestLambdaIdToken:
+    name: ${self:custom.base}-test-id-token
     handler: test.handler
-    description: test function for initial API deployment
+    description: test function for cognito id token
     timeout: 30
     memory: 256
     events:
       - http:
-          path: v1/test
+          path: v1/testid
           method: any
           cors: true
           private: true
           authorizer:
             type: CUSTOM
             authorizerId:
-              Ref: RestApiAuthorizer
-  AuthLambda:
-    name: ${self:custom.authLambdaName}
-    handler: authorizer.handler
-    description: authorizer for API deployment
+              Ref: RestApiAuthorizerIdToken
+  TestLambdaAccessToken:
+    name: ${self:custom.base}-test-access-token
+    handler: test.handler
+    description: test function for cognito access token
+    timeout: 30
+    memory: 256
+    events:
+      - http:
+          path: v1/testaccess
+          method: any
+          cors: true
+          private: true
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              Ref: RestApiAuthorizerAccessToken
+  AuthLambdaIdToken:
+    name: ${self:custom.authLambdaName}-id
+    handler: cognito-id-token/authorizer.handler
+    description: authorizer for cognito id token authentication
     timeout: 5
     memory: 1024
     environment:
       COGNITO_USERPOOL_ID: ${self:custom.params.COGNITO_USERPOOL_ID}
       COGNITO_USERPOOL_REGION: ${self:custom.params.COGNITO_USERPOOL_REGION}
+  AuthLambdaAccessToken:
+    name: ${self:custom.authLambdaName}-access
+    handler: cognito-access-token/authorizer.handler
+    description: authorizer for cognito access token authentication
+    timeout: 5
+    memory: 1024
+    environment:
+      COGNITO_USERPOOL_ID: ${self:custom.params.COGNITO_USERPOOL_ID}
+      COGNITO_USERPOOL_REGION: ${self:custom.params.COGNITO_USERPOOL_REGION}
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - cognito-idp:AdminGetUser
+        Resource:
+          - ${self:custom.params.COGNITO_USER_POOL_ARN}
 
 resources:
   Resources:
@@ -87,7 +125,7 @@ resources:
     # **** GATEWAY CORS for 4XX + 5XX **** #
 
     # ***** Auth Lambda IAM Role *****
-    RestApiAuthorizerRole:
+    RestApiAuthorizerRoleIdToken:
       Type: AWS::IAM::Role
       Properties:
         AssumeRolePolicyDocument:
@@ -111,16 +149,65 @@ resources:
                       - ""
                       - - "arn:aws:lambda:${self:provider.region}:"
                         - Ref: "AWS::AccountId"
-                        - ":function:${self:custom.authLambdaName}"
+                        - ":function:${self:custom.authLambdaName}-id-token"
+    RestApiAuthorizerRoleAccessToken:
+      Type: AWS::IAM::Role
+      Properties:
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - apigateway.amazonaws.com
+              Action:
+                - sts:AssumeRole
+        Policies:
+          - PolicyName: lambda
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow
+                  Action: lambda:invokeFunction
+                  Resource:
+                    Fn::Join:
+                      - ""
+                      - - "arn:aws:lambda:${self:provider.region}:"
+                        - Ref: "AWS::AccountId"
+                        - ":function:${self:custom.authLambdaName}-access-token"
     # ***** Auth Lambda IAM Role *****
 
     # ***** REST API Authorizer *****
-    RestApiAuthorizer:
+    RestApiAuthorizerIdToken:
       Type: AWS::ApiGateway::Authorizer
       Properties:
         AuthorizerCredentials:
           Fn::GetAtt:
-            - RestApiAuthorizerRole
+            - RestApiAuthorizerRoleIdToken
+            - Arn
+        AuthorizerResultTtlInSeconds: 0
+        AuthorizerUri:
+          Fn::Join:
+            - ""
+            - - "arn:aws:apigateway:${self:provider.region}"
+              - ":lambda:path/2015-03-31/functions/"
+              - "arn:aws:lambda:${self:provider.region}:"
+              - Ref: "AWS::AccountId"
+              - ":function:${self:custom.authLambdaName}-id-token"
+              - "/invocations"
+        # IdentitySource: method.request.header.Authorization
+        IdentitySource: method.request.header.x-auth-id-token
+        # IdentityValidationExpression: "^[a-zA-Z0-9]{3,32}$"
+        Name: ${self:custom.base}-Lambda-Auth-Id-Token
+        RestApiId:
+          Ref: ApiGatewayRestApi
+        Type: TOKEN
+    RestApiAuthorizerAccessToken:
+      Type: AWS::ApiGateway::Authorizer
+      Properties:
+        AuthorizerCredentials:
+          Fn::GetAtt:
+            - RestApiAuthorizerRoleAccessToken
             - Arn
         AuthorizerResultTtlInSeconds: 0
         AuthorizerUri:
@@ -132,9 +219,10 @@ resources:
               - Ref: "AWS::AccountId"
               - ":function:${self:custom.authLambdaName}"
               - "/invocations"
-        IdentitySource: method.request.header.Authorization
+        # IdentitySource: method.request.header.Authorization
+        IdentitySource: method.request.header.x-auth-access-token
         # IdentityValidationExpression: "^[a-zA-Z0-9]{3,32}$"
-        Name: ${self:custom.base}-Lambda-Auth
+        Name: ${self:custom.base}-Lambda-Auth-Access-Token
         RestApiId:
           Ref: ApiGatewayRestApi
         Type: TOKEN
@@ -171,22 +259,38 @@ resources:
         Ref: ApiGatewayResourceV1
       Export:
         Name: ${self:custom.base}-ApiGatewayResourceV1
-    AuthLambdaArn:
-      Description: The AuthLambdaArn
+    AuthLambdaIdTokenArn:
+      Description: The AuthLambdaIdTokenArn
       Value:
         Fn::Join:
           - ""
           - - "arn:aws:lambda:${self:provider.region}:"
             - Ref: "AWS::AccountId"
-            - ":function:${self:custom.authLambdaName}"
+            - ":function:${self:custom.authLambdaName}-id-token"
       Export:
-        Name: ${self:custom.base}-AuthLambdaArn
-    AuthorizerId:
-      Description: The AuthorizerId
+        Name: ${self:custom.base}-AuthLambdaIdTokenArn
+    AuthLambdaAccessTokenArn:
+      Description: The AuthLambdaAccessTokenArn
       Value:
-        Ref: RestApiAuthorizer
+        Fn::Join:
+          - ""
+          - - "arn:aws:lambda:${self:provider.region}:"
+            - Ref: "AWS::AccountId"
+            - ":function:${self:custom.authLambdaName}-access-token"
       Export:
-        Name: ${self:custom.base}-AuthorizerId
+        Name: ${self:custom.base}-AuthLambdaAccessTokenArn
+    IdTokenAuthorizerId:
+      Description: The IdTokenAuthorizerId
+      Value:
+        Ref: RestApiAuthorizerIdToken
+      Export:
+        Name: ${self:custom.base}-IdTokenAuthorizerId
+    AccessTokenAuthorizerId:
+      Description: The AccessTokenAuthorizerId
+      Value:
+        Ref: RestApiAuthorizerAccessToken
+      Export:
+        Name: ${self:custom.base}-AccessTokenAuthorizerId
     ApiUrl:
       Description: The ApiUrl
       Value:

@@ -12,6 +12,17 @@
   "dependencies": {
     "jsonwebtoken": "^8.5.1",
     "jwk-to-pem": "^2.0.4",
-    "request": "^2.88.2"
+    "jwt-decode": "^2.2.0",
+    "request": "^2.88.2",
+    "request-promise": "^4.2.6"
+  },
+  "devDependencies": {
+    "aws-sdk": "^2.729.0",
+    "serverless-api-gateway-caching": "^1.4.1",
+    "serverless-iam-roles-per-function": "^2.0.2",
+    "serverless-offline": "^6.5.0",
+    "serverless-prune-plugin": "^1.4.3",
+    "serverless-webpack": "^5.3.3",
+    "webpack": "^4.44.1"
   }
 }
