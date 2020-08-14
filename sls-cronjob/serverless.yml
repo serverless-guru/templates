@@ -1,0 +1,57 @@
+service: sls-cronjob
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  region: ${opt:region, "us-west-2"}
+  stage: ${opt:staging, "dev"}
+  profile: ${opt:profile, "serverlessguru-internal"}
+  environment:
+    SLS_DEBUG: "*"
+    REGION: ${self:provider.region}
+    SOURCE_ADDRESS: ${self:custom.source_address}
+    TO_ADDRESSES: "nadtakan@serverlessguru.com,ryan@serverlessguru.com,info@serverlessguru.com" # change this to distination emails
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - ses:SendEmail
+        - ses:SendTemplatedEmail
+      Resource: arn:aws:ses:#{AWS::Region}:#{AWS::AccountId}:identity/${self:custom.source_address}
+    - Effect: Allow
+      Action:
+        - cloudformation:DescribeStackResourceDrifts
+        - cloudformation:ListStacks
+      Resource: arn:aws:cloudformation:#{AWS::Region}:#{AWS::AccountId}:stack/*/*
+    - Effect: Allow
+      Action: 
+        - lambda:InvokeFunction
+      Resource: arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:custom.function_name}
+    - Effect: Allow
+      Action: 
+        - events:PutEvents
+        - events:listEventBuses
+      Resource: arn:aws:events:#{AWS::Region}:#{AWS::AccountId}:event-bus/*
+
+custom:
+  source_address: nadtakan@serverlessguru.com # change this to sender email that verified on AWS SES console, see readme Configure 
+  schedule_name: drift-scheduled-rate-daily-reporting
+  function_name: ${self:service}-${self:provider.stage}
+
+plugins:
+  - serverless-pseudo-parameters
+  - serverless-webpack
+
+package:
+  individually: true
+      
+functions:
+  cronjob:
+    handler: src/index.handler
+    name: ${self:custom.function_name}
+    events:
+      - schedule: 
+          name: ${self:custom.schedule_name}
+          description: 'running daily stack drift report'
+          rate: cron(0 12 * * ? *)
+      
+
