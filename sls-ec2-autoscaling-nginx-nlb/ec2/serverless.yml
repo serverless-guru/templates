@@ -1,0 +1,171 @@
+service: sls-ec2-nginx-ssl
+
+provider:
+  name: aws
+  stage: ${opt:stage, "dev"}
+  region: ${opt:region, "us-east-1"}
+  profile: ${opt:profile, "slsguru"}
+
+custom:
+  base: ${self:service}-${self:provider.stage}
+  EC2KeyPairName: 'slsguru-useast1'
+  EC2AMI: 'ami-02354e95b39ca8dec'
+  # InboundIP: ''
+  # VPCID: ''
+
+resources:
+  Resources:
+    EC2NginxRole:
+      Type: 'AWS::IAM::Role'
+      Properties:
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service: ec2.amazonaws.com
+              Action:
+                - sts:AssumeRole
+        ManagedPolicyArns:
+          - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+    EC2NginxInstanceProfile:
+      Type: 'AWS::IAM::InstanceProfile'
+      Properties:
+        Path: /
+        Roles:
+          - Ref: EC2NginxRole
+    EC2NginxSecurityGroup:
+      Type: AWS::EC2::SecurityGroup
+      Properties:
+        GroupDescription: "EC2-Nginx security group"
+        # VpcId: ${self:custom.VPCID}
+        Tags:
+          - Key: Name
+            Value: ${self:custom.base}-securitygroup
+    EC2NginxSGIngress:
+      Type: AWS::EC2::SecurityGroupIngress
+      DependsOn: EC2NginxSecurityGroup
+      Properties:
+        GroupId: !GetAtt EC2NginxSecurityGroup.GroupId
+        IpProtocol: tcp
+        FromPort: 443
+        ToPort: 443
+        CidrIp: 0.0.0.0/0
+        # CidrIp: ${self:custom.InboundIP}
+    EC2NginxAutoScalingLaunchConfiguration:
+      Type: AWS::AutoScaling::LaunchConfiguration
+      Properties:
+        SecurityGroups:
+          - !GetAtt EC2NginxSecurityGroup.GroupId
+        IamInstanceProfile: 
+          Ref: EC2NginxInstanceProfile
+        InstanceType: t2.micro
+        KeyName: ${self:custom.EC2KeyPairName}
+        ImageId: ${self:custom.EC2AMI}
+        UserData:
+          'Fn::Base64': 
+            !Sub |
+            #!/bin/bash
+            sudo amazon-linux-extras install nginx1.12
+            sudo mkdir /etc/pki/nginx
+            sudo mkdir /etc/pki/nginx/private
+            sudo cat <<EOF >./etc/nginx/conf.d/AirCanada.conf
+            server {
+            listen 443 ssl http2 default_server;
+            server_name 54.189.38.214;
+            root /404.html;
+            ssl_certificate /etc/pki/nginx/nginx-selfsigned.crt;
+            ssl_certificate_key /etc/pki/nginx/private/nginx-selfsigned.key;
+            location /dev {
+                  proxy_pass http://www.example.com;
+            }
+            location /dev/status {
+                  proxy_pass http://www.example.com;
+            }
+            error_page 404 /404.html;
+            location = /40x.html {
+            }
+            error_page 500 502 503 504 /50x.html;
+            location = /50x.html {
+            }
+            }
+            EOF
+            sudo cat <<EOF >./etc/pki/nginx/nginx-selfsigned.crt
+            -----BEGIN CERTIFICATE-----
+            MIIEFzCCAv+gAwIBAgIJALGx2/hBnHQjMA0GCSqGSIb3DQEBCwUAMIGhMQswCQYD
+            VQQGEwJVUzERMA8GA1UECAwIUG9ydGxhbmQxDzANBgNVBAcMBk9yZWdvbjEcMBoG
+            A1UECgwTU2VydmVybGVzcyBHdXJ1IExMQzEMMAoGA1UECwwDRGV2MRYwFAYDVQQD
+            DA01NC4xODkuMzguMjE0MSowKAYJKoZIhvcNAQkBFhttb2hhbW1lZEBzZXJ2ZXJs
+            ZXNzZ3VydS5jb20wHhcNMjAwODEyMDUxODE3WhcNMjEwODEyMDUxODE3WjCBoTEL
+            MAkGA1UEBhMCVVMxETAPBgNVBAgMCFBvcnRsYW5kMQ8wDQYDVQQHDAZPcmVnb24x
+            HDAaBgNVBAoME1NlcnZlcmxlc3MgR3VydSBMTEMxDDAKBgNVBAsMA0RldjEWMBQG
+            A1UEAwwNNTQuMTg5LjM4LjIxNDEqMCgGCSqGSIb3DQEJARYbbW9oYW1tZWRAc2Vy
+            dmVybGVzc2d1cnUuY29tMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA
+            vTzed2qx9kOhArhcgYrkKEl21WFlyG8ffhDxc3P973+5qTPPD7d6uLh3Eo0cfUG8
+            sY0lno4FfAb6fGb0GwEI5OTQZL+Ajen94lf5+Krayvre7ihhIvGMTWWVqF8zoj2h
+            HMRFK1xjsQ3tCi4mj7q7lVkkdcmIS3oGqaWgJLZcozBNuXdVc3SQ06J8Wl5fZ/RM
+            FCMdHU/xJdyZV9t/kh3TFbubJHTbZAbXlp8ZKooea2W7dflugFgk/1E9UTXfC8oC
+            oNf3z4svDgLx4KFYu7I2DeLPkQQO9W09/65d0TjVkqhaSkdIQrde18lRDJbqb6gc
+            pZN9cVhxonRHpT2jGO/8OwIDAQABo1AwTjAdBgNVHQ4EFgQUwWJROm5Sz4RqMw7z
+            1T63JaMjimIwHwYDVR0jBBgwFoAUwWJROm5Sz4RqMw7z1T63JaMjimIwDAYDVR0T
+            BAUwAwEB/zANBgkqhkiG9w0BAQsFAAOCAQEAgmaFLk3x4b4F170jpsmjwAAe+0+2
+            xDenoywwIv3i+GDo7cFqDUEHZSbOcEQNUK2XdSam4WzBamcxhPfqcYjXalQaix4F
+            22i6Tvoi2slkYuvedGhB/mT55KhyVPhZC0eOX9yVW22DlLJ0SrpLdH/dXXYE7iCn
+            +ETaZ/B54hf1NHCKYR59KDS8Ml19QhrrJyOSqF2L6qwSPKyp9ftzR+RfGN4v709T
+            u4wOzrmwz0qah+21FJdnQsWFhf5GnmizaEI/Z8jIswbwp1Ktc0XxySPQEVS7GZhK
+            ehCl+iYo5Z4EFhrtxs8pj2ap0aWvV/u7L68jvwADsH+MLB3mbyxkvmFXbQ==
+            -----END CERTIFICATE-----
+            EOF
+            sudo cat <<EOF >./etc/pki/nginx/private/nginx-selfsigned.key
+            -----BEGIN PRIVATE KEY-----
+            MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC9PN53arH2Q6EC
+            uFyBiuQoSXbVYWXIbx9+EPFzc/3vf7mpM88Pt3q4uHcSjRx9QbyxjSWejgV8Bvp8
+            ZvQbAQjk5NBkv4CN6f3iV/n4qtrK+t7uKGEi8YxNZZWoXzOiPaEcxEUrXGOxDe0K
+            LiaPuruVWSR1yYhLegappaAktlyjME25d1VzdJDTonxaXl9n9EwUIx0dT/El3JlX
+            23+SHdMVu5skdNtkBteWnxkqih5rZbt1+W6AWCT/UT1RNd8LygKg1/fPiy8OAvHg
+            oVi7sjYN4s+RBA71bT3/rl3RONWSqFpKR0hCt17XyVEMlupvqBylk31xWHGidEel
+            PaMY7/w7AgMBAAECggEAR+4uJbghoxj7x7vqNbdkmEesatlVxgUvNE0eaiMp3/Jt
+            0PoHd9LnS/WaFSwcKyRkpByhsw4K2aURa1365ZTUG6U57UG5jLfnsDR+qN3Qwpzv
+            RhmFKrIkAXtekpx1VPMWHYghPqUko7VGZ7s5HyL8kH1M1ZTgQMhGZg+1up6ywbg/
+            fub1QEe6UsaQsJHxVpRw360dTrlOm6TKs5IFNFh7gej/U7bc0DoPyCvzzOwOeBWS
+            U4bMuP1zhbsfuS/n7mAUeZ1Hw2BMxKXDu6bs+4bxYzvUwo7Yr89PSqOlOp/ljk2x
+            Ga5SjjKXDYgDrhEUz7EgFANq3XsNH+9nYEnpIXWbmQKBgQDy6lftdzgq1VY4hr6j
+            XMwk+grm+HsfL1cPeFUk/BjUZn5xUMUO8OHl0BRMAqvzH/dDToxVKFtBYgzVcqOp
+            eyH5x8QhlWV4KnMRlpKSM5sxDN99z4C1zZNv6bfvg7yMKHT62zJPBuZrxiTRs4Am
+            kvFGTvgSUIKTGTqkYioYMa9bnQKBgQDHblfqYecDrA44bbRe8VBB8XNn9MWOV/Mn
+            xOarFsnQQttb01CXRx7m1sBH8RB1bbF37UpMx7kuhLr46PGqzsc5vJ/Hi6E05qO3
+            X7lpY+gmH6KLebmTRfYTKl9gb9F6Ua2eb5Ij0yMuHe7Dn/LMXPy4a/ePQGKpnJyT
+            1wvCR7DLtwKBgQC8Nt0YDobDkXbz51twwmcew2qNGbx0Jj8Dqo32USp/8EZKUHXP
+            JM8zPG1tk6hdgcgZK5RKKzHB0FH3VJMAr3pcye7qwpHTcLilyRAaHchCUiIcnhmx
+            Q+7YCLRO7bi6tGInOI2bc9I3cVh37uf9e19cxbUqo5z4ktTAJ5tMEbs4dQKBgGgZ
+            V/i3S9/l0rJvyUP50HvrbeMoqGqJzBnJNOK/jW6RR3FiF2IvtJioJkwnMAEr1gQU
+            r8DuS+JVVEeTSHpxXxrrM7f0UZyMe46/f8fcZ5Rm1PDbBBw026LbblenZn/j3K2j
+            7XOXxXhQFY61kgZMz3nwmZOD9zwzzKN7D99Ejqt3AoGBAIVa7HAgCmeLoF8D9qTx
+            tT+MYsHlwGg2jMJH43N3eKskE1mCaegwWarcqhb470MmTBBcIwoHKz2E6zXAEKLJ
+            ZXdttKoKuKc0rGmS5tfK9OvQgQ9IbpUaif6nyGO3aSRC6LWWkcy7gWVlWK1shXeb
+            PHc+vqloB3nCg1fCDuzp7MhX
+            -----END PRIVATE KEY-----
+            EOF
+            sudo systemctl restart nginx
+    EC2NginxAutoScalingGroup:
+      Type: AWS::AutoScaling::AutoScalingGroup
+      Properties:
+        AutoScalingGroupName: EC2NginxMTLS
+        LaunchConfigurationName: 
+          Ref: EC2NginxAutoScalingLaunchConfiguration
+        VPCZoneIdentifier:
+          - subnet-2862a54f
+          - subnet-30bd3a7a
+        AvailabilityZones:
+          - us-east-1b
+          - us-east-1d
+        MaxSize: 2
+        MinSize: 2
+        HealthCheckType: ELB
+        HealthCheckGracePeriod: 300
+        TargetGroupARNs:
+            - Fn::ImportValue: sls-nlb-${self:provider.stage}-NetworkLoadBalancerTargetGroupARN
+        Tags:
+          - Key: Name
+            Value: ${self:custom.base}-autoScaling-group
+            PropagateAtLaunch: true
