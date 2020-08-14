@@ -1,0 +1,126 @@
+service: sls-ec2-nginx-ssl
+
+provider:
+  name: aws
+  stage: ${opt:stage, "dev"}
+  region: ${opt:region, "us-east-1"}
+  profile: ${opt:profile, "slsguru"}
+
+custom:
+  base: ${self:service}-${self:provider.stage}
+  EC2KeyPairName: 'xxxxxxxx'
+  EC2AMI: 'ami-02354e95b39ca8dec'
+  # InboundIP: ''
+  # VPCID: ''
+  
+
+resources:
+  Resources:
+    EC2NginxRole:
+      Type: 'AWS::IAM::Role'
+      Properties:
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service: ec2.amazonaws.com
+              Action:
+                - sts:AssumeRole
+        ManagedPolicyArns:
+          - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+    EC2NginxInstanceProfile:
+      Type: 'AWS::IAM::InstanceProfile'
+      Properties:
+        Path: /
+        Roles:
+          - Ref: EC2NginxRole
+    EC2NginxSecurityGroup:
+      Type: AWS::EC2::SecurityGroup
+      Properties:
+        GroupDescription: "EC2-Nginx security group"
+        # VpcId: ${self:custom.VPCID}
+        Tags:
+          - Key: Name
+            Value: ${self:custom.base}-securitygroup
+    EC2NginxSGIngress:
+      Type: AWS::EC2::SecurityGroupIngress
+      DependsOn: EC2NginxSecurityGroup
+      Properties:
+        GroupId: !GetAtt EC2NginxSecurityGroup.GroupId
+        IpProtocol: tcp
+        FromPort: 443
+        ToPort: 443
+        CidrIp: 0.0.0.0/0
+        # CidrIp: ${self:custom.InboundIP}
+    EC2NginxAutoScalingLaunchConfiguration:
+      Type: AWS::AutoScaling::LaunchConfiguration
+      Properties:
+        SecurityGroups:
+          - !GetAtt EC2NginxSecurityGroup.GroupId
+        IamInstanceProfile: 
+          Ref: EC2NginxInstanceProfile
+        InstanceType: t2.micro
+        KeyName: ${self:custom.EC2KeyPairName}
+        ImageId: ${self:custom.EC2AMI}
+        UserData:
+          'Fn::Base64': 
+            !Sub |
+            #!/bin/bash
+            sudo amazon-linux-extras install nginx1.12
+            sudo mkdir /etc/pki/nginx
+            sudo mkdir /etc/pki/nginx/private
+            sudo cat <<EOF >./etc/nginx/conf.d/myAPI.conf
+            server {
+            listen 443 ssl http2 default_server;
+            server_name 11.111.11.554;
+            root /404.html;
+            ssl_certificate /etc/pki/nginx/nginx-selfsigned.crt;
+            ssl_certificate_key /etc/pki/nginx/private/nginx-selfsigned.key;
+            location /dev {
+                  proxy_pass http://www.example.com;
+            }
+            location /dev/status {
+                  proxy_pass http://www.example.com;
+            }
+            error_page 404 /404.html;
+            location = /40x.html {
+            }
+            error_page 500 502 503 504 /50x.html;
+            location = /50x.html {
+            }
+            }
+            EOF
+            sudo cat <<EOF >./etc/pki/nginx/nginx-selfsigned.crt
+            -----BEGIN CERTIFICATE-----
+            
+            -----END CERTIFICATE-----
+            EOF
+            sudo cat <<EOF >./etc/pki/nginx/private/nginx-selfsigned.key
+            -----BEGIN PRIVATE KEY-----
+            
+            -----END PRIVATE KEY-----
+            EOF
+            sudo systemctl restart nginx
+    EC2NginxAutoScalingGroup:
+      Type: AWS::AutoScaling::AutoScalingGroup
+      Properties:
+        AutoScalingGroupName: EC2NginxMTLS
+        LaunchConfigurationName: 
+          Ref: EC2NginxAutoScalingLaunchConfiguration
+        VPCZoneIdentifier:
+          - subnet-xxxxx
+          - subnet-xxxxx
+        AvailabilityZones:
+          - us-east-1b
+          - us-east-1d
+        MaxSize: 2
+        MinSize: 2
+        HealthCheckType: ELB
+        HealthCheckGracePeriod: 300
+        TargetGroupARNs:
+            - Fn::ImportValue: sls-nlb-${self:provider.stage}-NetworkLoadBalancerTargetGroupARN
+        Tags:
+          - Key: Name
+            Value: ${self:custom.base}-autoScaling-group
+            PropagateAtLaunch: true
