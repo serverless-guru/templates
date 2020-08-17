@@ -1,0 +1,7 @@
+module.exports = `
+  scalar DateTime
+
+  type Todo { id: ID, title: String, completed: Boolean }
+  type User { id: ID, name: String, createdAt: DateTime }
+  type Query { todoItems: [Todo], user: User }
+`

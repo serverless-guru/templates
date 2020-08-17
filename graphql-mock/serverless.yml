@@ -1,0 +1,40 @@
+service: graphql-mock
+
+plugins:
+  - serverless-offline
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stage: ${opt:stage, 'dev'}
+  region: ${opt:region, 'us-east-1'}
+
+functions:
+  graphql:
+    handler: src/functions/graphql/handler.graphql
+    events:
+      - http:
+          path: graphql
+          method: post
+          cors: true
+          # private: true
+      - http:
+          path: graphql
+          method: get
+          cors: true
+
+  # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+  # Multi-service example in `src/functions/service-a/`
+  # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+  serviceA:
+    handler: src/functions/service-a/handler.graphql
+    events:
+      - http:
+          path: service-a
+          method: post
+          cors: true
+          # private: true
+      - http:
+          path: service-a
+          method: get
+          cors: true
