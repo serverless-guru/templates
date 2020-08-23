@@ -1,0 +1,207 @@
+service: sls-nlb-api
+
+provider:
+  name: aws
+  stage: ${opt:stage, "dev"}
+  region: ${opt:region, "us-east-1"}
+  profile: ${opt:profile, "slsguru"}
+
+custom:
+  base: ${self:service}-${self:provider.stage}
+  VPCID: vpc-xxxxxxx
+  Public_SubnetID_1: subnet-xxxxx
+  Public_SubnetID_2: subnet-xxxxx
+  Private_SubnetID_1: subnet-xxxxx
+  Private_SubnetID_2: subnet-xxxxx
+  Ip1: !GetAtt GetPrivateIPs.IP0
+  Ip2: !GetAtt GetPrivateIPs.IP1
+  VPC_CIDR_Range: 0.0.0.0/0
+          
+
+resources:
+  Resources:
+    VPCEndpointSecurityGroup:
+      Type: AWS::EC2::SecurityGroup
+      Properties:
+        GroupDescription: "VPC endpoint security group"
+        VpcId: ${self:custom.VPCID}
+        Tags:
+          - Key: Name
+            Value: ${self:custom.base}-securitygroup
+    VPCEndpointSGIngress:
+      Type: AWS::EC2::SecurityGroupIngress
+      DependsOn: VPCEndpointSecurityGroup
+      Properties:
+        GroupId: !GetAtt VPCEndpointSecurityGroup.GroupId
+        IpProtocol: tcp
+        FromPort: 443
+        ToPort: 443
+        CidrIp: ${self:custom.VPC_CIDR_Range}
+    VPCEndpoint:
+      Type: AWS::EC2::VPCEndpoint
+      DependsOn: VPCEndpointSecurityGroup
+      Properties: 
+        PrivateDnsEnabled: true
+        SecurityGroupIds: 
+          - !GetAtt VPCEndpointSecurityGroup.GroupId
+        ServiceName: com.amazonaws.${self:provider.region}.execute-api
+        SubnetIds: 
+          - ${self:custom.Private_SubnetID_1}
+          - ${self:custom.Private_SubnetID_2}
+        VpcEndpointType: Interface
+        VpcId: ${self:custom.VPCID}
+    LambdaRole:
+      Type: AWS::IAM::Role
+      Properties:
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - lambda.amazonaws.com
+              Action:
+                - sts:AssumeRole
+    LambdaPolicy:
+      Type: AWS::IAM::Policy
+      Properties:
+        PolicyName: LambdaPolicy
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - ec2:*
+                - logs:*
+              Resource: '*'
+        Roles:
+          - !Ref LambdaRole
+    LambdaFunction:
+      Type: 'AWS::Lambda::Function'
+      DependsOn: LambdaPolicy
+      DeletionPolicy: 'Delete'
+      Properties:
+        Code:
+          ZipFile: !Sub |
+            import cfnresponse
+            import json
+            import boto3
+            def lambda_handler(event, context):
+                print('REQUEST RECEIVED:\n' + json.dumps(event))
+                responseData = {}
+                if event['RequestType'] == 'Delete':
+                  cfnresponse.send(event, context, cfnresponse.SUCCESS, {})
+                  return
+                if event['RequestType'] == 'Create':
+                  try:
+                    ec2 = boto3.resource('ec2')
+                    enis = event['ResourceProperties']['NetworkInterfaceIds']
+                    for index, eni in enumerate(enis):
+                      network_interface = ec2.NetworkInterface(eni)
+                      responseData['IP' + str(index)] = network_interface.private_ip_address
+                      print(responseData)
+                  except Exception as e:
+                    responseData = {'error': str(e)}
+                    cfnresponse.send(event, context, cfnresponse.FAILED, responseData)
+                    return
+                  cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData)
+        Handler: index.lambda_handler
+        Role: !GetAtt LambdaRole.Arn
+        Runtime: python3.7
+        Timeout: 10
+    GetPrivateIPs:
+      DependsOn: VPCEndpoint
+      Type: Custom::GetPrivateIPs
+      Properties:
+        ServiceToken: !GetAtt LambdaFunction.Arn
+        NetworkInterfaceIds: !GetAtt VPCEndpoint.NetworkInterfaceIds
+    NetworkLoadBalancer:
+      Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+      Properties: 
+        IpAddressType: ipv4
+        Name: ${self:custom.base}-load-balancer
+        Scheme: internet-facing
+        Subnets:
+          - ${self:custom.Public_SubnetID_1}
+          - ${self:custom.Public_SubnetID_2}
+        Tags:
+          - Key: Name
+            Value: ${self:custom.base}-load-balancer
+        Type: network
+    NetworkLoadBalancerTargetGroup:
+      Type: AWS::ElasticLoadBalancingV2::TargetGroup
+      DependsOn: NetworkLoadBalancer
+      Properties: 
+        HealthCheckEnabled: true
+        HealthCheckProtocol: TCP
+        HealthyThresholdCount: 3
+        Name: ${self:custom.base}-target-group
+        Port: 443
+        Protocol: TCP
+        TargetType: ip
+        Targets:
+          - Id: !GetAtt GetPrivateIPs.IP0
+          - Id: !GetAtt GetPrivateIPs.IP1
+        Tags:
+          - Key: Name
+            Value: ${self:custom.base}-target-group
+        VpcId: ${self:custom.VPCID}
+    NetworkLoadBalancerListener:
+      Type: AWS::ElasticLoadBalancingV2::Listener
+      DependsOn: NetworkLoadBalancerTargetGroup
+      Properties: 
+        DefaultActions: 
+          - TargetGroupArn:
+              Ref: NetworkLoadBalancerTargetGroup
+            Type: forward
+        LoadBalancerArn:
+          Ref: NetworkLoadBalancer
+        Port: 443
+        Protocol: TCP
+    PrivateAPIGateway:
+      Type: AWS::ApiGateway::RestApi
+      DependsOn: VPCEndpoint
+      Properties:
+        ApiKeySourceType: HEADER
+        Description: 'API for gateway transit'
+        EndpointConfiguration: 
+          Types: 
+            - PRIVATE
+          VpcEndpointIds:
+            - Ref: VPCEndpoint
+        Name: ${self:custom.base}-TGW Private API
+        Policy:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Principal: "*"
+              Action:
+                - execute-api:Invoke
+              Resource:
+                - "execute-api:/*"
+              Condition: 
+                StringEquals:
+                  aws:SourceVpce: 
+                    Ref: VPCEndpoint
+        Tags: 
+          - Key: Name
+            Value: ${self:custom.base}-private-APIGW
+
+  Outputs:
+    NetworkLoadBalancerTargetGroupARN:
+      Description: "Network load balancer target group ARN"
+      Value: 
+        Ref: NetworkLoadBalancerTargetGroup
+      Export:
+        Name: ${self:custom.base}-NetworkLoadBalancerTargetGroupARN
+    ENIIP1:
+      Description: "ENI IP1"
+      Value: ${self:custom.Ip1}
+      Export:
+        Name: ${self:custom.base}-ENI-IP1
+    ENIIP2:
+      Description: "ENI IP2"
+      Value: ${self:custom.Ip2}
+      Export:
+        Name: ${self:custom.base}-ENI-IP2
+      
