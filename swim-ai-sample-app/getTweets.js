@@ -9,12 +9,13 @@ let valueLane = swimClient.downlinkValue()
                         // console.log("link watched info change to " + newValue + " from " + oldValue);
                       })
                     .open();
-
+                    
+// You can get the API keys from here, https://developer.twitter.com/en/apps
 var client = new Twitter({
-  consumer_key: "uguVrJEO6kSwIHAxBWQGaRB6a",
-  consumer_secret: "jZt79QgHhB2YXQiyF3g890WmGnEQ3tsMXrhnMapJ4iXXp5dXMI",
-  access_token_key: "102281889-g7l7pLfZislF3yWB7bbHc8kBcccBOnVySRive9Pk",
-  access_token_secret: "atyFtDz68RPe9209IJGDePedRKdRk9WYeWZxACrujN8in"
+  consumer_key: "your key",
+  consumer_secret: "your consumer secret",
+  access_token_key: "your token",
+  access_token_secret: "your access keys"
 });
 
 /**
