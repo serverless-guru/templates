@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Twitter Feed</title>
+    <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, shrink-to-fit=no, viewport-fit=cover" />
+    <style>
+      body {
+        margin: 0 auto;
+        max-width: 800px;
+        padding: 0 20px;
+      }
+      
+      .container {
+        border: 2px solid #a1eafb;
+        background-color: #a1eafb;
+        border-radius: 5px;
+        padding: 10px;
+        margin: 10px 0;
+      }
+      
+      .darker {
+        border-color: #cabbe9;
+        background-color: #cabbe9;
+      }
+      
+      .container::after {
+        content: "";
+        clear: both;
+        display: table;
+      }
+      
+      .container img {
+        float: left;
+        max-width: 60px;
+        width: 100%;
+        margin-right: 20px;
+        border-radius: 50%;
+      }
+      
+      .container img.right {
+        float: right;
+        margin-left: 20px;
+        margin-right:0;
+      }
+      
+      .time-right {
+        float: right;
+        color: #aaa;
+      }
+      
+      .time-left {
+        float: left;
+        color: #999;
+      }
+      </style>
+  </head>
+  <body>
+
+    <h2 style="font-family:geneva">Latest Tweet</h2>
+    
+    <div class="container">
+      <img id="newDpUrl" src="https://i1.pngguru.com/preview/137/834/449/cartoon-cartoon-character-avatar-drawing-film-ecommerce-facial-expression-png-clipart.jpg" alt="Avatar" style="width:100%;">
+      <p style="font-family:verdana" id="newChat"></p>
+      <span style="font-family:arial" id="newTime" class="time-right"></span>
+    </div>
+    
+    <h2 style="font-family:geneva">Previous Tweet</h2>
+    <div class="container darker">
+      <img id="oldDpUrl" src="https://i1.pngguru.com/preview/137/834/449/cartoon-cartoon-character-avatar-drawing-film-ecommerce-facial-expression-png-clipart.jpg" alt="Avatar" class="right" style="width:100%;">
+      <p style="font-family:verdana" id="oldChat"></p>
+      <span style="font-family:arial" id="oldTime" class="time-left"></span>
+    </div>
+    
+    </body>
+    <div id="app" style="display: flex; width: 67%; height: 67%; flex-direction: column;">
+    </div>
+    <script src="https://cdn.swimos.org/js/3.10.2/swim-system.js"></script>
+    <script src="https://cdn.swimos.org/js/latest/swim-core.js"></script>
+    <script src="https://cdn.swimos.org/js/latest/swim-ui.js"></script>
+    <script src="https://cdn.swimos.org/js/latest/swim-web.js"></script>
+    <script>
+
+const app = new swim.HtmlAppView(document.getElementById("app"));
+
+const gaugeCanvas = app.append('div').position('relative').append("canvas");
+
+
+/* Data Subscriptions */
+const valueLink = swim.downlinkValue()
+    .hostUri("warp://localhost:9001")
+    .nodeUri("/twitter/feed")
+    .laneUri("tweets")
+    .didSet(function (newValue, oldValue) {
+      console.log(JSON.parse(newValue['_value']).msg)
+      document.getElementById("newChat").innerHTML = JSON.parse(newValue['_value']).msg
+      document.getElementById("newDpUrl").src = JSON.parse(newValue['_value']).url
+      document.getElementById("newTime").innerHTML = JSON.parse(newValue['_value']).timeStamp
+      document.getElementById("oldChat").innerHTML = JSON.parse(oldValue['_value']).msg
+      document.getElementById("oldDpUrl").src = JSON.parse(oldValue['_value']).url
+      document.getElementById("oldTime").innerHTML = JSON.parse(newValue['_value']).timeStamp
+    })
+    .open();
+
+    </script>
+  </body>
+</html>
