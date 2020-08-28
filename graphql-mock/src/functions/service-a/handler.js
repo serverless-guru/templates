@@ -1,28 +1,21 @@
-const gqlHandler = require('../../graphql/server');
-const schema = require('./schema');
+const { gqlHandler, gqlSchema } = require('../../graphql/server');
+const { getMocksByHeaders } = require('../utils/mocks');
+
+const schema = gqlSchema(__dirname + '/schema.graphql');
 const defaultMocks = require('./mocks/default');
 
-module.exports.graphql = async (event, context) => {
-  const headerMockName = event.headers['x-mock-name'];
+const MOCKS_PATH = __dirname + '/mocks';
 
-  const mocks = getMocks(headerMockName);
+module.exports.graphql = async (event) => {
+  const mocks = getMocksByHeaders({ headers: event.headers, mocksPath: MOCKS_PATH }) || defaultMocks;
 
-  const handler = gqlHandler({ schema, mocks, introspection: true, playground: true });
-
-  return new Promise((resolve, reject) => {
-    const callback = (error, body) => (error ? reject(error) : resolve(body));
-    handler(event, context, callback);
-  });
-}
-
-const getMocks = (name, path = './mocks') => {
-  if (!name) {
-    return defaultMocks;
+  const params = {
+    event,
+    schema,
+    mocks,
+    introspection: true,
+    playground: true
   }
 
-  try {
-    return require(`${path}/${name}.js`);
-  } catch {
-    return defaultMocks;
-  }
+  return gqlHandler(params);
 }
