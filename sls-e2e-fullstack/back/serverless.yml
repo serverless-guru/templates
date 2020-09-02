@@ -1,0 +1,55 @@
+service: demo-back
+
+provider:
+    name: aws
+    runtime: nodejs12.x
+    environment:
+      TABLE: ${self:service}-${opt:stage, self:provider.stage}
+
+    iamRoleStatements:
+        - Effect: Allow
+          Action:
+              - dynamodb:Query
+              - dynamodb:Scan
+              - dynamodb:GetItem
+              - dynamodb:PutItem
+              - dynamodb:UpdateItem
+              - dynamodb:DeleteItem
+          Resource: 'arn:aws:dynamodb:#{AWS::Region}:#{AWS::AccountId}:table/${self:service}-${opt:stage, self:provider.stage}'
+
+plugins:
+    - serverless-pseudo-parameters
+
+functions:
+  submit:
+    handler: src/handler.submit
+    events:
+      - http:
+          path: submit
+          method: post
+
+  list:
+    handler: src/handler.list
+    events:
+      - http:
+          path: list
+          method: get
+
+
+resources:
+  Resources:
+      productsTable:
+          Type: AWS::DynamoDB::Table
+          Properties:
+              TableName: ${self:service}-${opt:stage, self:provider.stage}
+              AttributeDefinitions:
+                    - AttributeName: PK
+                      AttributeType: S
+                    - AttributeName: SK
+                      AttributeType: S
+              KeySchema:
+                    - AttributeName: PK
+                      KeyType: HASH
+                    - AttributeName: SK
+                      KeyType: RANGE
+              BillingMode: PAY_PER_REQUEST

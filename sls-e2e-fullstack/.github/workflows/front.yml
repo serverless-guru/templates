@@ -1,0 +1,53 @@
+name: E2E test
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-node@v2-beta
+      with:
+        node-version: '12'
+    - name: Cache node modules
+      uses: actions/cache@v1
+      env:
+        cache-name: cache-node-modules
+      with:
+        path: ~/.npm
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/yarn.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-build-${{ env.cache-name }}-
+          ${{ runner.os }}-build-
+          ${{ runner.os }}-
+
+    # Install Dependencies
+    - run: npm install -g serverless
+    - run: cd ./back && npm install
+    - run: cd ./front && npm install
+    - run: serverless config credentials --provider aws --key ${{secrets.AWS_KEY}} --secret ${{secrets.AWS_SECRET}}
+    
+    # Run Unit Tests
+    - run: cd ./front && npm run ci-test-unit
+
+    # Deploy to E2E Stage
+    - run: cd ./back && npm run ci-deploy-e2e
+    - run: cd ./front && npm run ci-deploy-e2e
+      env:
+        REACT_APP_ENDPOINT: ${{secrets.E2E_BACKEND_URL}}
+
+    # Run E2E Tests
+    - run: cd ./front && npm run ci-test-e2e
+      env:
+        E2E_URL: ${{secrets.E2E_URL}}
+        AWS_KEY: ${{secrets.AWS_KEY}}
+        AWS_SECRET: ${{secrets.AWS_SECRET}}
+
+    # Deploy to Demo
+    #- run: cd ./front && npm run ci-deploy-demo

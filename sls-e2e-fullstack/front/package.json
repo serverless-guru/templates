@@ -1,0 +1,46 @@
+{
+  "name": "front",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@testing-library/jest-dom": "^4.2.4",
+    "@testing-library/react": "^9.3.2",
+    "@testing-library/user-event": "^7.1.2",
+    "react": "^16.13.1",
+    "react-dom": "^16.13.1",
+    "react-scripts": "3.4.3",
+    "serverless-finch": "^2.6.0"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject",
+    "test-unit": "jest --config=jest-unit.config.json",
+    "test-e2e": "LOCAL=true jest --config=jest-e2e.config.json",
+    "ci-test-unit": "jest --config=jest-unit.config.json",
+    "ci-test-e2e": "jest --config=jest-e2e.config.json",
+    "ci-deploy-e2e": "npm run build && sls client deploy --stage=e2e --no-confirm",
+    "ci-deploy-demo": "npm run build && sls client deploy --stage=demo --no-confirm"
+  },
+  "eslintConfig": {
+    "extends": "react-app"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "aws-sdk": "^2.744.0",
+    "puppeteer": "^5.2.1",
+    "start-server-and-test": "^1.11.3"
+  }
+}

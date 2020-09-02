@@ -1,0 +1,11 @@
+{
+    "prod": {
+        "BUCKET_NAME": "slsguru-fs-demo-prod"
+    },
+    "demo": {
+        "BUCKET_NAME": "slsguru-fs-demo-demo"
+    },
+    "e2e": {
+        "BUCKET_NAME": "slsguru-fs-demo-e2e"
+    }
+}
