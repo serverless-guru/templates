@@ -1,0 +1,62 @@
+service: sls-nlb
+
+provider:
+  name: aws
+  stage: ${opt:stage, "dev"}
+  region: ${opt:region, "us-east-1"}
+  profile: ${opt:profile, "slsguru"}
+
+custom:
+  base: ${self:service}-${self:provider.stage}
+
+resources:
+  Resources:
+    NetworkLoadBalancer:
+      Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+      Properties: 
+        IpAddressType: ipv4
+        Name: ${self:custom.base}-load-balancer
+        Scheme: internal
+        Subnets:
+          - subnet-xxxxxx
+          - subnet-xxxxxx
+        Tags:
+          - Key: Name
+            Value: ${self:custom.base}-load-balancer
+        Type: network
+    NetworkLoadBalancerTargetGroup:
+      Type: AWS::ElasticLoadBalancingV2::TargetGroup
+      DependsOn: NetworkLoadBalancer
+      Properties: 
+        HealthCheckEnabled: true
+        HealthCheckPort: 433
+        HealthCheckProtocol: TCP
+        HealthyThresholdCount: 3
+        Name: ${self:custom.base}-target-group
+        Port: 433
+        Protocol: TCP
+        Tags:
+          - Key: Name
+            Value: ${self:custom.base}-target-group
+        VpcId: vpc-xxxxxx
+    NetworkLoadBalancerListener:
+      Type: AWS::ElasticLoadBalancingV2::Listener
+      DependsOn: NetworkLoadBalancerTargetGroup
+      Properties: 
+        DefaultActions: 
+          - TargetGroupArn:
+              Ref: NetworkLoadBalancerTargetGroup
+            Type: forward
+        LoadBalancerArn:
+          Ref: NetworkLoadBalancer
+        Port: 443
+        Protocol: TCP
+
+  Outputs:
+    NetworkLoadBalancerTargetGroupARN:
+      Description: "Network load balancer target group ARN"
+      Value: 
+        Ref: NetworkLoadBalancerTargetGroup
+      Export:
+        Name: ${self:custom.base}-NetworkLoadBalancerTargetGroupARN
+      
