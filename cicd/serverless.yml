@@ -1,0 +1,93 @@
+service: cicd
+
+provider:
+  name: aws
+  stage: ${opt:stage, "dev"}
+  region: ${opt:region, "us-west-2"}
+  profile: ${opt:profile, "cicd-dev"} # Need to create an AWS IAM User with IAM permissions to create IAM User + Role called, cicd-dev
+
+custom:
+  base: ${self:service}-${self:provider.stage}
+  artifactsBucketName: ${self:custom.base}
+  awsIamUserName: ${self:custom.base}-user
+
+resources:
+  Resources:
+    CICDUserKeys:
+      Type: AWS::IAM::AccessKey
+      Properties:
+        UserName:
+          Ref: CICDUser
+    CICDUser:
+      Type: AWS::IAM::User
+      Properties:
+        UserName: ${self:custom.awsIamUserName}
+        Policies:
+          - PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - ec2:Describe*
+                    - iam:ListRoles
+                    - sts:AssumeRole
+                  Resource: '*'
+            PolicyName: ${self:custom.base}-userpolicy
+    CICDRole:
+      DependsOn:
+        - CICDUser
+      Type: AWS::IAM::Role
+      Properties:
+        RoleName: ${self:custom.base}-role
+        AssumeRolePolicyDocument: 
+          Version: '2012-10-17'
+          Statement: 
+            - Effect: Allow
+              Principal:
+                # AWS: arn:aws:iam::${self:custom.awsAccountId.${self:provider.stage}}:root
+                AWS:
+                  Fn::Join:
+                    - ""
+                    - - "arn:aws:iam::"
+                      - Ref: "AWS::AccountId"
+                      - ":user/${self:custom.awsIamUserName}"
+              Action: sts:AssumeRole
+        Path: /
+    CICDRolePolicy: 
+      Type: AWS::IAM::Policy
+      Properties: 
+        PolicyName: ${self:custom.awsIamUserName}-rolepolicy
+        PolicyDocument: 
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Deny
+              Action:
+                - dynamodb:*Item
+                # add additional restrictions to role
+              Resource: '*'
+            - Effect: Allow
+              Action: '*'
+              Resource: '*'
+        Roles:
+          - Ref: CICDRole
+  Outputs:
+    #CICDAccessKey:
+      #Description: The CICDAccessKey for assuming the CICD role
+      #Value:
+        #Ref: CICDUserKeys
+      #Export:
+        #Name: ${self:custom.base}-CICDAccessKey
+    #CICDSecretAccessKey:
+      #Description: The CICDSecretAccessKey for assuming the CICD role
+      #Value:
+        #Fn::GetAtt: CICDUserKeys.SecretAccessKey
+      #Export:
+        #Name: ${self:custom.base}-CICDSecretAccessKey
+    CICDRoleArn:
+      Description: The CICDRoleArn for running, aws sts assume-role --role-arn <> --role-session-name <>
+      Value:
+        Fn::GetAtt:
+          - CICDRole
+          - Arn
+      Export:
+        Name: ${self:custom.base}-CICDRoleArn
