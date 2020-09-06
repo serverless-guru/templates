@@ -48,7 +48,8 @@ then
     CICD_USER_AWS_SECRET_ACCESS_KEY=$PROD_CICD_USER_AWS_SECRET_ACCESS_KEY
 fi
 
-sls config credentials --provider aws --key $CICD_USER_AWS_ACCESS_KEY --secret $CICD_USER_AWS_SECRET_ACCESS_KEY -o
+export AWS_ACCESS_KEY_ID=$CICD_USER_AWS_ACCESS_KEY
+export AWS_SECRET_ACCESS_KEY=$CICD_USER_AWS_SECRET_ACCESS_KEY
 
 assume_call=$(aws sts assume-role --role-arn $CICD_ROLE_ARN --role-session-name AWSCLI-Session)
 
