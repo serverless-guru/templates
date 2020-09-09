@@ -38,7 +38,7 @@ apk add git openssh
 mkdir -p ~/.ssh
 
 # `MY_DEPLOY_KEY` is an env variable with the ssh key associated with the public key we added to the Github/Bitbuket account
-echo MY_DEPLOY_KEY | base64 -d > ~/.ssh/deploy_key
+echo $MY_DEPLOY_KEY | base64 -d > ~/.ssh/deploy_key
 chmod 600 ~/.ssh/deploy_key
 
 # Add bitbucket.org to known hosts to avoid error
