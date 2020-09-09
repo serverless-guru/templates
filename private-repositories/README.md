@@ -19,10 +19,12 @@ Set up an SSH key and add the public key to your Github Account (steps [here](ht
 
 ```
 "dependencies": {
-  "my-private-github-dependency": "git+ssh://git@github.com/org-name/my-private-github-dependency.git#branch"
-  "my-private-bitbucket-dependency": "git+ssh://git@bitbucket.org/workspace-name/my-private-bitbucket-dependency.git#branch"
+  "my-private-github-dependency": "git+ssh://git@github.com/org-name/my-private-github-dependency.git#branch",
+  "my-private-bitbucket-dependency": "git+ssh://git@bitbucket.org/workspace-name/my-private-bitbucket-dependency.git#branch",
+  "my-private-bitbucket-dependency-2": "git+ssh://git@bitbucket.org/workspace-name/my-private-bitbucket-dependency.git#v0.1.0"
 }
 ```
+> Note that you can use a specific branch or tag on the dependency url after the `#`.
 
 ### CI/CD reference
 
