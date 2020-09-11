@@ -28,8 +28,21 @@ Set up an SSH key and add the public key to your Github Account (steps [here](ht
 
 ### CI/CD reference
 
-> Bitbucket pipeline example in [bitbucket-pipelines.yml](https://github.com/serverless-guru/templates/blob/master/private-repositories/bitbucket-pipelines.yml)
+#### Bitbucket Steps:
+- Create a new user called `CICD` in bitbucket organization.
+- Grant access for the required repositories to the above user.
+- Generate a new ssh key to be exclusive used for above user.
+- Add the new SSH public key to the `CICD` user Account settings. (steps [here](https://support.atlassian.com/bitbucket-cloud/docs/set-up-an-ssh-key/))
+- [Create a new Repository variable](https://support.atlassian.com/bitbucket-cloud/docs/variables-and-secrets/) inside the repo you set up the pipeline.
+  - Variable Name: `CICD_SSH_KEY`
+  - Variable Value: the private ssh key you created in the step 3.
+    - Use this command to copy the key into you clipboard: `pbcopy < ~/.ssh/SSH-KEY-NAME`
+    > In the above command, replace `SSH-KEY-NAME` with the name you used when creating the ssh key in the step 3.
 
+
+#### Bitbucket pipeline example in [bitbucket-pipelines.yml](https://github.com/serverless-guru/templates/blob/master/private-repositories/bitbucket-pipelines.yml)
+
+#### Bash script reference:
 ```bash
 
 # Install dependencies
@@ -39,9 +52,10 @@ apk add git openssh
 # Create .ssh directory
 mkdir -p ~/.ssh
 
-# `MY_PRIVATE_DEPLOY_KEY` is an env variable with the ssh private key associated with the public key we added to the Github/Bitbuket account
-echo $MY_PRIVATE_DEPLOY_KEY | base64 -d > ~/.ssh/deploy_key
-chmod 600 ~/.ssh/deploy_key
+# `CICD_SSH_KEY` is an env variable with the ssh key associated with the public key we added to the Bitbuket account
+printf "-----BEGIN OPENSSH PRIVATE KEY-----" > ~/.ssh/id_rsa_cicd && printf %s "$CICD_SSH_KEY" | sed -e 's/-----BEGIN OPENSSH PRIVATE KEY-----\(.*\)-----END OPENSSH PRIVATE KEY-----/\1/' | tr ' ' '\n' >> ~/.ssh/id_rsa_cicd && printf "-----END OPENSSH PRIVATE KEY-----\n" >> ~/.ssh/id_rsa_cicd
+
+chmod 600 ~/.ssh/id_rsa_cicd
 
 # Add bitbucket.org to known hosts to avoid error
 ssh-keyscan -t rsa bitbucket.org >> ~/.ssh/known_hosts
@@ -51,7 +65,7 @@ ssh-keyscan -t rsa bitbucket.org >> ~/.ssh/known_hosts
 eval $(ssh-agent)
 
 # Add the key to the ssh-agent
-ssh-add ~/.ssh/deploy_key
+ssh-add ~/.ssh/id_rsa_cicd
 
 # Install dependencies
 npm install

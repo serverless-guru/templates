@@ -3,18 +3,16 @@ image: node:12.17.0-alpine3.11
 pipelines:
   default:
     - step:
-        name: Setup SSH Key
+        name: Deploy app
         script:
           - apk update
           - apk add git openssh
           - mkdir -p ~/.ssh
-          # `MY_DEPLOY_KEY` is an env variable with the ssh key associated with the public key we added to the Github/Bitbuket account
-          - echo ${MY_DEPLOY_KEY} | base64 -d > ~/.ssh/deploy_key
-          - chmod 600 ~/.ssh/deploy_key
+          - printf "-----BEGIN OPENSSH PRIVATE KEY-----" > ~/.ssh/id_rsa_cicd && printf %s "$CICD_SSH_KEY" | sed -e 's/-----BEGIN OPENSSH PRIVATE KEY-----\(.*\)-----END OPENSSH PRIVATE KEY-----/\1/' | tr ' ' '\n' >> ~/.ssh/id_rsa_cicd && printf "-----END OPENSSH PRIVATE KEY-----\n" >> ~/.ssh/id_rsa_cicd
+          - cat ~/.ssh/id_rsa_cicd
+          - chmod 600 ~/.ssh/id_rsa_cicd
           - ssh-keyscan -t rsa bitbucket.org >> ~/.ssh/known_hosts
           - eval $(ssh-agent)
-          - ssh-add ~/.ssh/deploy_key
-    - step:
-      name: Install dependencies
-        script:
+          - ssh-add ~/.ssh/id_rsa_cicd
           - npm install
+          - node src/index.js
