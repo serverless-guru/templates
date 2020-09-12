@@ -7,12 +7,4 @@ pipelines:
         script:
           - apk update
           - apk add git openssh
-          - mkdir -p ~/.ssh
-          - printf "-----BEGIN OPENSSH PRIVATE KEY-----" > ~/.ssh/id_rsa_cicd && printf %s "$CICD_SSH_KEY" | sed -e 's/-----BEGIN OPENSSH PRIVATE KEY-----\(.*\)-----END OPENSSH PRIVATE KEY-----/\1/' | tr ' ' '\n' >> ~/.ssh/id_rsa_cicd && printf "-----END OPENSSH PRIVATE KEY-----\n" >> ~/.ssh/id_rsa_cicd
-          - cat ~/.ssh/id_rsa_cicd
-          - chmod 600 ~/.ssh/id_rsa_cicd
-          - ssh-keyscan -t rsa bitbucket.org >> ~/.ssh/known_hosts
-          - eval $(ssh-agent)
-          - ssh-add ~/.ssh/id_rsa_cicd
           - npm install
-          - node src/index.js
