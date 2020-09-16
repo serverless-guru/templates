@@ -21,7 +21,7 @@ provider:
           Condition:
               IpAddress:
                   aws:SourceIp:
-                      - "123.123.123.123"
+                      - "xxx.xxx.xxx.xxx"
 
 functions:
     hello:

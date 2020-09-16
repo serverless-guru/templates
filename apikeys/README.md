@@ -4,12 +4,12 @@
 
 # Overview of Template
 
-In this example, we are going to demonstrate 2 ways you can protect your API Endpoint
+In this example, we are going to demonstrate 2 ways you can determine how your API Endpoint will be called.
 
--   With API Keys (Best practices suggesting using more than an API key to protect an endpoint)
--   Wit Resource Policy
+-   With API Keys (AWS best practices suggest using more than an API key to protect an endpoint)
+-   With a Resource Policy
 
-It is important to note that are other options for protecting your endpoint as well, all available options can be found in the following AWS Docs [here](https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-control-access-to-api.html).
+It is important to note that there are other options for protecting your endpoint as well. All available options can be found in the following AWS Documentation [here](https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-control-access-to-api.html).
 
 # Resources
 
