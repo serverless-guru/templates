@@ -1,0 +1,33 @@
+service: sls-apikey
+
+provider:
+    name: aws
+    runtime: nodejs12.x
+    apiKeys:
+        - ${opt:stage}-myFirstKey
+    resourcePolicy:
+        - Effect: Allow
+          # Where we define the actor
+          # This can be an IAM user or account or *
+          Principal: "*"
+
+          # This allows the principle to invoke upon request
+          Action: execute-api:Invoke
+
+          Resource:
+              # Where we define what resource are we applying this policy to
+              #/ STAGE / METHOD / PATH
+              - execute-api:/dev/GET/endpoint
+          Condition:
+              IpAddress:
+                  aws:SourceIp:
+                      - "123.123.123.123"
+
+functions:
+    hello:
+        handler: handler.hello
+        events:
+            - http:
+                  path: /endpoint
+                  method: get
+                  private: true

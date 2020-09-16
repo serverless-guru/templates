@@ -1,0 +1,216 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: The AWS CloudFormation template for this Serverless application
+Resources:
+    ServerlessDeploymentBucket:
+        Type: "AWS::S3::Bucket"
+        Properties:
+            BucketEncryption:
+                ServerSideEncryptionConfiguration:
+                    - ServerSideEncryptionByDefault:
+                          SSEAlgorithm: AES256
+    ServerlessDeploymentBucketPolicy:
+        Type: "AWS::S3::BucketPolicy"
+        Properties:
+            Bucket: !Ref ServerlessDeploymentBucket
+            PolicyDocument:
+                Statement:
+                    - Action: "s3:*"
+                      Effect: Deny
+                      Principal: "*"
+                      Resource:
+                          - !Join
+                            - ""
+                            - - "arn:"
+                              - !Ref "AWS::Partition"
+                              - ":s3:::"
+                              - !Ref ServerlessDeploymentBucket
+                              - /*
+                      Condition:
+                          Bool:
+                              "aws:SecureTransport": false
+    HelloLogGroup:
+        Type: "AWS::Logs::LogGroup"
+        Properties:
+            LogGroupName: /aws/lambda/sls-apikey-dev-hello
+    IamRoleLambdaExecution:
+        Type: "AWS::IAM::Role"
+        Properties:
+            AssumeRolePolicyDocument:
+                Version: 2012-10-17
+                Statement:
+                    - Effect: Allow
+                      Principal:
+                          Service:
+                              - lambda.amazonaws.com
+                      Action:
+                          - "sts:AssumeRole"
+            Policies:
+                - PolicyName: !Join
+                      - "-"
+                      - - sls-apikey
+                        - dev
+                        - lambda
+                  PolicyDocument:
+                      Version: 2012-10-17
+                      Statement:
+                          - Effect: Allow
+                            Action:
+                                - "logs:CreateLogStream"
+                                - "logs:CreateLogGroup"
+                            Resource:
+                                - !Sub >-
+                                    arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/sls-apikey-dev*:*
+                          - Effect: Allow
+                            Action:
+                                - "logs:PutLogEvents"
+                            Resource:
+                                - !Sub >-
+                                    arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/sls-apikey-dev*:*:*
+            Path: /
+            RoleName: !Join
+                - "-"
+                - - sls-apikey
+                  - dev
+                  - !Ref "AWS::Region"
+                  - lambdaRole
+    HelloLambdaFunction:
+        Type: "AWS::Lambda::Function"
+        Properties:
+            Code:
+                S3Bucket: !Ref ServerlessDeploymentBucket
+                S3Key: >-
+                    serverless/sls-apikey/dev/1600208156641-2020-09-15T22:15:56.641Z/sls-apikey.zip
+            FunctionName: sls-apikey-dev-hello
+            Handler: handler.hello
+            MemorySize: 1024
+            Role: !GetAtt
+                - IamRoleLambdaExecution
+                - Arn
+            Runtime: nodejs12.x
+            Timeout: 6
+        DependsOn:
+            - HelloLogGroup
+    HelloLambdaVersionqgoKaWkkZreYwb4qcHeBzevWtxYh4DplIL3xRG98:
+        Type: "AWS::Lambda::Version"
+        DeletionPolicy: Retain
+        Properties:
+            FunctionName: !Ref HelloLambdaFunction
+            CodeSha256: CXV6IqsSfJHGfg7VMfPprR6V7zfkti6f1P0DcsgbUK0=
+    ApiGatewayRestApi:
+        Type: "AWS::ApiGateway::RestApi"
+        Properties:
+            Name: dev-sls-apikey
+            EndpointConfiguration:
+                Types:
+                    - EDGE
+            Policy:
+                Version: 2012-10-17
+                Statement:
+                    - Effect: Allow
+                      Principal: "*"
+                      Action: "execute-api:Invoke"
+                      Resource:
+                          - "execute-api:/dev/GET/endpoint"
+                      Condition:
+                          IpAddress:
+                              "aws:SourceIp":
+                                  - 100.100.100.100
+    ApiGatewayResourceEndpoint:
+        Type: "AWS::ApiGateway::Resource"
+        Properties:
+            ParentId: !GetAtt
+                - ApiGatewayRestApi
+                - RootResourceId
+            PathPart: endpoint
+            RestApiId: !Ref ApiGatewayRestApi
+    ApiGatewayMethodEndpointGet:
+        Type: "AWS::ApiGateway::Method"
+        Properties:
+            HttpMethod: GET
+            RequestParameters: {}
+            ResourceId: !Ref ApiGatewayResourceEndpoint
+            RestApiId: !Ref ApiGatewayRestApi
+            ApiKeyRequired: true
+            AuthorizationType: NONE
+            Integration:
+                IntegrationHttpMethod: POST
+                Type: AWS_PROXY
+                Uri: !Join
+                    - ""
+                    - - "arn:"
+                      - !Ref "AWS::Partition"
+                      - ":apigateway:"
+                      - !Ref "AWS::Region"
+                      - ":lambda:path/2015-03-31/functions/"
+                      - !GetAtt
+                        - HelloLambdaFunction
+                        - Arn
+                      - /invocations
+            MethodResponses: []
+    ApiGatewayDeployment1600208154956:
+        Type: "AWS::ApiGateway::Deployment"
+        Properties:
+            RestApiId: !Ref ApiGatewayRestApi
+            StageName: dev
+        DependsOn:
+            - ApiGatewayMethodEndpointGet
+    ApiGatewayApiKey1:
+        Type: "AWS::ApiGateway::ApiKey"
+        Properties:
+            Enabled: true
+            Name: dev-myFirstKey
+            StageKeys:
+                - RestApiId: !Ref ApiGatewayRestApi
+                  StageName: dev
+        DependsOn: ApiGatewayDeployment1600208154956
+    ApiGatewayUsagePlan:
+        Type: "AWS::ApiGateway::UsagePlan"
+        DependsOn: ApiGatewayDeployment1600208154956
+        Properties:
+            ApiStages:
+                - ApiId: !Ref ApiGatewayRestApi
+                  Stage: dev
+            Description: Usage plan for sls-apikey dev stage
+            UsagePlanName: sls-apikey-dev
+    ApiGatewayUsagePlanKey1:
+        Type: "AWS::ApiGateway::UsagePlanKey"
+        Properties:
+            KeyId: !Ref ApiGatewayApiKey1
+            KeyType: API_KEY
+            UsagePlanId: !Ref ApiGatewayUsagePlan
+    HelloLambdaPermissionApiGateway:
+        Type: "AWS::Lambda::Permission"
+        Properties:
+            FunctionName: !GetAtt
+                - HelloLambdaFunction
+                - Arn
+            Action: "lambda:InvokeFunction"
+            Principal: apigateway.amazonaws.com
+            SourceArn: !Join
+                - ""
+                - - "arn:"
+                  - !Ref "AWS::Partition"
+                  - ":execute-api:"
+                  - !Ref "AWS::Region"
+                  - ":"
+                  - !Ref "AWS::AccountId"
+                  - ":"
+                  - !Ref ApiGatewayRestApi
+                  - /*/*
+Outputs:
+    ServerlessDeploymentBucketName:
+        Value: !Ref ServerlessDeploymentBucket
+    HelloLambdaFunctionQualifiedArn:
+        Description: Current Lambda function version
+        Value: !Ref HelloLambdaVersionqgoKaWkkZreYwb4qcHeBzevWtxYh4DplIL3xRG98
+    ServiceEndpoint:
+        Description: URL of the service endpoint
+        Value: !Join
+            - ""
+            - - "https://"
+              - !Ref ApiGatewayRestApi
+              - .execute-api.
+              - !Ref "AWS::Region"
+              - .
+              - !Ref "AWS::URLSuffix"
+              - /dev

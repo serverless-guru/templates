@@ -1,0 +1,5 @@
+{
+    "scripts": {
+        "deploy": "sls deploy --stage=dev"
+    }
+}
