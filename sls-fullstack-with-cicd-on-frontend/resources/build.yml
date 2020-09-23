@@ -1,0 +1,34 @@
+Resources:
+  ProductionProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: BuildProductionFrontend
+      Description: Build production frontend
+      ServiceRole: !GetAtt CodePipelineServiceRole.Arn
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/standard:4.0
+      Source:
+        Type: CODEPIPELINE
+      TimeoutInMinutes: 5
+
+
+  TestProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: BuildTestFrontend
+      Description: Build test frontend
+      ServiceRole: !GetAtt CodePipelineServiceRole.Arn
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/standard:4.0
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: devbuildspec.yml
+      TimeoutInMinutes: 5      

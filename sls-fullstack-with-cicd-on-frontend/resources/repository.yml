@@ -1,0 +1,7 @@
+Resources:
+
+  FrontendRepository:
+    Type: AWS::CodeCommit::Repository
+    Properties:
+      RepositoryName: ${param:repositoryName}
+      RepositoryDescription: Application repository

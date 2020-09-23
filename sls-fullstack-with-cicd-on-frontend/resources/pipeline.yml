@@ -1,0 +1,87 @@
+Resources: 
+
+  ProductionPipeline:
+    Type: 'AWS::CodePipeline::Pipeline'
+    Properties:
+      Name: production-frontend-pipeline
+      RoleArn: !GetAtt 
+        - CodePipelineServiceRole
+        - Arn
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: SourceAction
+              ActionTypeId:
+                Category: Source
+                Owner: AWS
+                Version: 1
+                Provider: CodeCommit
+              OutputArtifacts:
+                - Name: SourceOutput
+              Configuration:
+                BranchName: master
+                RepositoryName: ${param:repositoryName}
+                PollForSourceChanges: false
+              RunOrder: 1
+        - Name: Build
+          Actions:
+            - Name: BuildFrontend
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: '1'
+              RunOrder: 1
+              Configuration:
+                BatchEnabled: 'false'
+                ProjectName: BuildProductionFrontend
+                PrimarySource: SourceOutput
+              InputArtifacts:
+                - Name: SourceOutput
+
+      ArtifactStore:
+        Type: S3
+        Location: !Ref CodePipelineArtifactStoreBucket
+
+  TestPipeline:
+    Type: 'AWS::CodePipeline::Pipeline'
+    Properties:
+      Name: test-frontend-pipeline
+      RoleArn: !GetAtt 
+        - CodePipelineServiceRole
+        - Arn
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: SourceAction
+              ActionTypeId:
+                Category: Source
+                Owner: AWS
+                Version: 1
+                Provider: CodeCommit
+              OutputArtifacts:
+                - Name: SourceOutput
+              Configuration:
+                BranchName: development
+                RepositoryName: ${param:repositoryName}
+                PollForSourceChanges: false
+              RunOrder: 1
+        - Name: Build
+          Actions:
+            - Name: BuildFrontend
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: '1'
+              RunOrder: 1
+              Configuration:
+                BatchEnabled: 'false'
+                ProjectName: BuildTestFrontend
+                PrimarySource: SourceOutput
+              InputArtifacts:
+                - Name: SourceOutput
+
+      ArtifactStore:
+        Type: S3
+        Location: !Ref CodePipelineArtifactStoreBucket
