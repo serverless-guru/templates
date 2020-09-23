@@ -13,7 +13,7 @@ Following stack will create:
   - CodePipelines for test and production
   - Hello world lambda function
 
-Fronted application will be deploy on test, as well as on production bucket. Whenever you push changes to master branch Pipeline will build and deploy your app to the production bucket. Push to development branch will build and deploy app to the test bucket. 
+Fronted application will be deployed to test and to production bucket. Whenever you push changes to master branch Pipeline will build and deploy your app to the production bucket. Push to development branch will build and deploy app to the test bucket. 
 
 ## Instructions
 
