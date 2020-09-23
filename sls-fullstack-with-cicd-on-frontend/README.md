@@ -13,11 +13,11 @@ Following stack will create:
   - CodePipelines for test and production
   - Hello world lambda function
 
-Fronted application will be deployed to test and to production bucket. Whenever you push changes to master branch Pipeline will build and deploy your app to the production bucket. Push to development branch will build and deploy app to the test bucket. 
+Frontend application will be deployed to test and to production bucket. Whenever you push changes to master branch Pipeline will build and deploy your app to the production bucket. Push to development branch will build and deploy app to the test bucket. 
 
 ## Instructions
 
-1. Loging to your serverless [dashboard](https://app.serverless.com) then create app.
+1. Login to your serverless [dashboard](https://app.serverless.com) then create app.
 
 2. Create the following parameters:
     - repositoryName
