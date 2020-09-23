@@ -12,4 +12,4 @@ phases:
       - echo Build started on `date`
       - npm run build
       - aws s3 rm s3://${BUCKET}/ --recursive
-      - aws s3 cp ./build s3://${BUCKET}/ --recursive --grants read=uri=http://acs.amazonaws.com/groups/global/AllUsers
+      - aws s3 cp ./dist s3://${BUCKET}/ --recursive --grants read=uri=http://acs.amazonaws.com/groups/global/AllUsers

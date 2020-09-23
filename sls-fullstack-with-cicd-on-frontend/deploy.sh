@@ -21,7 +21,7 @@ if [[ "$type" == "angular" ]]; then
   echo "*** Angular detected ***"
 
   # install angular cli
-  # npm i -g @angular/cli
+  npm i -g @angular/cli
 
   # generate angular app
 
