@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 
 region=$1
 profile=$2
@@ -7,6 +7,39 @@ repository=$(sls param get --name repositoryName)
 testBucket=$(sls param get --name testBucket)
 productionBucket=$(sls param get --name productionBucket)
 dir=$(pwd)
+
+# default profile if not passed
+if [[ -z $profile ]];
+then
+  profile="default"
+fi
+
+# default region if not passed
+if [[ -z $region ]];
+then
+  stage="us-east-1"
+fi
+
+# no repository param
+if [[ -z $repository ]];
+then
+  echo "repositoryName param not set"
+  exit 2
+fi
+
+# no test bucket param
+if [[ -z $testBucket ]];
+then
+  echo "testBucket param not set"
+  exit 2
+fi
+
+# no production bucket 
+if [[ -z $productionBucket ]];
+then
+  echo "productionBucket param not set"
+  exit 2
+fi
 
 # deploy infra
 sls deploy --stage prod --region $region --aws-profile $profile 
