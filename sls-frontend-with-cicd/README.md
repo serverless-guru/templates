@@ -1,4 +1,4 @@
-# Serverless full stack with CI/CD for frontend app (Angular/React/Vue)
+# Serverless frontend (Angular/React/Vue) with CI/CD
 
 ## Prerequisites
   - serverless pro account
