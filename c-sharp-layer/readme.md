@@ -1,3 +1,5 @@
+[Lambda layers with C# and Serverless framework](https://serverlessguru.com/blog/serverless-c-sharp-lambda-layers-with-c-sharp-and-serverless-framework)
+
 **Instructions**
 
 1. Run `npm install` 
