@@ -1,7 +1,7 @@
 **Instructions**
 
 1. Run `npm install` 
-2. On `Line:25` and `Line:37`  inside of `serveless.yml` replace `AWS_ACCOUNT_NUMBER` with your account number.
+2. On `Line:28` and `Line:37`  inside of `serveless.yml` replace `AWS_ACCOUNT_NUMBER` with your account number.
 3. Run `build`
 4. Run `serverless deploy`
 
