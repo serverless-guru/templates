@@ -1,0 +1,39 @@
+
+service: c-sharp-layer
+
+frameworkVersion: '2'
+
+provider:
+  name: aws
+  runtime: dotnetcore3.1
+  stage: ${opt:stage, 'dev'}
+  region: ${opt:region, 'eu-west-1'}
+  
+package:
+  individually: true
+
+plugins:
+  - serverless-latest-layer-version
+
+layers:
+  lib:
+    path: ./layer # path to layer contents on disk
+    name: ${self:provider.stage}-my-shared-library # Deployed Lambda layer name
+
+functions:
+
+  hello:
+    handler: CsharpHandlers::AwsDotnetCsharp.Hello::Handler
+    layers:
+      - arn:aws:lambda:${self:provider.region}:AWS_ACCOUNT_NUMBER:layer:${self:provider.stage}-my-shared-library:latest
+    package:
+      artifact: bin/Release/netcoreapp3.1/sample.zip
+
+  scheduled:
+    handler: CsharpHandlers::AwsDotnetCsharp.Scheduled::Handler
+    events:
+      - schedule: rate(10 minutes)
+    layers:
+      - arn:aws:lambda:${self:provider.region}:AWS_ACCOUNT_NUMBER:layer:${self:provider.stage}-my-shared-library:latest
+    package:
+      artifact: bin/Release/netcoreapp3.1/sample.zip
