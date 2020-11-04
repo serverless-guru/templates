@@ -1,0 +1,165 @@
+service: sls-bastion
+
+provider:
+  name: aws
+  stage: ${opt:stage, "dev"}
+  region: ${opt:region, "us-east-2"}
+
+plugins:
+  - serverless-stack-output
+
+package:
+  exclude:
+    - node_modules/**
+
+custom:
+  output:
+    handler: scripts/output.handler
+  stages:
+    dev:
+      VPC_ID: vpc-xxxxxxxxx
+      SUBNET_ID: subnet-xxxxxxxx
+      CIDR_IP: x.x.x.x/xx
+      INSTANCE_AMI_ID: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
+      INSTANCE_TYPE: t3.nano
+      ASSOCIATE_PUBLIC_IP_ADDRESS: false
+      ROUTE_TABLE_IDS: 
+        - rtb-xxxxxxxx
+    int:
+      VPC_ID: xxxxxxxxxxxxxxx
+      SUBNET_ID: xxxxxxxxxxxxxxx
+      CIDR_IP: xxxxxxxxxxxxxx
+      INSTANCE_AMI_ID: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
+      INSTANCE_TYPE: t3.nano
+      ASSOCIATE_PUBLIC_IP_ADDRESS: false
+      ROUTE_TABLE_IDS: 
+        - xxxxxxxxxxx
+    crt:
+      VPC_ID: xxxxxxxxxxxxxxx
+      SUBNET_ID: xxxxxxxxxxxxxxx
+      CIDR_IP: xxxxxxxxxxxxxx
+      INSTANCE_AMI_ID: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
+      INSTANCE_TYPE: t3.nano
+      ASSOCIATE_PUBLIC_IP_ADDRESS: false
+      ROUTE_TABLE_IDS: 
+        - xxxxxxxxxxx
+    preprod:
+      VPC_ID: xxxxxxxxxxxxxxx
+      SUBNET_ID: xxxxxxxxxxxxxxx
+      CIDR_IP: xxxxxxxxxxxxxx
+      INSTANCE_AMI_ID: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
+      INSTANCE_TYPE: t3.nano
+      ASSOCIATE_PUBLIC_IP_ADDRESS: false
+      ROUTE_TABLE_IDS: 
+        - xxxxxxxxxxx
+    prod:
+      VPC_ID: xxxxxxxxxxxxxxx
+      SUBNET_ID: xxxxxxxxxxxxxxx
+      CIDR_IP: xxxxxxxxxxxxxx
+      INSTANCE_AMI_ID: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
+      INSTANCE_TYPE: t3.nano
+      ASSOCIATE_PUBLIC_IP_ADDRESS: false
+      ROUTE_TABLE_IDS: 
+        - xxxxxxxxxxx
+
+resources:
+  Parameters:
+    InstanceAmiId:
+      Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+      Default: ${self:custom.stages.${self:provider.stage}.INSTANCE_AMI_ID}
+
+  Resources:
+    VpcEndpointSG:
+      Type: AWS::EC2::SecurityGroup
+      Properties:
+        GroupDescription: HTTPS from the subnet
+        VpcId: ${self:custom.stages.${self:provider.stage}.VPC_ID}
+        SecurityGroupIngress: 
+          - IpProtocol: tcp
+            FromPort: 443
+            ToPort: 443
+            CidrIp: ${self:custom.stages.${self:provider.stage}.CIDR_IP}
+        Tags: 
+        - Key: Name
+          Value: !Ref AWS::StackName
+
+    VpcEndpointSsm:
+      Type: AWS::EC2::VPCEndpoint
+      Properties:
+        ServiceName: !Sub com.amazonaws.${AWS::Region}.ssm
+        VpcEndpointType: Interface
+        PrivateDnsEnabled: true
+        VpcId: ${self:custom.stages.${self:provider.stage}.VPC_ID}
+        SubnetIds: 
+          - ${self:custom.stages.${self:provider.stage}.SUBNET_ID}
+        SecurityGroupIds:
+          - !GetAtt VpcEndpointSG.GroupId
+
+    VpcEndpointSsmMessages:
+      Type: AWS::EC2::VPCEndpoint
+      Properties: 
+        ServiceName: !Sub com.amazonaws.${AWS::Region}.ssmmessages
+        VpcEndpointType: Interface
+        PrivateDnsEnabled: true
+        VpcId: ${self:custom.stages.${self:provider.stage}.VPC_ID}
+        SubnetIds: 
+          - ${self:custom.stages.${self:provider.stage}.SUBNET_ID}
+        SecurityGroupIds:
+          - !GetAtt VpcEndpointSG.GroupId
+
+    VpcEndpointEc2messages:
+      Type: AWS::EC2::VPCEndpoint
+      Properties: 
+        ServiceName: !Sub com.amazonaws.${AWS::Region}.ec2messages
+        VpcEndpointType: Interface
+        PrivateDnsEnabled: true
+        VpcId: ${self:custom.stages.${self:provider.stage}.VPC_ID}
+        SubnetIds: 
+          - ${self:custom.stages.${self:provider.stage}.SUBNET_ID}
+        SecurityGroupIds:
+          - !GetAtt VpcEndpointSG.GroupId
+
+    VpcEndpointS3:
+      Type: AWS::EC2::VPCEndpoint
+      Properties: 
+        ServiceName: !Sub com.amazonaws.${AWS::Region}.s3
+        VpcEndpointType: Gateway
+        VpcId: ${self:custom.stages.${self:provider.stage}.VPC_ID}
+        RouteTableIds:
+          ${self:custom.stages.${self:provider.stage}.ROUTE_TABLE_IDS}
+
+    InstanceRole:
+      Type: AWS::IAM::Role
+      Properties:
+        AssumeRolePolicyDocument:
+          Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+        ManagedPolicyArns:
+          - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+
+    InstanceProfile:
+      Type: AWS::IAM::InstanceProfile
+      Properties:
+        Roles:
+          - !Ref InstanceRole
+
+    Instance:
+      Type: AWS::EC2::Instance
+      Properties:
+        ImageId: !Ref InstanceAmiId
+        InstanceType: ${self:custom.stages.${self:provider.stage}.INSTANCE_TYPE}
+        IamInstanceProfile: !Ref InstanceProfile
+        Tags:
+          - Key: Name
+            Value: !Ref AWS::StackName
+        NetworkInterfaces:
+          - AssociatePublicIpAddress: ${self:custom.stages.${self:provider.stage}.ASSOCIATE_PUBLIC_IP_ADDRESS}
+            DeviceIndex: '0'
+            SubnetId: ${self:custom.stages.${self:provider.stage}.SUBNET_ID}
+
+  Outputs:
+    InstanceId:
+      Value: !Ref Instance
