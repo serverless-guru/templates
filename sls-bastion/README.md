@@ -10,6 +10,10 @@ This project simplify the way you connect to a RDS instance, without the need to
 
 - System: `Mac OS`;
 
+- You need to have `AWS CLI` already installed in your machine;
+
+- You need to have `AWS Credentials` already configured in your machine;
+
 - You need to have `AWS Session Manager Plugin` already installed in your machine;
 
 - You need to update your `~/.ssh/config` file with this instructions:
