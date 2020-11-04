@@ -2,8 +2,8 @@
 
 export AWS_PAGER=""
 
-socket=$(mktemp -d 2>/dev/null || mktemp -d -t 'mytmpdir')
-rm -rf ${socket} 
+socket=$(mktemp -t deploy-ssh-socket)
+rm ${socket} 
 
 exit_code=0
 
