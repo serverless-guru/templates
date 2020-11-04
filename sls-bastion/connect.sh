@@ -2,8 +2,8 @@
 
 export AWS_PAGER=""
 
-socket=$(mktemp 2>/dev/null || mktemp -t 'mytmpdir')
-rm ${socket} 
+socket=$(mktemp -d 2>/dev/null || mktemp -d -t 'mytmpdir')
+rm -rf ${socket} 
 
 exit_code=0
 
