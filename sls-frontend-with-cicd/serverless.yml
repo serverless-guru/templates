@@ -1,0 +1,28 @@
+app: SLS-PRO-APP
+service: SERVICE-NAME
+org: SLS-PRO-ORG
+
+frameworkVersion: '2'
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stage: prod
+  region: us-east-1
+
+custom:
+  base: ${self:service}-${self:provider.stage}
+  stage: ${opt:stage, self:provider.stage}
+  region: ${opt:region, self:provider.region}
+
+functions:
+  hello:
+    handler: functions/handler.hello
+
+resources:
+  - ${file(./resources/iam.yml)}
+  - ${file(./resources/buckets.yml)}
+  - ${file(./resources/repository.yml)}
+  - ${file(./resources/build.yml)}
+  - ${file(./resources/events.yml)}
+  - ${file(./resources/pipeline.yml)}

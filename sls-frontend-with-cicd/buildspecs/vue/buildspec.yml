@@ -1,0 +1,15 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 12
+    commands:
+      - echo installing deps
+      - npm install
+  build:
+    commands:
+      - echo Build started on `date`
+      - npm run build
+      - aws s3 rm s3://${BUCKET}/ --recursive
+      - aws s3 cp ./dist s3://${BUCKET}/ --recursive --grants read=uri=http://acs.amazonaws.com/groups/global/AllUsers
