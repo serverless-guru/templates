@@ -8,11 +8,28 @@ This project simplify the way you connect to a RDS instance, without the need to
 
 ### Requirements
 
-You need to have `AWS Session Manager Plugin` already installed in your machine.
+- System: `Mac OS`;
+
+- You need to have `AWS CLI` already installed in your machine;
+
+- You need to have `AWS Credentials` already configured in your machine;
+
+- You need to have `AWS Session Manager Plugin` already installed in your machine;
+
+- You need to update your `~/.ssh/config` file with this instructions:
+```
+# SSH over Session Manager
+host i-* mi-*
+    ProxyCommand sh -c "aws ssm start-session --target %h --document-name AWS-StartSSHSession --parameters 'portNumber=%p'"
+```
+source: https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-getting-started-enable-ssh-connections.html
+
+- You need to update your `serverless.yml` custom attributes for each stage that you want;
 
 ### Deploy 
 
 ```bash
+npm install
 serverless deploy
 ```
 
