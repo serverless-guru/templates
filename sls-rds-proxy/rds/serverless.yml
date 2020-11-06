@@ -1,0 +1,300 @@
+service: rds
+
+provider:
+  name: aws
+  stage: dev
+  region: ca-central-1
+  profile: serverlessguru-internal
+  environment:
+    AURORA_HOST: ${self:custom.AURORA.HOST}
+    AURORA_PORT: ${self:custom.AURORA.PORT}
+    AURORA_DB_NAME: ${self:custom.AURORA.DB_NAME}
+    AURORA_USERNAME: ${self:custom.AURORA.USERNAME}
+    AURORA_PASSWORD: ${self:custom.AURORA.PASSWORD}
+
+# Define variables here for lisibility
+custom:
+  AURORA:
+    DB_NAME: aurora${opt:stage, self:provider.stage}
+    USERNAME: master
+    PASSWORD: password
+    HOST:
+      Fn::GetAtt: [AuroraRDSCluster, Endpoint.Address]
+    PORT:
+      Fn::GetAtt: [AuroraRDSCluster, Endpoint.Port]
+    VPC_CIDR: 10
+
+resources:
+  Resources:    
+    # VPC config
+    ServerlessVPC:
+      Type: AWS::EC2::VPC
+      Properties:
+        CidrBlock: ${self:custom.AURORA.VPC_CIDR}.0.0.0/16
+        EnableDnsSupport: true
+        EnableDnsHostnames: true
+        InstanceTenancy: default
+    
+    MySecurityGroup:
+      Type: AWS::EC2::SecurityGroup
+      Properties: 
+        GroupDescription: RDS Network
+        GroupName: RDS Networkcd
+        Tags: 
+          - Key: Name
+            Value: ${self:service}-security-group
+        VpcId: 
+          Ref: ServerlessVPC
+    
+    SecurityGroupIngressTCP1:
+      Type: AWS::EC2::SecurityGroupIngress
+      DependsOn: MySecurityGroup
+      Properties:
+        GroupId: 
+          Ref: MySecurityGroup
+        IpProtocol: tcp
+        CidrIp: 0.0.0.0/0
+        FromPort: 3306
+        ToPort: 3306
+    
+    SecurityGroupIngressTCP2:
+      Type: AWS::EC2::SecurityGroupIngress
+      DependsOn: MySecurityGroup
+      Properties:
+        GroupId: 
+          Ref: MySecurityGroup
+        IpProtocol: tcp
+        CidrIpv6: ::/0
+        FromPort: 3306
+        ToPort: 3306
+
+    SubnetPrivateA:
+      DependsOn: ServerlessVPC
+      Type: AWS::EC2::Subnet
+      Description: Referencing default VPC.
+      Properties:
+        VpcId:
+          Ref: ServerlessVPC
+        AvailabilityZone: ${self:provider.region}a
+        CidrBlock: ${self:custom.AURORA.VPC_CIDR}.0.1.0/24
+        Tags:
+          - Key: Name
+            Value: ${self:service}-private-subnet-a
+
+    SubnetPrivateB:
+      DependsOn: ServerlessVPC
+      Type: AWS::EC2::Subnet
+      Properties:
+        VpcId:
+          Ref: ServerlessVPC
+        AvailabilityZone: ${self:provider.region}b
+        CidrBlock: ${self:custom.AURORA.VPC_CIDR}.0.2.0/24
+        Tags:
+          - Key: Name
+            Value: ${self:service}-private-subnet-b
+    
+    SubnetPrivateC:
+      DependsOn: ServerlessVPC
+      Type: AWS::EC2::Subnet
+      Properties:
+        VpcId:
+          Ref: ServerlessVPC
+        AvailabilityZone: ${self:provider.region}b
+        CidrBlock: ${self:custom.AURORA.VPC_CIDR}.0.3.0/24
+        Tags:
+          - Key: Name
+            Value: ${self:service}-private-subnet-d
+
+    # NAT:
+    #   Type: AWS::EC2::NatGateway
+    #   Properties:
+    #     AllocationId:
+    #       Fn::GetAtt:
+    #         - EIP
+    #         - AllocationId
+    #     SubnetId: 
+    #       Ref: SubnetPublic
+    #     Tags:
+    #       - Key: Name
+    #         Value: ${self:service}-nat-gateway
+
+    # EIP:
+    #   Type: AWS::EC2::EIP
+    #   Properties:
+    #     Domain: vpc
+
+    # RouteTablePrivate:
+    #   Type: AWS::EC2::RouteTable
+    #   Properties:
+    #     VpcId: 
+    #       Ref: ServerlessVPC
+    #     Tags:
+    #       - Key: Name
+    #         Value: ${self:service}-route-table-private
+    
+    # InternetGateway:
+    #   Type: AWS::EC2::InternetGateway
+    #   Properties:
+    #     Tags:
+    #     - Key: Name
+    #       Value: ${self:service}-internet-gateway
+
+    # VPCGatewayAttachment:
+    #   Type: AWS::EC2::VPCGatewayAttachment
+    #   Properties: 
+    #     InternetGatewayId:
+    #       Ref: InternetGateway
+    #     VpcId: 
+    #       Ref: ServerlessVPC
+
+    # RoutePrivate:
+    #   Type: AWS::EC2::Route
+    #   Properties:
+    #     RouteTableId:
+    #       Ref: RouteTablePrivate
+    #     DestinationCidrBlock: 0.0.0.0/0
+    #     NatGatewayId:
+    #       Ref: NAT
+
+    # Aurora DB config
+    AuroraSubnetGroup:
+      Type: AWS::RDS::DBSubnetGroup
+      Properties:
+        DBSubnetGroupDescription: "Aurora Subnet Group"
+        SubnetIds:
+          # - Ref: SubnetPublic
+          - Ref: SubnetPrivateA
+          - Ref: SubnetPrivateB
+          - Ref: SubnetPrivateC
+          
+    AuroraRDSClusterParameter:
+      Type: AWS::RDS::DBClusterParameterGroup
+      Properties:
+        Description: Parameter group for the Serverless Aurora RDS DB.
+        Family: aurora-mysql5.7
+        Parameters:
+          character_set_database: "utf32"
+
+    AuroraRDSInstanceParameter:
+      Type: AWS::RDS::DBParameterGroup
+      Properties:
+        Description: Parameter group for the Serverless Aurora RDS DB.
+        Family: aurora-mysql5.7
+        Parameters:
+          sql_mode: IGNORE_SPACE
+          max_connections: 100
+          wait_timeout: 900
+          interactive_timeout: 900
+
+    AuroraRDSCluster:
+      Type: AWS::RDS::DBCluster
+      Properties:
+        MasterUsername: ${self:custom.AURORA.USERNAME}
+        MasterUserPassword: ${self:custom.AURORA.PASSWORD}
+        DBSubnetGroupName:
+          Ref: AuroraSubnetGroup
+        Engine: aurora-mysql
+        EngineVersion: "5.7"
+        DatabaseName: ${self:custom.AURORA.DB_NAME}
+        BackupRetentionPeriod: 1
+        DBClusterParameterGroupName:
+          Ref: AuroraRDSClusterParameter
+        VpcSecurityGroupIds:
+          - Fn::GetAtt: ServerlessVPC.DefaultSecurityGroup
+
+    AuroraRDSInstanceOne:
+      Type: AWS::RDS::DBInstance
+      Properties:
+        DBInstanceClass: db.t2.small
+        DBSubnetGroupName:
+          Ref: AuroraSubnetGroup
+        Engine: aurora-mysql
+        EngineVersion: "5.7"
+        PubliclyAccessible: false
+        DBParameterGroupName:
+          Ref: AuroraRDSInstanceParameter
+        DBClusterIdentifier:
+          Ref: AuroraRDSCluster
+        # MultiAZ: true # rds proxy need minimum 2 AZs
+    
+    AuroraRDSInstanceTwo:
+      Type: AWS::RDS::DBInstance
+      Properties:
+        DBInstanceClass: db.t2.small
+        DBSubnetGroupName:
+          Ref: AuroraSubnetGroup
+        Engine: aurora-mysql
+        EngineVersion: "5.7"
+        PubliclyAccessible: false
+        DBParameterGroupName:
+          Ref: AuroraRDSInstanceParameter
+        DBClusterIdentifier:
+          Ref: AuroraRDSCluster
+        # MultiAZ: true # rds proxy need minimum 2 AZs
+  
+  Outputs:
+    ServerlessVPC:
+      Value: 
+        Fn::GetAtt: 
+          - ServerlessVPC
+          - DefaultSecurityGroup
+      Export:
+        Name: ${self:service}:${self:provider.stage}:ServerlessVPCId
+    
+    MySecurityGroup:
+      Value: 
+        Fn::GetAtt: 
+          - MySecurityGroup
+          - GroupId
+      Export:
+        Name: ${self:service}:${self:provider.stage}:MySecurityGroup
+
+    SubnetPrivateA:
+      Value: 
+        Ref: SubnetPrivateA
+      Export:
+        Name: ${self:service}:${self:provider.stage}:SubnetPrivateA
+    
+    SubnetPrivateB:
+      Value:  
+        Ref: SubnetPrivateB
+      Export:
+        Name: ${self:service}:${self:provider.stage}:SubnetPrivateB
+    
+    SubnetPrivateC:
+      Value:  
+        Ref: SubnetPrivateC
+      Export:
+        Name: ${self:service}:${self:provider.stage}:SubnetPrivateC
+
+    AuroraRDSInstanceOne:
+      Value:  
+        Fn::GetAtt: 
+          - AuroraRDSInstanceOne
+          - Endpoint.Address
+      Export:
+        Name: ${self:service}:${self:provider.stage}:AuroraRDSInstanceOne
+    
+    AuroraRDSInstanceTwo:
+      Value:  
+        Fn::GetAtt: 
+          - AuroraRDSInstanceTwo
+          - Endpoint.Address
+      Export:
+        Name: ${self:service}:${self:provider.stage}:AuroraRDSInstanceTwo
+
+    AuroraRDSCluster:
+      Value:
+        Fn::GetAtt:
+          - AuroraRDSCluster
+          - Endpoint.Address
+      Export:
+        Name: ${self:service}:${self:provider.stage}:AuroraRDSCluster
+    
+    AuroraRDSClusterId:
+      Value:  
+        Ref: AuroraRDSCluster
+      Export:
+        Name: ${self:service}:${self:provider.stage}:AuroraRDSClusterId
+    
+    

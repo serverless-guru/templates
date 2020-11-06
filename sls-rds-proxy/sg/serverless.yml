@@ -1,0 +1,139 @@
+service: rds
+
+provider:
+  name: aws
+  stage: dev
+  region: ca-central-1
+  profile: serverlessguru-internal
+
+# Define variables here for lisibility
+custom:
+  AURORA:
+    DB_NAME: aurora${opt:stage, self:provider.stage}
+    USERNAME: master
+    PASSWORD: password
+    HOST:
+      Fn::GetAtt: [AuroraRDSCluster, Endpoint.Address]
+    PORT:
+      Fn::GetAtt: [AuroraRDSCluster, Endpoint.Port]
+    VPC_CIDR: 10
+
+resources:
+  Resources:    
+    # VPC config
+    ServerlessVPC:
+      Type: AWS::EC2::VPC
+      Properties:
+        CidrBlock: ${self:custom.AURORA.VPC_CIDR}.0.0.0/16
+        EnableDnsSupport: true
+        EnableDnsHostnames: true
+        InstanceTenancy: default
+    
+    MySecurityGroup:
+      Type: AWS::EC2::SecurityGroup
+      Properties: 
+        GroupDescription: RDS Network
+        GroupName: RDS Networkcd
+        Tags: 
+          - Key: Name
+            Value: ${self:service}-security-group
+        VpcId: 
+          Ref: ServerlessVPC
+    
+    SecurityGroupIngressTCP1:
+      Type: AWS::EC2::SecurityGroupIngress
+      DependsOn: MySecurityGroup
+      Properties:
+        GroupId: 
+          Ref: MySecurityGroup
+        IpProtocol: tcp
+        CidrIp: 0.0.0.0/0
+        FromPort: 3306
+        ToPort: 3306
+    
+    SecurityGroupIngressTCP2:
+      Type: AWS::EC2::SecurityGroupIngress
+      DependsOn: MySecurityGroup
+      Properties:
+        GroupId: 
+          Ref: MySecurityGroup
+        IpProtocol: tcp
+        CidrIpv6: ::/0
+        FromPort: 3306
+        ToPort: 3306
+
+    SubnetPrivateA:
+      DependsOn: ServerlessVPC
+      Type: AWS::EC2::Subnet
+      Description: Referencing default VPC.
+      Properties:
+        VpcId:
+          Ref: ServerlessVPC
+        AvailabilityZone: ${self:provider.region}a
+        CidrBlock: ${self:custom.AURORA.VPC_CIDR}.0.1.0/24
+        Tags:
+          - Key: Name
+            Value: ${self:service}-private-subnet-a
+
+    SubnetPrivateB:
+      DependsOn: ServerlessVPC
+      Type: AWS::EC2::Subnet
+      Properties:
+        VpcId:
+          Ref: ServerlessVPC
+        AvailabilityZone: ${self:provider.region}b
+        CidrBlock: ${self:custom.AURORA.VPC_CIDR}.0.2.0/24
+        Tags:
+          - Key: Name
+            Value: ${self:service}-private-subnet-b
+    
+    SubnetPrivateC:
+      DependsOn: ServerlessVPC
+      Type: AWS::EC2::Subnet
+      Properties:
+        VpcId:
+          Ref: ServerlessVPC
+        AvailabilityZone: ${self:provider.region}b
+        CidrBlock: ${self:custom.AURORA.VPC_CIDR}.0.3.0/24
+        Tags:
+          - Key: Name
+            Value: ${self:service}-private-subnet-d
+  
+  Outputs:
+    ServerlessVPC:
+      Value: 
+        Fn::GetAtt: 
+          - ServerlessVPC
+          - DefaultSecurityGroup
+      Export:
+        Name: ${self:service}:${self:provider.stage}:ServerlessVPCId
+
+    MySecurityGroup:
+      Value: 
+        Fn::GetAtt: 
+          - MySecurityGroup
+          - GroupId
+      Export:
+        Name: ${self:service}:${self:provider.stage}:MySecurityGroup
+
+
+    SubnetPrivateA:
+      Value: 
+        Ref: SubnetPrivateA
+      Export:
+        Name: ${self:service}:${self:provider.stage}:SubnetPrivateA
+    
+    SubnetPrivateB:
+      Value:  
+        Ref: SubnetPrivateB
+      Export:
+        Name: ${self:service}:${self:provider.stage}:SubnetPrivateB
+    
+    SubnetPrivateC:
+      Value:  
+        Ref: SubnetPrivateC
+      Export:
+        Name: ${self:service}:${self:provider.stage}:SubnetPrivateC
+
+    
+    

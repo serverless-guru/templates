@@ -1,0 +1,17 @@
+{
+  "name": "sls-rds-proxy",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Nadtakan Jones",
+  "license": "ISC",
+  "dependencies": {
+    "mysql2": "^2.2.5"
+  },
+  "devDependencies": {
+    "aws-sdk": "^2.771.0"
+  }
+}

@@ -1,0 +1,209 @@
+service: sls-rds-proxy
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  memorySize: 512
+  timeout: 30
+  profile: serverlessguru-internal
+  region: ca-central-1
+  vpc: # attaching lambda to vpc
+    securityGroupIds: 
+      - sg-0aa1d2ba4a55a3c3e
+      # - Fn::ImportValue: rds:${self:provider.stage}:MySecurityGroup
+    subnetIds:
+      - Fn::ImportValue: rds:${self:provider.stage}:SubnetPrivateA
+      - Fn::ImportValue: rds:${self:provider.stage}:SubnetPrivateB
+      - Fn::ImportValue: rds:${self:provider.stage}:SubnetPrivateC
+  environment:
+    PROXY_ENDPOINT: rds-proxy-demo.proxy-csbl7dcbtydc.ca-central-1.rds.amazonaws.com
+    AURORA_REGION: ca-central-1
+    AURORA_PORT: 3306
+    AURORA_USERNAME: master # replace this with aws secret 
+    AURORA_DB_NAME: aurora${opt:stage, self:provider.stage} # replace this with aws secret 
+
+functions:
+  hello:
+    handler: src/handler.handler
+    role: LambdaRole
+    events:
+      - http: 
+          path: /hello
+          method: get 
+
+custom:
+  secretName: rds-db-secret-${self:provider.stage}-${self:provider.region}
+
+resources:
+  Resources:
+    # Secret manager
+    MySecretsManager:
+      Type: AWS::SecretsManager::Secret
+      Properties: 
+        Description: rds secret keys
+        Name: ${self:custom.secretName}
+        SecretString: 
+          '{"username":"master","password":"password"}'
+        Tags: 
+          - Key: Name
+            Value: ${self:service}-rds-proxy
+
+    # Create IAM role for proxy uses to access secrets in AWS Secrets Manager
+    # https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/rds-proxy.html#rds-proxy-iam-setup
+    SecretIAMRole:
+      Type: AWS::IAM::Role
+      Properties:
+        RoleName: ${self:service.name}-secret-manager-role
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - rds.amazonaws.com
+            Action:
+              - sts:AssumeRole
+        Policies:
+          - PolicyName: ${self:service}-${self:provider.stage}-${self:provider.region}-secret-manager-policy
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - secretsmanager:GetRandomPassword
+                    - secretsmanager:CreateSecret
+                    - secretsmanager:ListSecrets
+                  Resource: "*"
+          - PolicyName: ${self:service}-${self:provider.stage}-${self:provider.region}-secret-manager
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow
+                  Action:
+                    # - secretsmanager:GetSecretValue
+                    # - secretsmanager:GetResourcePolicy
+                    # - secretsmanager:DescribeSecret
+                    # - secretsmanager:ListSecretVersionIds
+                    # - secretsmanager:CreateSecret
+                    # - secretsmanager:ListSecrets
+                    # - secretsmanager:GetRandomPassword
+                    - secretsmanager:*
+                  Resource:
+                    Ref: MySecretsManager
+    
+    # RDS Proxy
+    MyRDSProxy:
+      Type: AWS::RDS::DBProxy
+      Properties: 
+        Auth: 
+          - AuthScheme: SECRETS
+            IAMAuth: REQUIRED
+            SecretArn: 
+              Ref: MySecretsManager
+        DBProxyName: RDS-Proxy-Demo
+        DebugLogging: true
+        RequireTLS: true
+        EngineFamily: MYSQL
+        RoleArn: 
+          Fn::GetAtt: 
+            - SecretIAMRole
+            - Arn
+        Tags:
+          - Key: Name
+            Value: ${self:service}-rds-proxy
+        VpcSecurityGroupIds: # Same security group with RDS
+          - sg-0aa1d2ba4a55a3c3e #
+          # - Fn::ImportValue: rds:${self:provider.stage}:ServerlessVPCId # MySecurityGroup
+          # - Fn::ImportValue: rds:${self:provider.stage}:MySecurityGroup
+        VpcSubnetIds: # Only private subnet
+          - Fn::ImportValue: rds:${self:provider.stage}:SubnetPrivateA
+          - Fn::ImportValue: rds:${self:provider.stage}:SubnetPrivateB
+          - Fn::ImportValue: rds:${self:provider.stage}:SubnetPrivateC
+
+    ProxyTargetGroup: 
+      Type: AWS::RDS::DBProxyTargetGroup
+      Properties:
+        DbProxyName: RDS-Proxy-Demo
+        TargetGroupName: default
+        DBClusterIdentifiers:
+          - Fn::ImportValue: rds:${self:provider.stage}:AuroraRDSClusterId
+      DependsOn: MyRDSProxy
+
+    LambdaRole:
+      Type: AWS::IAM::Role
+      Properties:
+        RoleName: ${self:service.name}-lambda-role
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+        Policies:
+          - PolicyName: ${self:service}-${self:provider.stage}-${self:provider.region}-lambda-policy-logs
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - logs:PutLogEvents
+                    - logs:CreateLogGroup
+                    - logs:CreateLogStream
+                  Resource:
+                    - arn:aws:logs:*:*:*
+          - PolicyName: ${self:service}-${self:provider.stage}-${self:provider.region}-vpc-policy
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - ec2:CreateNetworkInterface
+                    - ec2:DescribeNetworkInterfaces
+                    - ec2:DeleteNetworkInterface
+                  Resource:
+                    - "*"
+          - PolicyName: ${self:service}-${self:provider.stage}-${self:provider.region}-rds-connection
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - rds-db:connect
+                  Resource:
+                    - Fn::GetAtt:
+                      - MyRDSProxy
+                      - DBProxyArn
+  
+    # MyRDSPG:
+    #   Type: AWS::RDS::DBProxyTargetGroup
+    #   Properties: 
+    #     DBClusterIdentifiers: 
+    #       - rds-dev-aurorardscluster-bw05qd5oozkd
+    #     DBProxyName: RDS-Proxy-Demo
+    #     TargetGroupName: default
+
+  Outputs:
+    DBProxyArn:
+      Value: 
+        Fn::GetAtt:
+          - MyRDSProxy
+          - DBProxyArn
+      Export:
+        Name: ${self:service}:${self:provider.stage}:DBProxyArn
+    Endpoint:
+      Value: 
+        Fn::GetAtt:
+          - MyRDSProxy
+          - Endpoint
+      Export:
+        Name: ${self:service}:${self:provider.stage}:Endpoint
+    SecretsManager:
+      Value:
+        Ref: MySecretsManager
+      Export:
+        Name: ${self:service}:${self:provider.stage}:SecretsManager
+
+      
