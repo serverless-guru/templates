@@ -33,8 +33,6 @@ then
   read instanceid
 fi
 
-echo $i
-
 az=`aws ec2 describe-instances --instance-ids $instanceid --query "Reservations[0].Instances[0].Placement.AvailabilityZone" --output text`
 retVal=$?
 if [ $retVal -ne 0 ]; then
