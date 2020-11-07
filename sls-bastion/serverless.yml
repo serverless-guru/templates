@@ -1,3 +1,5 @@
+org: serverlessguru
+app: patterns
 service: sls-bastion
 
 provider:

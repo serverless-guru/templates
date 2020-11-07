@@ -5,7 +5,6 @@ export AWS_PAGER=""
 export AWS_ACCESS_KEY_ID=$(sls param get --name AWS_ACCESS_KEY_ID --org serverlessguru --app patterns --service sls-bastion --stage dev)
 export AWS_SECRET_ACCESS_KEY=$(sls param get --name AWS_SECRET_ACCESS_KEY --org serverlessguru --app patterns --service sls-bastion --stage dev)
 export AWS_REGION=$(sls param get --name AWS_REGION --org serverlessguru --app patterns --service sls-bastion --stage dev)
-# sls config credentials --provider aws --key AWS_ACCESS_KEY --secret AWS_SECRET_KEY --overwrite
 
 socket=$(mktemp 2>/dev/null || mktemp -t 'mytmpdir')
 rm ${socket} 
@@ -33,6 +32,8 @@ then
   echo "Add your EC2 instance ID"
   read instanceid
 fi
+
+echo $i
 
 az=`aws ec2 describe-instances --instance-ids $instanceid --query "Reservations[0].Instances[0].Placement.AvailabilityZone" --output text`
 retVal=$?
