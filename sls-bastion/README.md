@@ -16,7 +16,20 @@ This project simplify the way you connect to a RDS instance, without the need to
 
 - You need to have `AWS Credentials` already configured in your machine;
 
-- You need to have `AWS Session Manager Plugin` already installed in your machine;
+- You need to have `AWS Session Manager Plugin` already installed in your machine; [Docs](https://docs.aws.amazon.com/systems-manager/latest/userguide/
+session-manager-working-with-install-plugin.html)
+
+On Mac:
+```
+curl "https://s3.amazonaws.com/session-manager-downloads/plugin/latest/mac/sessionmanager-bundle.zip" -o "sessionmanager-bundle.zip"
+unzip sessionmanager-bundle.zip
+sudo ./sessionmanager-bundle/install -i /usr/local/sessionmanagerplugin -b /usr/local/bin/session-manager-plugin
+```
+
+Verify:
+```
+session-manager-plugin
+```
 
 - You need to update your `~/.ssh/config` file with this instructions:
 ```
@@ -31,8 +44,7 @@ source: https://docs.aws.amazon.com/systems-manager/latest/userguide/session-man
 ### Deploy 
 
 ```bash
-npm install
-serverless deploy
+serverless deploy --stage <slsprostage> -v
 ```
 
 After your deploy has finished, you should see in your Terminal the ID of the EC2 Bastion instance (InstanceId). 

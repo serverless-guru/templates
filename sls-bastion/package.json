@@ -1,8 +1,0 @@
-{
-  "name": "sls-bastion",
-  "version": "1.0.0",
-  "devDependencies": {
-    "serverless-pseudo-parameters": "^2.5.0",
-    "serverless-stack-output": "^0.2.3"
-  }
-}
