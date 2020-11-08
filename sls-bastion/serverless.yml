@@ -9,6 +9,7 @@ provider:
 
 plugins:
   - serverless-stack-output
+  - serverless-pseudo-parameters
 
 package:
   exclude:
@@ -162,6 +163,55 @@ resources:
             DeviceIndex: '0'
             SubnetId: ${self:custom.stages.${self:provider.stage}.SUBNET_ID}
 
-  Outputs:
-    InstanceId:
-      Value: !Ref Instance
+    BastionUser:
+      Type: AWS::IAM::User
+      Properties:
+        UserName: sls-bastion-user
+        Policies: []
+
+    BastionPolicy:
+      Type: AWS::IAM::Policy
+      Properties:
+        Users:
+          - !Ref BastionUser
+        PolicyName: BastionUserRole
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action: ec2:DescribeInstances
+              Resource:
+                - "*"
+            - Effect: Allow
+              Action: ec2-instance-connect:SendSSHPublicKey
+              Resource:
+                - 'arn:aws:ec2:#{AWS::Region}:#{AWS::AccountId}:instance/${output:sls-bastion.InstanceId}'
+            - Effect: Allow
+              Action:
+                - ssm:StartSession
+              Resource:
+                - 'arn:aws:ec2:#{AWS::Region}:#{AWS::AccountId}:instance/${output:sls-bastion.InstanceId}'
+                - arn:aws:ssm:*::document/AWS-StartSSHSession
+
+    BastionUserKeys:
+      Type: AWS::IAM::AccessKey
+      Properties:
+        UserName: !Ref BastionUser
+
+    Outputs:
+      InstanceId:
+        Value: !Ref Instance
+      AccessKey:
+        Value: !Ref BastionUserKeys
+        Description: AWSAccessKeyId of BastionUser
+      SecretKey:
+        Value: !GetAtt [BastionUserKeys, SecretAccessKey]
+        Description: AWSSecretAccessKey of BastionUser
+
+outputs:
+  InstanceId: 
+    Ref: Instance
+  AccessKey: 
+    Ref: BastionUserKeys
+  SecretKey: 
+    Fn::GetAtt: BastionUserKeys.SecretAccessKey
