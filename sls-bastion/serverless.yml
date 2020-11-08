@@ -198,15 +198,15 @@ resources:
     #   Properties:
     #     UserName: !Ref BastionUser
 
-    Outputs:
-      InstanceId:
-        Value: !Ref Instance
-      # AccessKey:
-      #   Value: !Ref BastionUserKeys
-      #   Description: AWSAccessKeyId of BastionUser
-      # SecretKey:
-      #   Value: !GetAtt [BastionUserKeys, SecretAccessKey]
-      #   Description: AWSSecretAccessKey of BastionUser
+  Outputs:
+    InstanceId:
+      Value: !Ref Instance
+    # AccessKey:
+    #   Value: !Ref BastionUserKeys
+    #   Description: AWSAccessKeyId of BastionUser
+    # SecretKey:
+    #   Value: !GetAtt [BastionUserKeys, SecretAccessKey]
+    #   Description: AWSSecretAccessKey of BastionUser
 
 # outputs:
 #   InstanceId: 
