@@ -208,10 +208,10 @@ resources:
       #   Value: !GetAtt [BastionUserKeys, SecretAccessKey]
       #   Description: AWSSecretAccessKey of BastionUser
 
-outputs:
-  InstanceId: 
-    Ref: Instance
-  # AccessKey: 
-  #   Ref: BastionUserKeys
-  # SecretKey: 
-  #   Fn::GetAtt: BastionUserKeys.SecretAccessKey
+# outputs:
+#   InstanceId: 
+#     Ref: Instance
+#   AccessKey: 
+#     Ref: BastionUserKeys
+#   SecretKey: 
+#     Fn::GetAtt: BastionUserKeys.SecretAccessKey
