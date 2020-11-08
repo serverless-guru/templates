@@ -4,6 +4,8 @@
 
 This project simplify the way you connect to a RDS instance, without the need to configure and manage SSH keys inside your EC2 Bastion.
 
+![image](https://github.com/MaksimAniskov/aws-ssh-bastion-ssm/raw/master/README.images/architecture-private.svg)
+
 ## Commands
 
 ### Requirements
