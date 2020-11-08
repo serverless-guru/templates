@@ -2,10 +2,6 @@
 
 export AWS_PAGER=""
 
-export AWS_ACCESS_KEY_ID=$(sls param get --name AWS_ACCESS_KEY_ID --org serverlessguru --app patterns --service sls-bastion --stage dev)
-export AWS_SECRET_ACCESS_KEY=$(sls param get --name AWS_SECRET_ACCESS_KEY --org serverlessguru --app patterns --service sls-bastion --stage dev)
-export AWS_REGION=$(sls param get --name AWS_REGION --org serverlessguru --app patterns --service sls-bastion --stage dev)
-
 socket=$(mktemp 2>/dev/null || mktemp -t 'mytmpdir')
 rm ${socket} 
 
@@ -20,6 +16,34 @@ while [ $# -gt 0 ]; do
 
   shift
 done
+
+if [ -z "$slsorg" ]
+then
+  echo "Add your Serverless Dashboard Pro Org name"
+  read slsorg
+fi
+
+if [ -z "$slsapp" ]
+then
+  echo "Add your Serverless Dashboard Pro App name"
+  read slsapp
+fi
+
+if [ -z "$slsservice" ]
+then
+  echo "Add your Serverless Dashboard Pro Service name"
+  read slsservice
+fi
+
+if [ -z "$slsstage" ]
+then
+  echo "Add your Serverless Dashboard Pro Stage name"
+  read slsstage
+fi
+
+export AWS_ACCESS_KEY_ID=$(sls param get --name AWS_ACCESS_KEY_ID --org $slsorg --app $slsapp --service $slsservice --stage $slsstage)
+export AWS_SECRET_ACCESS_KEY=$(sls param get --name AWS_SECRET_ACCESS_KEY --org $slsorg --app $slsapp --service $slsservice --stage $slsstage)
+export AWS_REGION=$(sls param get --name AWS_REGION --org $slsorg --app $slsapp --service $slsservice --stage $slsstage)
 
 if [ -z "$username" ]
 then
