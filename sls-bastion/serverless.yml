@@ -1,3 +1,5 @@
+org: serverlessguru
+app: patterns
 service: sls-bastion
 
 provider:
@@ -5,83 +7,33 @@ provider:
   stage: ${opt:stage, "dev"}
   region: ${opt:region, "us-east-2"}
 
-plugins:
-  - serverless-stack-output
-
-package:
-  exclude:
-    - node_modules/**
-
 custom:
-  output:
-    handler: scripts/output.handler
-  stages:
-    dev:
-      VPC_ID: vpc-xxxxxxxxx
-      SUBNET_ID: subnet-xxxxxxxx
-      CIDR_IP: x.x.x.x/xx
-      INSTANCE_AMI_ID: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
-      INSTANCE_TYPE: t3.nano
-      ASSOCIATE_PUBLIC_IP_ADDRESS: false
-      ROUTE_TABLE_IDS: 
-        - rtb-xxxxxxxx
-    int:
-      VPC_ID: xxxxxxxxxxxxxxx
-      SUBNET_ID: xxxxxxxxxxxxxxx
-      CIDR_IP: xxxxxxxxxxxxxx
-      INSTANCE_AMI_ID: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
-      INSTANCE_TYPE: t3.nano
-      ASSOCIATE_PUBLIC_IP_ADDRESS: false
-      ROUTE_TABLE_IDS: 
-        - xxxxxxxxxxx
-    crt:
-      VPC_ID: xxxxxxxxxxxxxxx
-      SUBNET_ID: xxxxxxxxxxxxxxx
-      CIDR_IP: xxxxxxxxxxxxxx
-      INSTANCE_AMI_ID: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
-      INSTANCE_TYPE: t3.nano
-      ASSOCIATE_PUBLIC_IP_ADDRESS: false
-      ROUTE_TABLE_IDS: 
-        - xxxxxxxxxxx
-    preprod:
-      VPC_ID: xxxxxxxxxxxxxxx
-      SUBNET_ID: xxxxxxxxxxxxxxx
-      CIDR_IP: xxxxxxxxxxxxxx
-      INSTANCE_AMI_ID: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
-      INSTANCE_TYPE: t3.nano
-      ASSOCIATE_PUBLIC_IP_ADDRESS: false
-      ROUTE_TABLE_IDS: 
-        - xxxxxxxxxxx
-    prod:
-      VPC_ID: xxxxxxxxxxxxxxx
-      SUBNET_ID: xxxxxxxxxxxxxxx
-      CIDR_IP: xxxxxxxxxxxxxx
-      INSTANCE_AMI_ID: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
-      INSTANCE_TYPE: t3.nano
-      ASSOCIATE_PUBLIC_IP_ADDRESS: false
-      ROUTE_TABLE_IDS: 
-        - xxxxxxxxxxx
+  base: ${self:service}-${self:provider.stage}
+
+  params:
+    VPC_ID: ${param:SSM_BASTION_VPC_ID} # vpc-xxxxxxxxx
+    SUBNET_ID_1: ${param:SSM_BASTION_SUBNET_ID_1} # subnet-xxxxxxxx
+    CIDR_IP: ${param:SSM_BASTION_CIDR_IP} # x.x.x.x/xx
+    ROUTE_TABLE_ID_1: ${param:SSM_BASTION_ROUTE_TABLE_ID_1} # rtb-xxxxxxxx
+    INSTANCE_AMI_ID: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
+    INSTANCE_TYPE: t3.nano
+    ASSOCIATE_PUBLIC_IP_ADDRESS: false
 
 resources:
-  Parameters:
-    InstanceAmiId:
-      Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
-      Default: ${self:custom.stages.${self:provider.stage}.INSTANCE_AMI_ID}
-
   Resources:
     VpcEndpointSG:
       Type: AWS::EC2::SecurityGroup
       Properties:
         GroupDescription: HTTPS from the subnet
-        VpcId: ${self:custom.stages.${self:provider.stage}.VPC_ID}
+        VpcId: ${self:custom.params.VPC_ID}
         SecurityGroupIngress: 
           - IpProtocol: tcp
             FromPort: 443
             ToPort: 443
-            CidrIp: ${self:custom.stages.${self:provider.stage}.CIDR_IP}
+            CidrIp: ${self:custom.params.CIDR_IP}
         Tags: 
-        - Key: Name
-          Value: !Ref AWS::StackName
+          - Key: Name
+            Value: ${self:custom.base}-vpce-https-sg
 
     VpcEndpointSsm:
       Type: AWS::EC2::VPCEndpoint
@@ -89,9 +41,9 @@ resources:
         ServiceName: !Sub com.amazonaws.${AWS::Region}.ssm
         VpcEndpointType: Interface
         PrivateDnsEnabled: true
-        VpcId: ${self:custom.stages.${self:provider.stage}.VPC_ID}
+        VpcId: ${self:custom.params.VPC_ID}
         SubnetIds: 
-          - ${self:custom.stages.${self:provider.stage}.SUBNET_ID}
+          - ${self:custom.params.SUBNET_ID_1}
         SecurityGroupIds:
           - !GetAtt VpcEndpointSG.GroupId
 
@@ -101,9 +53,9 @@ resources:
         ServiceName: !Sub com.amazonaws.${AWS::Region}.ssmmessages
         VpcEndpointType: Interface
         PrivateDnsEnabled: true
-        VpcId: ${self:custom.stages.${self:provider.stage}.VPC_ID}
+        VpcId: ${self:custom.params.VPC_ID}
         SubnetIds: 
-          - ${self:custom.stages.${self:provider.stage}.SUBNET_ID}
+          - ${self:custom.params.SUBNET_ID_1}
         SecurityGroupIds:
           - !GetAtt VpcEndpointSG.GroupId
 
@@ -113,9 +65,9 @@ resources:
         ServiceName: !Sub com.amazonaws.${AWS::Region}.ec2messages
         VpcEndpointType: Interface
         PrivateDnsEnabled: true
-        VpcId: ${self:custom.stages.${self:provider.stage}.VPC_ID}
+        VpcId: ${self:custom.params.VPC_ID}
         SubnetIds: 
-          - ${self:custom.stages.${self:provider.stage}.SUBNET_ID}
+          - ${self:custom.params.SUBNET_ID_1}
         SecurityGroupIds:
           - !GetAtt VpcEndpointSG.GroupId
 
@@ -124,9 +76,9 @@ resources:
       Properties: 
         ServiceName: !Sub com.amazonaws.${AWS::Region}.s3
         VpcEndpointType: Gateway
-        VpcId: ${self:custom.stages.${self:provider.stage}.VPC_ID}
+        VpcId: ${self:custom.params.VPC_ID}
         RouteTableIds:
-          ${self:custom.stages.${self:provider.stage}.ROUTE_TABLE_IDS}
+          - ${self:custom.params.ROUTE_TABLE_ID_1}
 
     InstanceRole:
       Type: AWS::IAM::Role
@@ -149,17 +101,65 @@ resources:
     Instance:
       Type: AWS::EC2::Instance
       Properties:
-        ImageId: !Ref InstanceAmiId
-        InstanceType: ${self:custom.stages.${self:provider.stage}.INSTANCE_TYPE}
+        ImageId: ${ssm:${self:custom.params.INSTANCE_AMI_ID}} # pulling value from SSM
+        InstanceType: ${self:custom.params.INSTANCE_TYPE}
         IamInstanceProfile: !Ref InstanceProfile
         Tags:
           - Key: Name
-            Value: !Ref AWS::StackName
+            Value: ${self:custom.base}-ec2
         NetworkInterfaces:
-          - AssociatePublicIpAddress: ${self:custom.stages.${self:provider.stage}.ASSOCIATE_PUBLIC_IP_ADDRESS}
+          - AssociatePublicIpAddress: ${self:custom.params.ASSOCIATE_PUBLIC_IP_ADDRESS}
             DeviceIndex: '0'
-            SubnetId: ${self:custom.stages.${self:provider.stage}.SUBNET_ID}
+            SubnetId: ${self:custom.params.SUBNET_ID_1}
 
-  Outputs:
-    InstanceId:
-      Value: !Ref Instance
+    BastionUser:
+      Type: AWS::IAM::User
+      Properties:
+        UserName: ${self:custom.base}-sls-bastion-user
+        Policies:
+          - PolicyName: ${self:custom.base}-userpolicy
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow
+                  Action: ec2:DescribeInstances
+                  # ec2:DescribeInstances only supports '*'
+                  # https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ExamplePolicies_EC2.html
+                  Resource:
+                    - "*"
+                - Effect: Allow
+                  Action: ec2-instance-connect:SendSSHPublicKey
+                  Resource:
+                    - Fn::Join:
+                      - ''
+                      - - 'arn:aws:ec2:'
+                        - '${self:provider.region}:'
+                        - Ref: AWS::AccountId
+                        - ':instance/'
+                        - Ref: Instance
+                - Effect: Allow
+                  Action:
+                    - ssm:StartSession
+                  Resource:
+                    # - 'arn:aws:ec2:#{AWS::Region}:#{AWS::AccountId}:instance/${output:sls-bastion.InstanceId}'
+                    - Fn::Join:
+                      - ''
+                      - - 'arn:aws:ec2:'
+                        - '${self:provider.region}:'
+                        - Ref: AWS::AccountId
+                        - ':instance/'
+                        - Ref: Instance
+                    - arn:aws:ssm:*::document/AWS-StartSSHSession
+
+    BastionUserKeys:
+      Type: AWS::IAM::AccessKey
+      Properties:
+        UserName: !Ref BastionUser
+
+outputs:
+  InstanceId: 
+    Ref: Instance
+  AccessKey: 
+    Ref: BastionUserKeys
+  SecretKey: 
+    Fn::GetAtt: BastionUserKeys.SecretAccessKey

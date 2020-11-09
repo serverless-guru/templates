@@ -2,7 +2,7 @@
 
 export AWS_PAGER=""
 
-socket=$(mktemp -t deploy-ssh-socket)
+socket=$(mktemp 2>/dev/null || mktemp -t 'mytmpdir')
 rm ${socket} 
 
 exit_code=0
@@ -17,17 +17,36 @@ while [ $# -gt 0 ]; do
   shift
 done
 
-if [ -z "$username" ]
+if [ -z "$slsorg" ]
 then
-  echo "Add your EC2 username"
-  read username
+  echo "Add your Serverless Dashboard Pro Org name"
+  read slsorg
 fi
 
-if [ -z "$instanceid" ]
+if [ -z "$slsapp" ]
 then
-  echo "Add your EC2 instance ID"
-  read instanceid
+  echo "Add your Serverless Dashboard Pro App name"
+  read slsapp
 fi
+
+if [ -z "$slsservice" ]
+then
+  echo "Add your Serverless Dashboard Pro Service name"
+  read slsservice
+fi
+
+if [ -z "$slsstage" ]
+then
+  echo "Add your Serverless Dashboard Pro Stage name"
+  read slsstage
+fi
+
+export AWS_ACCESS_KEY_ID=$(sls output get --name AccessKey --org $slsorg --app $slsapp --service $slsservice --stage $slsstage)
+export AWS_SECRET_ACCESS_KEY=$(sls output get --name SecretKey --org $slsorg --app $slsapp --service $slsservice --stage $slsstage)
+export AWS_REGION=$(sls param get --name AWS_REGION --org $slsorg --app $slsapp --service $slsservice --stage $slsstage)
+
+username="ec2-user"
+instanceid=$(sls output get --name InstanceId --org $slsorg --app $slsapp --service $slsservice --stage $slsstage)
 
 az=`aws ec2 describe-instances --instance-ids $instanceid --query "Reservations[0].Instances[0].Placement.AvailabilityZone" --output text`
 retVal=$?
