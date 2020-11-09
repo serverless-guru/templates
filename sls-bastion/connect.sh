@@ -41,21 +41,12 @@ then
   read slsstage
 fi
 
-export AWS_ACCESS_KEY_ID=$(sls param get --name AWS_ACCESS_KEY_ID --org $slsorg --app $slsapp --service $slsservice --stage $slsstage)
-export AWS_SECRET_ACCESS_KEY=$(sls param get --name AWS_SECRET_ACCESS_KEY --org $slsorg --app $slsapp --service $slsservice --stage $slsstage)
+export AWS_ACCESS_KEY_ID=$(sls output get --name AccessKey --org $slsorg --app $slsapp --service $slsservice --stage $slsstage)
+export AWS_SECRET_ACCESS_KEY=$(sls output get --name SecretKey --org $slsorg --app $slsapp --service $slsservice --stage $slsstage)
 export AWS_REGION=$(sls param get --name AWS_REGION --org $slsorg --app $slsapp --service $slsservice --stage $slsstage)
 
-if [ -z "$username" ]
-then
-  echo "Add your EC2 username"
-  read username
-fi
-
-if [ -z "$instanceid" ]
-then
-  echo "Add your EC2 instance ID"
-  read instanceid
-fi
+username="ec2-user"
+instanceid=$(sls output get --name InstanceId --org $slsorg --app $slsapp --service $slsservice --stage $slsstage)
 
 az=`aws ec2 describe-instances --instance-ids $instanceid --query "Reservations[0].Instances[0].Placement.AvailabilityZone" --output text`
 retVal=$?

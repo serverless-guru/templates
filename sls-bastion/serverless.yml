@@ -151,10 +151,15 @@ resources:
                         - Ref: Instance
                     - arn:aws:ssm:*::document/AWS-StartSSHSession
 
-    # BastionUserKeys:
-    #   Type: AWS::IAM::AccessKey
-    #   Properties:
-    #     UserName: !Ref BastionUser
+    BastionUserKeys:
+      Type: AWS::IAM::AccessKey
+      Properties:
+        UserName: !Ref BastionUser
+
 outputs:
   InstanceId: 
     Ref: Instance
+  AccessKey: 
+    Ref: BastionUserKeys
+  SecretKey: 
+    Fn::GetAtt: BastionUserKeys.SecretAccessKey
