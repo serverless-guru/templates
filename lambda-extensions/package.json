@@ -1,0 +1,15 @@
+{
+  "name": "lambda-extensions",
+  "version": "1.0.0",
+  "description": "## NOTE: Pattern is setup with Serverless Pro for deployments",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "uuidv4": "^6.2.5"
+  }
+}
