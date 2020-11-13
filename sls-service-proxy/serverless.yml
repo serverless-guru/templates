@@ -1,0 +1,28 @@
+org: serverlessguru
+app: patterns
+service: sls-service-proxy
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stage: ${opt:stage, "dev"}
+  region: ${opt:region, "us-east-2"}
+
+plugins:
+  - serverless-apigateway-service-proxy
+
+resources:
+  Resources:
+    MySqsQueue:
+      Type: "AWS::SQS::Queue"
+      Properties:
+        QueueName: ${self:custom.queueName}
+
+custom:
+  queueName: MySqsQueue-${self:provider.stage}
+  apiGatewayServiceProxies:
+    - sqs:
+        path: /sqs
+        method: post
+        queueName: { 'Fn::GetAtt': ['MySqsQueue', 'QueueName'] }
+
