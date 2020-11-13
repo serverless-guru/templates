@@ -1,5 +1,5 @@
 {
-  "name": "lambda-extensions",
+  "name": "elk-extension",
   "version": "1.0.0",
   "description": "## NOTE: Pattern is setup with Serverless Pro for deployments",
   "main": "index.js",
@@ -8,8 +8,5 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
-  "devDependencies": {
-    "uuidv4": "^6.2.5"
-  }
+  "license": "ISC"
 }

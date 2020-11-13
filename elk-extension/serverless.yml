@@ -1,0 +1,39 @@
+org: serverlessguru
+app: patterns
+service: example-lambda
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stage: ${opt:stage, "dev"}
+  region: ${opt:region, "us-west-2"}
+
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - lambda:InvokeFunction
+      Resource: !Sub arn:aws:lambda:${self:provider.region}:${AWS::AccountId}:function:${self:custom.extensionShutdownLambdaName}
+
+custom:
+  base: ${self:service}-${self:provider.stage}
+  layerStackName: patterns:${self:provider.stage}:${self:provider.region}:elk-lambda-extension
+  extensionShutdownLambdaName: ${self:custom.base}-extension-shutdown
+
+functions:
+  # Lambda that has ELK Extension attached
+  example:
+    name: ${self:custom.base}-exampleLambda
+    handler: src/handlers/example.handler
+    events:
+      - http:
+          path: /example
+          cors: true
+          method: any
+    environment:
+      ELK_LAMBDA_NAME: ${self:custom.extensionShutdownLambdaName}
+      REGION: ${self:provider.region}
+    layers:
+      - ${output:${self:custom.layerStackName}.ELKLambdaExtensionLayerArn}
+  # Lambda to test Extension Shutdown 
+  extensionShutdown:
+    name: ${self:custom.extensionShutdownLambdaName}
+    handler: src/handlers/extensionShutdown.handler
