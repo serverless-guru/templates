@@ -1,0 +1,42 @@
+service: kafka-msk-ssm-params
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stage: ${opt:stage, "dev"}
+  region: ${opt:region, "us-east-1"}
+
+custom:
+  base: ${self:service}-${self:provider.stage}
+  accountId:
+    Ref: 'AWS::AccountId'
+
+resources:
+  Resources:
+    BootstrapBrokerStringParameter:
+      Type: AWS::SSM::Parameter
+      Properties:
+        Name: /${self:custom.base}/broker-string
+        Type: String
+        Value: 'UPDATE_WITH_BootstrapBrokerString'
+        Description: SSM Parameter for MSK bootstrap broker string.
+        Tags:
+          Environment: ${self:provider.stage}
+    BootstrapBrokerStringTLsParameter:
+      Type: AWS::SSM::Parameter
+      Properties:
+        Name: /${self:custom.base}/broker-string-tls
+        Type: String
+        Value: 'UPDATE_WITH_BootstrapBrokerStringTls'
+        Description: SSM Parameter for MSK bootstrap broker string TLS.
+        Tags:
+          Environment: ${self:provider.stage}
+  Outputs:
+    BootstrapBrokerStringParameter:
+      Description: SSM Parameter for MSK bootstrap broker string.
+      Value:
+        Ref: BootstrapBrokerStringParameter
+    BootstrapBrokerStringTLsParameter:
+      Description: SSM Parameter for MSK bootstrap broker string TLS.
+      Value:
+        Ref: BootstrapBrokerStringTLsParameter

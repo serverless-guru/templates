@@ -1,0 +1,74 @@
+service: kafka-msk-vpc
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stage: ${opt:stage, "dev"}
+  region: ${opt:region, "us-east-1"}
+
+custom:
+  base: ${self:service}-${self:provider.stage}
+  accountId:
+    Ref: 'AWS::AccountId'
+
+
+resources:
+  Resources:
+    kafkaVPC:
+      Type: AWS::EC2::VPC
+      Properties:
+        CidrBlock: 10.0.0.0/16
+
+    PrivateSubnet1:
+      Type: AWS::EC2::Subnet
+      Properties:
+        VpcId:
+          Ref: kafkaVPC
+        AvailabilityZone: us-east-1a
+        CidrBlock: 10.0.1.0/24
+        MapPublicIpOnLaunch: false
+    
+    PrivateSubnet2:
+      Type: AWS::EC2::Subnet
+      Properties:
+        VpcId:
+          Ref: kafkaVPC
+        AvailabilityZone: us-east-1b
+        CidrBlock: 10.0.2.0/24
+        MapPublicIpOnLaunch: false
+
+    PrivateRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:
+        Ref: kafkaVPC
+
+    PrivateSubnet1RouteTableAssociation:
+      Type: AWS::EC2::SubnetRouteTableAssociation
+      Properties:
+        SubnetId:
+          Ref: PrivateSubnet1
+        RouteTableId:
+          Ref: PrivateRouteTable
+    
+    PrivateSubnet2RouteTableAssociation:
+      Type: AWS::EC2::SubnetRouteTableAssociation
+      Properties:
+        SubnetId:
+          Ref: PrivateSubnet2
+        RouteTableId:
+          Ref: rivateRouteTable
+    
+  Outputs:
+    kafkaVPC:
+      Description: kafkaVPC id
+      Value:
+        Ref: kafkaVPC
+    PrivateSubnet1Id:
+      Description: PrivateSubnet1 id
+      Value:
+        Ref: PrivateSubnet1
+    PrivateSubnet2Id:
+      Description: PrivateSubnet2 id
+      Value:
+        Ref: PrivateSubnet2

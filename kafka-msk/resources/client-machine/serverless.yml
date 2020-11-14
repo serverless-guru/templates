@@ -1,0 +1,111 @@
+service: kafka-msk-client-machine
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stage: ${opt:stage, "dev"}
+  region: ${opt:region, "us-east-1"}
+  
+custom:
+  base: ${self:service}-${self:provider.stage}
+  accountId:
+    Ref: 'AWS::AccountId'
+
+  regionAMI:
+    us-east-1:
+      HVM64: 'ami-0947d2ba12ee1ff75'
+    us-east-1:
+      HVM64: 'ami-03657b56516ab7912'
+
+  params:
+    VPC_ID: ${cf:kafka-msk-vpc-${self:provider.stage}.kafkaVPC}
+    KAFKA_SECURITY_GROUP: ${cf:kafka-msk-msk-${self:provider.stage}.MSKSecurityGroup}
+    CM_INSTANCE_TYPE: t2.xlarge
+    CM_SUBNET: ${cf:kafka-msk-vpc-${self:provider.stage}.PrivateSubnet1Id}
+    CM_AMI: ${self:custom.regionAMI.${self:provider.region}.HVM64}
+
+
+resources:
+  Resources:
+    ## MSK CLIENT MACHINE SECURITY GROUP ##
+    MSKClientMachineSecurityGroup:
+      Type: AWS::EC2::SecurityGroup
+      Properties:
+        GroupDescription: EC2 SecurityGroup
+        VpcId: ${self:custom.params.VPC_ID}
+
+    ## MSK CLIENT MACHINE ROLE ##
+    MSKClientMachineRole:
+      Type: AWS::IAM::Role
+      Properties:
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Sid: ''
+              Effect: Allow
+              Principal:
+                Service: ec2.amazonaws.com
+              Action: 'sts:AssumeRole'
+        Path: /
+        ManagedPolicyArns:
+          - 'arn:aws:iam::aws:policy/AmazonMSKFullAccess'
+          - 'arn:aws:iam::aws:policy/AWSCloudFormationReadOnlyAccess'
+          - 'arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore'
+
+    # MSK SECURITY GROUP Ingress ##
+    MSKSecurityGroupIngress1:
+      Type: AWS::EC2::SecurityGroupIngress
+      Properties:
+        GroupId: ${self:custom.params.KAFKA_SECURITY_GROUP}
+        IpProtocol: tcp
+        FromPort: 2181
+        ToPort: 2181
+        SourceSecurityGroupId:
+          Ref: MSKClientMachineSecurityGroup
+    MSKSecurityGroupIngress2:
+      Type: AWS::EC2::SecurityGroupIngress
+      Properties:
+        GroupId: ${self:custom.params.KAFKA_SECURITY_GROUP}
+        IpProtocol: tcp
+        FromPort: 9094
+        ToPort: 9094
+        SourceSecurityGroupId:
+          Ref: MSKClientMachineSecurityGroup
+    MSKSecurityGroupIngress3:
+      Type: AWS::EC2::SecurityGroupIngress
+      Properties:
+        GroupId: ${self:custom.params.KAFKA_SECURITY_GROUP}
+        IpProtocol: tcp
+        FromPort: 9092
+        ToPort: 9092
+        SourceSecurityGroupId:
+          Ref: MSKClientMachineSecurityGroup
+
+    ## MSK CLIENT MACHINE ##
+    MSKClientEC2Instance:
+      Type: AWS::EC2::Instance
+      Properties:
+        InstanceType: ${self:custom.params.CM_INSTANCE_TYPE}
+        IamInstanceProfile:
+          Ref: MSKClientEC2InstanceProfile
+        SubnetId: ${self:custom.params.CM_SUBNET}
+        SecurityGroupIds:
+          - Ref: MSKClientMachineSecurityGroup
+        ImageId: ${self:custom.params.CM_AMI}
+        Tags:
+          - Key: Name
+            Value: KafkaClientInstance-${self:provider.stage}
+        UserData: 
+          Fn::Base64: "${file(startup.sh)}"
+          
+    MSKClientEC2InstanceProfile:
+      Type: AWS::IAM::InstanceProfile
+      Properties:
+        Roles:
+          - Ref: MSKClientMachineRole
+
+  Outputs:
+    MSKClientMachine:
+      Description: MSK CLient Machine instance ID
+      Value:
+        Ref: MSKClientEC2Instance
