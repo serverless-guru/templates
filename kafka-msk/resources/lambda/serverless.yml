@@ -1,0 +1,135 @@
+service: kafka-msk-lambda
+
+plugins:
+  - serverless-iam-roles-per-function
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stage: ${opt:stage, "dev"}
+  region: ${opt:region, "us-east-1"}
+
+custom:
+  base: ${self:service}-${self:provider.stage}
+  accountId:
+    Ref: 'AWS::AccountId'
+    
+  params:
+    VPC_ID: ${cf:kafka-msk-vpc-${self:provider.stage}.kafkaVPC}
+    MSK_ARN: ${cf:kafka-msk-msk-${self:provider.stage}.MSKClusterArn}
+    MSK_LAMBDA_CONSUMER_SUBNET_1: ${cf:kafka-msk-vpc-${self:provider.stage}.PrivateSubnet1Id}
+    MSK_LAMBDA_CONSUMER_SUBNET_2: ${cf:kafka-msk-vpc-${self:provider.stage}.PrivateSubnet2Id}
+    MSK_LAMBDA_PRODUCER_SUBNET_1: ${cf:kafka-msk-vpc-${self:provider.stage}.PrivateSubnet1Id}
+    MSK_LAMBDA_PRODUCER_SUBNET_2: ${cf:kafka-msk-vpc-${self:provider.stage}.PrivateSubnet2Id}
+    KAFKA_SECURITY_GROUP: ${cf:kafka-msk-msk-${self:provider.stage}.MSKSecurityGroup}
+    MSK_CONSUMER_BATCH_SIZE: 100
+    MY_TOPIC: MYTopic # Change with your topic name
+
+functions:
+  consumer:
+    handler: functions/msk-consumer/index.handler
+    vpc:
+      securityGroupIds:
+        - Ref: MSKLambdaConsumerSG
+      subnetIds:
+        - ${self:custom.params.MSK_LAMBDA_CONSUMER_SUBNET_1}
+        - ${self:custom.params.MSK_LAMBDA_CONSUMER_SUBNET_2}
+    iamRoleStatements:
+      - Effect: "Allow"
+        Action:
+          - kafka:DescribeCluster
+          - kafka:GetBootstrapBrokers
+          - ec2:CreateNetworkInterface
+          - ec2:DescribeNetworkInterfaces
+          - ec2:DescribeVpcs
+          - ec2:DeleteNetworkInterface
+          - ec2:DescribeSubnets
+          - ec2:DescribeSecurityGroups
+          - logs:CreateLogGroup
+          - logs:CreateLogStream
+          - logs:PutLogEvents
+        Resource:
+            - "*"
+
+  producer:
+    handler: functions/msk-producer/index.handler
+    timeout: 60
+    vpc:
+      securityGroupIds:
+        - Ref: MSKLambdaProducerSG
+      subnetIds:
+        - ${self:custom.params.MSK_LAMBDA_PRODUCER_SUBNET_1}
+        - ${self:custom.params.MSK_LAMBDA_PRODUCER_SUBNET_2}
+    environment:
+      KAFKA_HOST: ${ssm:${cf:kafka-msk-ssm-params-${self:provider.stage}.BootstrapBrokerStringParameter}}
+      APP_NAME: ${self:custom.base}
+      MY_TOPIC: ${self:custom.params.MY_TOPIC}
+    iamRoleStatements: # Policy arn:aws:iam::aws:policy/service-role/AWSLambdaMSKExecutionRole
+      - Effect: "Allow"
+        Action:
+          - kafka:DescribeCluster
+          - kafka:GetBootstrapBrokers
+        Resource:
+          - ${self:custom.params.MSK_ARN}
+      - Effect: "Allow"
+        Action:
+          - ec2:CreateNetworkInterface
+          - ec2:DescribeNetworkInterfaces
+          - ec2:DescribeVpcs
+          - ec2:DeleteNetworkInterface
+          - ec2:DescribeSubnets
+          - ec2:DescribeSecurityGroups
+          - logs:CreateLogGroup
+          - logs:CreateLogStream
+          - logs:PutLogEvents
+        Resource:
+            - "*"
+
+resources:
+  Resources:
+    MSKLambdaConsumerSG:
+      Type: AWS::EC2::SecurityGroup
+      Properties:
+        VpcId: ${self:custom.params.VPC_ID}
+        GroupDescription: 'MSK Lambda Consumer SG'
+        SecurityGroupIngress:
+          - IpProtocol: "-1"
+            CidrIp: 0.0.0.0/0
+
+    MSKLambdaProducerSG:
+      Type: AWS::EC2::SecurityGroup
+      Properties:
+        VpcId: ${self:custom.params.VPC_ID}
+        GroupDescription: 'MSK Lambda Producer SG'
+    
+    MSKLambdaProducerSGIngress:
+      Type: AWS::EC2::SecurityGroupIngress
+      Properties:
+        GroupId: ${self:custom.params.KAFKA_SECURITY_GROUP}
+        IpProtocol: tcp
+        FromPort: 9094
+        ToPort: 9094
+        SourceSecurityGroupId:
+          Ref: MSKLambdaProducerSG
+
+    MSKLambdaProducerSGIngress2:
+      Type: AWS::EC2::SecurityGroupIngress
+      Properties:
+        GroupId: ${self:custom.params.KAFKA_SECURITY_GROUP}
+        IpProtocol: tcp
+        FromPort: 9092
+        ToPort: 9092
+        SourceSecurityGroupId:
+          Ref: MSKLambdaProducerSG
+
+    MSKLambdaConsumerEventSourceMapping: 
+      Type: AWS::Lambda::EventSourceMapping
+      Properties:
+        Enabled: true
+        EventSourceArn: ${self:custom.params.MSK_ARN}
+        FunctionName:
+          Ref: ConsumerLambdaFunction
+        StartingPosition: "LATEST"
+        Topics:
+          - ${self:custom.params.MY_TOPIC}
+        BatchSize: ${self:custom.params.MSK_CONSUMER_BATCH_SIZE}

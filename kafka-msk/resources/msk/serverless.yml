@@ -1,0 +1,68 @@
+service: kafka-msk-msk
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stage: ${opt:stage, "dev"}
+  region: ${opt:region, "us-east-1"}
+
+custom:
+  base: ${self:service}-${self:provider.stage}
+  accountId:
+    Ref: 'AWS::AccountId'
+  
+  params:
+    VPC_ID: ${cf:kafka-msk-vpc-${self:provider.stage}.kafkaVPC}
+    MSK_NAME: ${self:custom.base}
+    KAFKA_VERSION: 2.2.1
+    MSK_BROKER_NODES_NUMBER: 2
+    MSK_ENHANCED_MONITORING: PER_TOPIC_PER_BROKER
+    MSK_BROKER_INSTANCE_TYPE: kafka.m5.large
+    MSK_BROKER_EBS_STORAGE_SIZE: 100
+    MSK_BROKER_SUBNET_1: ${cf:kafka-msk-vpc-${self:provider.stage}.PrivateSubnet1Id}
+    MSK_BROKER_SUBNET_2: ${cf:kafka-msk-vpc-${self:provider.stage}.PrivateSubnet2Id}
+
+
+resources:
+  Resources:
+    ## MSK SECURITY GROUP ##
+    MSKSecurityGroup:
+      Type: AWS::EC2::SecurityGroup
+      Properties:
+        GroupDescription: MSK SecurityGroup
+        VpcId: ${self:custom.params.VPC_ID}
+        SecurityGroupIngress: # Required for setting MSK as event source for lambda.
+          - IpProtocol: "-1"
+            CidrIp: 0.0.0.0/0
+    
+    ## MSK CLUSTER ##
+    MSKCluster:
+      Type: AWS::MSK::Cluster
+      Properties:
+        ClusterName: ${self:custom.params.MSK_NAME}
+        KafkaVersion: ${self:custom.params.KAFKA_VERSION}
+        NumberOfBrokerNodes: ${self:custom.params.MSK_BROKER_NODES_NUMBER}
+        EnhancedMonitoring: ${self:custom.params.MSK_ENHANCED_MONITORING}
+        EncryptionInfo:
+          EncryptionInTransit:
+            ClientBroker: TLS_PLAINTEXT
+            InCluster: true
+        BrokerNodeGroupInfo:
+          InstanceType: ${self:custom.params.MSK_BROKER_INSTANCE_TYPE}
+          SecurityGroups:
+            - Ref: MSKSecurityGroup
+          StorageInfo:
+            EBSStorageInfo:
+              VolumeSize: ${self:custom.params.MSK_BROKER_EBS_STORAGE_SIZE}
+          ClientSubnets:
+            - ${self:custom.params.MSK_BROKER_SUBNET_1}
+            - ${self:custom.params.MSK_BROKER_SUBNET_2}
+  Outputs:
+    MSKSecurityGroup:
+      Description: MSK Security Group
+      Value:
+        Ref: MSKSecurityGroup
+    MSKClusterArn:
+      Description: The Arn for the MSK cluster
+      Value:
+        Ref: MSKCluster
