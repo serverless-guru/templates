@@ -1,6 +1,6 @@
-org: serverlessguru
-app: patterns
-service: elk-lambda-extension
+# org: serverlessguru
+# app: patterns
+service: elk-lambda-extension-test-logs
 provider:
   name: aws
   stage: ${opt:stage, "dev"}
