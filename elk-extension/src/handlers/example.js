@@ -1,10 +1,8 @@
 const fs = require('fs');
 
 let logStorage = {};
-const logFilePath = '/tmp/logs.json';
 
 exports.handler = async event => {
-    console.log('***')
     let { headers, path, httpMethod, pathParameters } = event;
     let traceId = headers['x-amzn-trace-id'];
 
@@ -12,12 +10,7 @@ exports.handler = async event => {
         headers, path, httpMethod, pathParameters, traceId
     };
 
-    console.log({ traceId, data: JSON.stringify(event) });
-    console.log({ traceId, data: JSON.stringify(event) });
-    console.log({ traceId, data: JSON.stringify(event) });
-    console.log({ traceId, data: JSON.stringify(event) });
-    console.log({ traceId, data: JSON.stringify(event) });
-    console.log({ traceId, data: JSON.stringify(event) });
+    logMessages(10, traceId, event, randomString(10));
 
     return {
         statusCode: 200,
@@ -29,3 +22,19 @@ exports.handler = async event => {
         }
     }
 };
+
+const logMessages = (amount, traceId, event, randomString) => {
+    for (i = 0; i < amount; i++) {
+        console.log({ number: i, traceId, randomString, data: JSON.stringify(event) });
+    }
+}
+
+const randomString = (times) => {
+    let string = '';
+
+    for (i = 0; i < times; i++) {
+        string += Math.random().toString(36).substring(2, 15);
+    }
+    
+    return string;
+}
