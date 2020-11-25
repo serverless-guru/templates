@@ -35,10 +35,9 @@ functions:
           method: any
     environment:
       REGION: ${self:provider.region}
-      LOGS_MAX_ITEMS: 1000
-      LOGS_TIMEOUT_MS: 100
-      LOGS_DESTINATION_BUCKET_NAME: ${self:custom.base}
-      LOGS_DESTINATION_OBJECT_NAME: ${self:custom.base}-exampleLambda
+      EXTENSION_LOG_DESTINATIONS: "s3"
+      EXTENSION_LOG_DESTINATION_S3_BUCKET_NAME: ${self:custom.bucketName}
+      EXTENSION_LOG_DESTINATION_S3_OBJECT_NAME: ${self:custom.base}-exampleLambda
     layers:
       - ${cf:${self:custom.layerStackName}.ELKLambdaExtensionLayerLambdaLayerQualifiedArn}
 
