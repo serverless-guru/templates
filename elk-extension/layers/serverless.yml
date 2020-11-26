@@ -1,6 +1,6 @@
-org: serverlessguru
-app: patterns
-service: elk-lambda-extension
+# org: serverlessguru
+# app: patterns
+service: elk-lambda-extension-test-logs
 provider:
   name: aws
   stage: ${opt:stage, "dev"}
@@ -12,7 +12,7 @@ layers:
   ELKLambdaExtensionLayer:
     path: ./elk
     name: ${self:custom.base}-ELKLogging
-    description: Test lambda extension shutdown hook for ELK
+    description: Test lambda extension using Lambda Logs API
     compatibleRuntimes:
       - nodejs12.x
     retain: false

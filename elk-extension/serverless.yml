@@ -1,6 +1,6 @@
-org: serverlessguru
-app: patterns
-service: example-lambda
+# org: serverlessguru
+# app: patterns
+service: example-lambda-test-logs
 provider:
   name: aws
   runtime: nodejs12.x
@@ -10,13 +10,18 @@ provider:
   iamRoleStatements:
     - Effect: Allow
       Action:
-        - lambda:InvokeFunction
-      Resource: !Sub arn:aws:lambda:${self:provider.region}:${AWS::AccountId}:function:${self:custom.extensionShutdownLambdaName}
-
+        - s3:putObject
+      Resource:
+        Fn::Join:
+          - ""
+          - - "arn:aws:s3:::"
+            - "Ref" : "ELKExampleS3Bucket"
+            - "/*"
+        
 custom:
   base: ${self:service}-${self:provider.stage}
-  layerStackName: patterns:${self:provider.stage}:${self:provider.region}:elk-lambda-extension
-  extensionShutdownLambdaName: ${self:custom.base}-extension-shutdown
+  bucketName: ${self:custom.base}-bucket
+  layerStackName: elk-lambda-extension-test-logs-${self:provider.stage}
 
 functions:
   # Lambda that has ELK Extension attached
@@ -29,11 +34,16 @@ functions:
           cors: true
           method: any
     environment:
-      ELK_LAMBDA_NAME: ${self:custom.extensionShutdownLambdaName}
       REGION: ${self:provider.region}
+      EXTENSION_LOG_DESTINATIONS: "s3"
+      EXTENSION_LOG_DESTINATION_S3_BUCKET_NAME: ${self:custom.bucketName}
+      EXTENSION_LOG_DESTINATION_S3_OBJECT_NAME: ${self:custom.base}-exampleLambda
     layers:
-      - ${output:${self:custom.layerStackName}.ELKLambdaExtensionLayerArn}
-  # Lambda to test Extension Shutdown 
-  extensionShutdown:
-    name: ${self:custom.extensionShutdownLambdaName}
-    handler: src/handlers/extensionShutdown.handler
+      - ${cf:${self:custom.layerStackName}.ELKLambdaExtensionLayerLambdaLayerQualifiedArn}
+
+resources:
+  Resources:
+    ELKExampleS3Bucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:custom.bucketName}
