@@ -3,7 +3,7 @@ const { PORT } = require('./http-server');
 
 const baseUrl = `http://${process.env.AWS_LAMBDA_RUNTIME_API}/2020-08-15/logs`;
 
-const MAX_ITEMS = 1000;
+const MAX_ITEMS = 10000;
 const MAX_BYTES = 262144;
 const TIMEOUT_MS = 1000;
 

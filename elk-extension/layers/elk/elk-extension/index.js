@@ -61,7 +61,7 @@ const handleInvoke = async (event) => {
 
         while (logs.length > 0) {
             const logBatch = logs.shift();
-            // await uploadLogsToS3(logBatch);
+
             await Promise.all(
                 registeredDestinations.map(async ({ sendLogs }) => {
                     await sendLogs(logBatch);
