@@ -98,7 +98,7 @@ EXTENSION_LOG_DESTINATIONS: "s3,destination1,destination2"
 
 ## S3 destination
 
-With this destination, function logs that the Lambda function generates and writes to stdout or stderr are send to a S3 bucket. As the this is an asynchronous system, logs for one invoke may be processed during the next invocation. Logs for the last invoke may be processed during the SHUTDOWN event.
+With this destination, function logs that the Lambda function generates and writes to stdout or stderr are send to a S3 bucket. As this is an asynchronous system, logs for one invoke may be processed during the next invocation. Logs for the last invoke may be processed during the SHUTDOWN event.
 
 ### Configuration
 This destination accepts the following params as environment variables:
