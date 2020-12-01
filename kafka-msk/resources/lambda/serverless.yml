@@ -62,7 +62,6 @@ functions:
         - ${self:custom.params.MSK_LAMBDA_PRODUCER_SUBNET_2}
     environment:
       KAFKA_HOST: ${ssm:${cf:kafka-msk-ssm-params-${self:provider.stage}.BootstrapBrokerStringParameter}}
-      APP_NAME: ${self:custom.base}
       MY_TOPIC: ${self:custom.params.MY_TOPIC}
     iamRoleStatements: # Policy arn:aws:iam::aws:policy/service-role/AWSLambdaMSKExecutionRole
       - Effect: "Allow"

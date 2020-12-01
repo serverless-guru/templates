@@ -10,7 +10,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "kafkajs": "^1.14.0"
+    "kafka-node": "^5.0.0"
   },
   "devDependencies": {
     "serverless-iam-roles-per-function": "^2.0.2"
