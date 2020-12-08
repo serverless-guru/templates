@@ -1,0 +1,13 @@
+{
+  "name": "sls-sqsfifo-to-rds-mysql",
+  "description": "",
+  "version": "0.1.0",
+  "dependencies": {
+    "aws-sdk": "^2.797.0",
+    "faker": "^5.1.0",
+    "serverless-mysql": "^1.5.4"
+  },
+  "devDependencies": {
+    "serverless-apigateway-service-proxy": "^1.13.0"
+  }
+}
