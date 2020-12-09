@@ -14,13 +14,23 @@ custom:
     VPC_ID: ${param:SSM_BASTION_VPC_ID} # vpc-xxxxxxxxx
     SUBNET_ID_1: ${param:SSM_BASTION_SUBNET_ID_1} # subnet-xxxxxxxx
     CIDR_IP: ${param:SSM_BASTION_CIDR_IP} # x.x.x.x/xx
-    ROUTE_TABLE_ID_1: ${param:SSM_BASTION_ROUTE_TABLE_ID_1} # rtb-xxxxxxxx
     INSTANCE_AMI_ID: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
     INSTANCE_TYPE: t3.nano
     ASSOCIATE_PUBLIC_IP_ADDRESS: false
 
 resources:
   Resources:
+    RouteTable:
+      Type: AWS::EC2::RouteTable
+      Properties:
+        VpcId: ${self:custom.params.VPC_ID}
+
+    RouteTableAssociation:
+      Type: AWS::EC2::SubnetRouteTableAssociation
+      Properties:
+        RouteTableId: !Ref RouteTable
+        SubnetId: ${self:custom.params.SUBNET_ID_1}
+
     VpcEndpointSG:
       Type: AWS::EC2::SecurityGroup
       Properties:
@@ -78,7 +88,7 @@ resources:
         VpcEndpointType: Gateway
         VpcId: ${self:custom.params.VPC_ID}
         RouteTableIds:
-          - ${self:custom.params.ROUTE_TABLE_ID_1}
+          - !Ref RouteTable
 
     InstanceRole:
       Type: AWS::IAM::Role
