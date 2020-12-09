@@ -1,0 +1,14 @@
+config:
+  target: "YOUR_BASE_PATH_GOES_HERE"
+  phases:
+    -
+      duration: 300
+      arrivalRate: 500
+      rampTo: 1000
+scenarios:
+  - name: "Send Message"
+    flow:
+      - post:
+          url: "YOUR_ENDPOINT_GOES_HERE"
+          json:
+            id: "{{ $randomNumber(0,1000000000000000000000) }}"

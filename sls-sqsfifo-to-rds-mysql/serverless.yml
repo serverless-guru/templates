@@ -1,0 +1,108 @@
+org: serverlessguru
+app: patterns
+service: sls-sqsfifo-to-rds-mysql
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stage: ${opt:stage, "dev"}
+  region: ${opt:region, "us-east-2"}
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "secretsmanager:GetSecretValue"
+      Resource:
+        - "*"
+
+plugins:
+  - serverless-apigateway-service-proxy
+  - serverless-pseudo-parameters
+
+custom:
+  secretManagerKey: ${self:service}/dbAccess
+  sqs:
+    params:
+      MaximumMessageSize: 262144
+      VisibilityTimeout: 360
+      MessageRetentionPeriod: 345600
+      ReceiveMessageWaitTimeSeconds: 0
+    base:
+      name: ${self:service}-${self:provider.stage}
+      arn: arn:aws:sqs:${self:provider.region}:#{AWS::AccountId}
+    queues:
+      PushToAuroraQueue:
+        name: ${self:custom.sqs.base.name}-push-to-aurora-queue.fifo
+        arn: ${self:custom.sqs.base.arn}:${self:custom.sqs.queues.PushToAuroraQueue.name}
+        url: https://sqs.${self:provider.region}.amazonaws.com/#{AWS::AccountId}/${self:custom.sqs.queues.PushToAuroraQueue.name}
+      PushToAuroraQueueDLQ:
+        name: ${self:custom.sqs.base.name}-push-to-aurora-dlq-queue.fifo
+        arn: ${self:custom.sqs.base.arn}:${self:custom.sqs.queues.PushToAuroraQueueDLQ.name}
+        url: https://sqs.${self:provider.region}.amazonaws.com/#{AWS::AccountId}/${self:custom.sqs.queues.PushToAuroraQueueDLQ.name}
+  params:
+    VPC_ID: vpc-xxxxxxxx
+    SUBNET_IDS:
+      - subnet-xxxxxxxx
+      - subnet-xxxxxxxx
+      - subnet-xxxxxxxx
+    SECURITY_GROUP_IDS:
+      - sg-xxxxxxxx
+  apiGatewayServiceProxies:
+    - sqs:
+        path: /sqs
+        method: post
+        queueName: { 'Fn::GetAtt': ['PushToAuroraQueue', 'QueueName'] }
+        requestParameters:
+          'integration.request.querystring.MessageGroupId': "'PushToAuroraQueue'"
+
+functions:
+  consumer:
+    handler: index.handler
+    memorySize: 128
+    timeout: 60
+    events:
+      - sqs:
+          arn: ${self:custom.sqs.queues.PushToAuroraQueue.arn}
+          batchSize: 10
+    vpc:
+      securityGroupIds: ${self:custom.params.SECURITY_GROUP_IDS}
+      subnetIds: ${self:custom.params.SUBNET_IDS}
+    environment:
+      REGION: ${self:provider.region}
+      SECRET_MANAGER_KEY: ${self:custom.secretManagerKey}
+
+resources:
+  Resources:
+    PushToAuroraQueue:
+      Type: "AWS::SQS::Queue"
+      Properties:
+        FifoQueue: true
+        ContentBasedDeduplication: true
+        MaximumMessageSize: ${self:custom.sqs.params.MaximumMessageSize}
+        MessageRetentionPeriod: ${self:custom.sqs.params.MessageRetentionPeriod}
+        ReceiveMessageWaitTimeSeconds: ${self:custom.sqs.params.ReceiveMessageWaitTimeSeconds}
+        VisibilityTimeout: ${self:custom.sqs.params.VisibilityTimeout}      
+        QueueName : ${self:custom.sqs.queues.PushToAuroraQueue.name}
+        RedrivePolicy: 
+          deadLetterTargetArn: { 'Fn::GetAtt': ['PushToAuroraQueueDLQ', 'Arn'] }
+          maxReceiveCount: 1
+    PushToAuroraQueueDLQ: 
+      Type: AWS::SQS::Queue
+      Properties:
+        FifoQueue: true
+        MaximumMessageSize: ${self:custom.sqs.params.MaximumMessageSize}
+        MessageRetentionPeriod: ${self:custom.sqs.params.MessageRetentionPeriod}
+        ReceiveMessageWaitTimeSeconds: ${self:custom.sqs.params.ReceiveMessageWaitTimeSeconds}
+        VisibilityTimeout: ${self:custom.sqs.params.VisibilityTimeout}      
+        QueueName : ${self:custom.sqs.queues.PushToAuroraQueueDLQ.name}
+    VpcEndpointSecretsManager:
+      Type: AWS::EC2::VPCEndpoint
+      Properties: 
+        ServiceName: !Sub com.amazonaws.#{AWS::Region}.secretsmanager
+        VpcEndpointType: Interface
+        PrivateDnsEnabled: true
+        VpcId: ${self:custom.params.VPC_ID}
+        SubnetIds: ${self:custom.params.SUBNET_IDS}
+        SecurityGroupIds: ${self:custom.params.SECURITY_GROUP_IDS}
+
+package:
+  excludeDevDependencies: true
