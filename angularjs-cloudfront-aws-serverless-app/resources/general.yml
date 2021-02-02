@@ -16,7 +16,7 @@ WebAppS3BucketPolicy:
       Ref: WebAppS3Bucket
     PolicyDocument:
       Statement:
-        - Sid: PublicReadGetObject
+        - Sid: PublicReadFromCloudfront
           Action:
             - s3:GetObject
           Effect: Allow
