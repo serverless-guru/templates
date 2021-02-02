@@ -3,6 +3,11 @@ WebAppS3Bucket:
   Type: AWS::S3::Bucket
   Properties:
     BucketName: ${self:custom.s3.name}
+    PublicAccessBlockConfiguration:
+      BlockPublicAcls: true
+      BlockPublicPolicy: true
+      IgnorePublicAcls: true
+      RestrictPublicBuckets: true
 ## Specifying the policies to make sure all files inside the Bucket are avaialble to CloudFront
 WebAppS3BucketPolicy:
   Type: AWS::S3::BucketPolicy
