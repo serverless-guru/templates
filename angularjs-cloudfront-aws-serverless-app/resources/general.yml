@@ -64,13 +64,9 @@ WebAppCloudFrontDistribution:
           ResponsePagePath: /index.html
       DefaultCacheBehavior:
         AllowedMethods:
-          - DELETE
           - GET
           - HEAD
           - OPTIONS
-          - PATCH
-          - POST
-          - PUT
         ## The origin id defined above
         TargetOriginId: ${self:custom.base}-web-app
         ## Defining if and how the QueryString and Cookies are forwarded to the origin which in this case is S3
