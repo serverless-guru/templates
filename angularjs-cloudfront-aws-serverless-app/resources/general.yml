@@ -3,7 +3,6 @@ WebAppS3Bucket:
   Type: AWS::S3::Bucket
   Properties:
     BucketName: ${self:custom.s3.name}
-    AccessControl: PublicRead
     WebsiteConfiguration:
       IndexDocument: index.html
       ErrorDocument: index.html
