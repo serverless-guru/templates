@@ -85,3 +85,4 @@ WebAppCloudFrontDistribution:
       #   IncludeCookies: 'false'
       #   Bucket: mylogs.s3.amazonaws.com
       #   Prefix: myprefix
+      HttpVersion: http2
