@@ -3,9 +3,6 @@ WebAppS3Bucket:
   Type: AWS::S3::Bucket
   Properties:
     BucketName: ${self:custom.s3.name}
-    WebsiteConfiguration:
-      IndexDocument: index.html
-      ErrorDocument: index.html
 ## Specifying the policies to make sure all files inside the Bucket are avaialble to CloudFront
 WebAppS3BucketPolicy:
   Type: AWS::S3::BucketPolicy
