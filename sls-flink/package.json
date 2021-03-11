@@ -1,0 +1,8 @@
+{
+  "name": "sls-flink",
+  "description": "",
+  "version": "0.1.0",
+  "devDependencies": {
+    "serverless-s3-deploy": "^0.10.0"
+  }
+}

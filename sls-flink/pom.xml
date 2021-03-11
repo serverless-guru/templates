@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>com.arjunsk</groupId>
+  <artifactId>flink-kda-sample</artifactId>
+  <version>1.0-SNAPSHOT</version>
+
+  <name>flink-kda-sample</name>
+  <description>Flink KDA Sample</description>
+  <url>http://www.arjun.com</url>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <java.version>1.8</java.version>
+    <maven.compiler.source>${java.version}</maven.compiler.source>
+    <maven.compiler.target>${java.version}</maven.compiler.target>
+    <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
+    <maven-shade-plugin.version>3.2.2</maven-shade-plugin.version>
+    <maven-install-plugin.version>3.0.0-M1</maven-install-plugin.version>
+    <flink.version>1.8.2</flink.version>
+    <scala.binary.version>2.11</scala.binary.version>
+    <aws.kda.version>1.1.0</aws.kda.version>
+    <aws-java-sdk.version>1.11.319</aws-java-sdk.version>
+    <lombok.version>1.18.12</lombok.version>
+  </properties>
+
+  <dependencies>
+
+    <!-- Kinesis Analytics Dependency-->
+    <dependency>
+      <groupId>com.amazonaws</groupId>
+      <artifactId>aws-kinesisanalytics-runtime</artifactId>
+      <version>${aws.kda.version}</version>
+    </dependency>
+
+    <!-- Add connector dependencies here. They must be in the default scope (compile). -->
+    <!-- Flink Kinesis Connector-->
+    <dependency>
+      <groupId>org.apache.flink</groupId>
+      <artifactId>flink-connector-kinesis_${scala.binary.version}</artifactId>
+      <version>${flink.version}</version>
+    </dependency>
+
+    <!-- Apache Flink dependencies -->
+    <!-- These dependencies are provided, because they should not be packaged into the JAR file. -->
+    <dependency>
+      <groupId>org.apache.flink</groupId>
+      <artifactId>flink-java</artifactId>
+      <version>${flink.version}</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.flink</groupId>
+      <artifactId>flink-streaming-java_${scala.binary.version}</artifactId>
+      <version>${flink.version}</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <!-- Lombok -->
+    <dependency>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+      <version>${lombok.version}</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <!-- Flink Test Dependency-->
+    <dependency>
+      <groupId>org.apache.flink</groupId>
+      <artifactId>flink-test-utils_${scala.binary.version}</artifactId>
+      <version>${flink.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.flink</groupId>
+      <artifactId>flink-runtime_${scala.binary.version}</artifactId>
+      <version>${flink.version}</version>
+      <scope>test</scope>
+      <classifier>tests</classifier>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.flink</groupId>
+      <artifactId>flink-streaming-java_${scala.binary.version}</artifactId>
+      <version>${flink.version}</version>
+      <scope>test</scope>
+      <classifier>tests</classifier>
+    </dependency>
+
+  </dependencies>
+
+
+
+  <!-- This profile helps to make things run out of the box in IntelliJ -->
+  <!-- It adds Flink's core classes to the runtime class path. -->
+  <!-- Otherwise they are missing in IntelliJ, because the dependency is 'provided' -->
+  <profiles>
+    <profile>
+      <id>add-dependencies-for-IDEA</id>
+
+      <activation>
+        <property>
+          <name>idea.version</name>
+        </property>
+      </activation>
+
+      <dependencies>
+
+        <dependency>
+          <groupId>org.apache.flink</groupId>
+          <artifactId>flink-java</artifactId>
+          <version>${flink.version}</version>
+          <scope>compile</scope>
+        </dependency>
+
+        <dependency>
+          <groupId>org.apache.flink</groupId>
+          <artifactId>flink-streaming-java_${scala.binary.version}</artifactId>
+          <version>${flink.version}</version>
+          <scope>compile</scope>
+        </dependency>
+
+      </dependencies>
+    </profile>
+  </profiles>
+
+  <build>
+    <plugins>
+
+      <!-- Maven Compiler: compiles the sources of your project -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>${maven-compiler-plugin.version}</version>
+        <configuration>
+          <source>${java.version}</source>
+          <target>${java.version}</target>
+        </configuration>
+      </plugin>
+
+      <!-- We use the maven-shade plugin to create a fat jar that contains all necessary dependencies. -->
+      <!-- Change the value of <mainClass>...</mainClass> if your program entry point changes. -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <version>${maven-shade-plugin.version}</version>
+        <executions>
+          <!-- Run shade goal on package phase -->
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+            <configuration>
+              <artifactSet>
+                <excludes>
+                  <exclude>org.apache.flink:force-shading</exclude>
+                  <exclude>com.google.code.findbugs:jsr305</exclude>
+                  <exclude>org.slf4j:*</exclude>
+                  <exclude>log4j:*</exclude>
+                </excludes>
+              </artifactSet>
+              <filters>
+                <filter>
+                  <!-- Do not copy the signatures in the META-INF folder.
+                  Otherwise, this might cause SecurityExceptions when using the JAR. -->
+                  <artifact>*:*</artifact>
+                  <excludes>
+                    <exclude>META-INF/*.SF</exclude>
+                    <exclude>META-INF/*.DSA</exclude>
+                    <exclude>META-INF/*.RSA</exclude>
+                    <exclude>META-INF/LICENSE</exclude>
+                  </excludes>
+                </filter>
+              </filters>
+              <transformers>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                  <mainClass>com.arjunsk.flink.kda.sample.StreamingJob</mainClass>
+                </transformer>
+              </transformers>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!-- Install flink-kinesis-connector-1.8.2 to your local .m2. Refer README in lib folder.-->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-install-plugin</artifactId>
+        <version>${maven-install-plugin.version}</version>
+        <executions>
+          <execution>
+            <id>install-flink-kinesis-connector</id>
+            <phase>validate</phase>
+            <configuration>
+              <file>${basedir}/libs/flink-connector-kinesis_2.11/1.8.2/flink-connector-kinesis_2.11-1.8.2.jar</file>
+              <groupId>org.apache.flink</groupId>
+              <artifactId>flink-connector-kinesis_2.11</artifactId>
+              <version>1.8.2</version>
+              <packaging>jar</packaging>
+              <generatePom>true</generatePom>
+            </configuration>
+            <goals>
+              <goal>install-file</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+    </plugins>
+  </build>
+
+
+</project>
