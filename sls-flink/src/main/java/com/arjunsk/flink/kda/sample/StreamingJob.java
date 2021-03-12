@@ -2,6 +2,8 @@ package com.arjunsk.flink.kda.sample;
 
 import static com.arjunsk.flink.kda.sample.configs.StreamProcessorConfigConstants.KINESIS_SOURCE_GROUP_ID_KEY;
 import static com.arjunsk.flink.kda.sample.configs.StreamProcessorConfigConstants.KINESIS_SOURCE_STREAM_NAME_KEY;
+import static com.arjunsk.flink.kda.sample.configs.StreamProcessorConfigConstants.KINESIS_REGION;
+import static com.arjunsk.flink.kda.sample.configs.StreamProcessorConfigConstants.KINESIS_OUTPUT_STREAM_NAME_KEY;
 import static com.arjunsk.flink.kda.sample.configs.StreamProcessorConfigConstants.STREAM_PROCESSOR_GREETING_KEY;
 import static com.arjunsk.flink.kda.sample.configs.StreamProcessorConfigConstants.STREAM_PROCESSOR_GROUP_ID_KEY;
 
@@ -17,6 +19,8 @@ import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.LocalStreamEnvironment;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.connectors.kinesis.FlinkKinesisConsumer;
+import org.apache.flink.streaming.connectors.kinesis.FlinkKinesisProducer;
+import org.apache.flink.streaming.connectors.kinesis.config.AWSConfigConstants;
 
 /** Stream Job Main class. */
 @Slf4j
@@ -49,9 +53,21 @@ public class StreamingJob {
     Map<String, Properties> applicationPropertiesMap = initPropertiesMap(sEnv);
     Properties applicationProperties = applicationPropertiesMap.get(STREAM_PROCESSOR_GROUP_ID_KEY);
 
+    // Producer
+    Properties producerConfig = new Properties();
+    producerConfig.put(AWSConfigConstants.AWS_REGION, "us-east-2");
+    producerConfig.put("AggregationEnabled", "false");
+
+    FlinkKinesisProducer<String> producer = new FlinkKinesisProducer<>(new SimpleStringSchema(), producerConfig);
+    producer.setFailOnError(true);
+    producer.setDefaultStream("sls-flink-dev-OutputKinesisStream");
+    producer.setDefaultPartition("0");
+
     // ===== Adding Flink Source. =====
     DataStream<String> inputStream =
         createSource(sEnv, applicationPropertiesMap.get(KINESIS_SOURCE_GROUP_ID_KEY));
+
+    inputStream.addSink(producer);
 
     DataStream<String> timeAppendedStream =
         inputStream
