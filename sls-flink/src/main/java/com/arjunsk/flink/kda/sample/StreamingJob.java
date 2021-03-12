@@ -69,23 +69,6 @@ public class StreamingJob {
 
     inputStream.addSink(producer);
 
-    DataStream<String> timeAppendedStream =
-        inputStream
-            .map(new AppendTimeFunction())
-            .name("Time Appender")
-            .uid("time_appender")
-            .startNewChain();
-
-    String greetingKeyword = applicationProperties.getProperty(STREAM_PROCESSOR_GREETING_KEY);
-    DataStream<String> greetAppendedStream =
-        timeAppendedStream
-            .map(new AppendGreetingsFunction(greetingKeyword))
-            .name("Greet Appender")
-            .uid("greet_appender")
-            .startNewChain();
-
-    greetAppendedStream.print();
-
     sEnv.execute("Flink Streaming Processor");
   }
 
