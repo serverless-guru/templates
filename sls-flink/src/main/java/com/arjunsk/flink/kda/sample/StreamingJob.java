@@ -60,7 +60,7 @@ public class StreamingJob {
 
     FlinkKinesisProducer<String> producer = new FlinkKinesisProducer<>(new SimpleStringSchema(), producerConfig);
     producer.setFailOnError(true);
-    producer.setDefaultStream("sls-flink-dev-OutputKinesisStream");
+    producer.setDefaultStream("sls-flink-new-streams-dev-OutputKinesisStream");
     producer.setDefaultPartition("0");
 
     // ===== Adding Flink Source. =====

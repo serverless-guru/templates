@@ -1,0 +1,154 @@
+org: serverlessguru
+app: patterns
+service: sls-flink-new-kda
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stage: ${opt:stage, "dev"}
+  region: ${opt:region, "us-east-2"}
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - kinesis:PutRecords
+        - kinesis:GetRecords
+        - kinesis:GetShardIterator
+        - kinesis:DescribeStream
+        - kinesis:ListStream
+      Resource: '*'
+      
+resources:
+  Resources:
+    rKDAFlinkApplication:
+      Type: 'AWS::KinesisAnalyticsV2::Application'
+      Properties:
+        ApplicationName: !Sub '${AWS::StackName}-sampleApplication'
+        ApplicationDescription: >-
+          This application detects and alerts when wind turbine's avarage speed
+          goes above configured threshold
+        RuntimeEnvironment: FLINK-1_8
+        ServiceExecutionRole: !GetAtt 
+          - rServiceExecutionRole
+          - Arn
+        ApplicationConfiguration:
+          ApplicationCodeConfiguration:
+            CodeContent:
+              S3ContentLocation:
+                BucketARN: ${output:sls-flink-new-s3.S3BucketArn}
+                FileKey: flink-kda-sample-1.0-SNAPSHOT.jar
+            CodeContentType: ZIPFILE
+          EnvironmentProperties:
+            PropertyGroups:
+              - PropertyGroupId: KinesisSourceProperties
+                PropertyMap:
+                  flink.stream.initpos: LATEST
+                  aws.region: !Sub '${AWS::Region}'
+                  AggregationEnabled: 'false'
+                  aws.kinesis.stream.input.name: ${output:sls-flink-new-streams.InputKinesisDataStreamName}
+                  aws.kinesis.stream.output.name: ${output:sls-flink-new-streams.OutputKinesisDataStreamName}
+
+    rServiceExecutionRole:
+      Type: 'AWS::IAM::Role'
+      Properties:
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service: kinesisanalytics.amazonaws.com
+              Action: 'sts:AssumeRole'
+        Path: /
+        Policies:
+          - PolicyName: Open
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: Allow
+                  Action: 
+                    - kinesis:PutRecord
+                    - kinesis:PutRecords
+                    - kinesis:DescribeStreamConsumer
+                    - kinesis:GetShardIterator
+                    - kinesis:GetRecords
+                    - kinesis:DescribeStream
+                    - logs:PutLogEvents
+                  Resource: 
+                    - !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:*:log-stream:*'
+                    - ${output:sls-flink-new-streams.InputKinesisDataStream}
+                    - ${output:sls-flink-new-streams.OutputKinesisDataStream}
+                - Effect: Allow
+                  Action: 
+                    - kinesis:ListStreams
+                    - kinesis:ListShards
+                    - kinesis:DescribeLimits
+                    - kinesis:ListStreamConsumers
+                    - logs:PutDestination
+                    - logs:CreateLogDelivery
+                    - logs:PutResourcePolicy
+                    - s3:ListStorageLensConfigurations
+                    - s3:GetAccessPoint
+                    - s3:GetAccountPublicAccessBlock
+                    - s3:ListAllMyBuckets
+                    - s3:ListAccessPoints
+                    - s3:ListJobs
+                  Resource: '*'
+                - Effect: Allow
+                  Action:
+                    - logs:PutMetricFilter
+                    - logs:CreateLogStream
+                    - logs:PutSubscriptionFilter
+                    - logs:PutRetentionPolicy
+                    - logs:CreateLogGroup
+                  Resource: 
+                    - !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:*'
+                - Effect: Allow
+                  Action:
+                    - s3:GetLifecycleConfiguration
+                    - s3:GetBucketTagging
+                    - s3:GetInventoryConfiguration
+                    - s3:GetObjectVersionTagging
+                    - s3:ListBucketVersions
+                    - s3:GetBucketLogging
+                    - s3:ListBucket
+                    - s3:GetAccelerateConfiguration
+                    - s3:GetBucketPolicy
+                    - s3:GetStorageLensConfigurationTagging
+                    - s3:GetObjectVersionTorrent
+                    - s3:GetObjectAcl
+                    - s3:GetEncryptionConfiguration
+                    - s3:GetBucketObjectLockConfiguration
+                    - s3:GetBucketRequestPayment
+                    - s3:GetAccessPointPolicyStatus
+                    - s3:GetObjectVersionAcl
+                    - s3:GetObjectTagging
+                    - s3:GetMetricsConfiguration
+                    - s3:GetBucketOwnershipControls
+                    - s3:GetBucketPublicAccessBlock
+                    - s3:GetBucketPolicyStatus
+                    - s3:ListBucketMultipartUploads
+                    - s3:GetObjectRetention
+                    - s3:GetBucketWebsite
+                    - s3:GetJobTagging
+                    - s3:GetBucketVersioning
+                    - s3:GetBucketAcl
+                    - s3:GetObjectLegalHold
+                    - s3:GetBucketNotification
+                    - s3:GetReplicationConfiguration
+                    - s3:ListMultipartUploadParts
+                    - s3:GetObject
+                    - s3:GetStorageLensConfiguration
+                    - s3:GetObjectTorrent
+                    - s3:DescribeJob
+                    - s3:GetBucketCORS
+                    - s3:GetAnalyticsConfiguration
+                    - s3:GetObjectVersionForReplication
+                    - s3:GetBucketLocation
+                    - s3:GetAccessPointPolicy
+                    - s3:GetObjectVersion
+                    - s3:GetStorageLensDashboard
+                  # Resource: arn:aws:s3:::aws-bigdata-blog-replica-us-west-2/artifacts/amazon-kinesis-data-streams-for-amazon-dynamodb/wind-turbine-data-aggregator-app-2.0.6.jar
+                  Resource: '*'
+
+outputs:
+  OutputKinesisDataAnalytics:
+    Ref: rKDAFlinkApplication

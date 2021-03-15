@@ -1,0 +1,31 @@
+org: serverlessguru
+app: patterns
+service: sls-flink-new-s3
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stage: ${opt:stage, "dev"}
+  region: ${opt:region, "us-east-2"}
+
+plugins:
+  - serverless-s3-remover
+
+custom:
+  s3BucketName: ${self:service}-${opt:stage}
+  remover:
+    buckets:
+      - ${self:custom.s3BucketName}
+      
+resources:
+  Resources:
+    S3Bucket:
+      Type: 'AWS::S3::Bucket'
+      Properties:
+        BucketName: ${self:custom.s3BucketName}
+
+outputs:
+  S3BucketName:
+    Ref: S3Bucket
+  S3BucketArn:
+    Fn::GetAtt: S3Bucket.Arn

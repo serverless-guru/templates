@@ -1,0 +1,80 @@
+org: serverlessguru
+app: patterns
+service: sls-flink-new-streams
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stage: ${opt:stage, "dev"}
+  region: ${opt:region, "us-east-2"}
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - kinesis:PutRecords
+        - kinesis:GetRecords
+        - kinesis:GetShardIterator
+        - kinesis:DescribeStream
+        - kinesis:ListStream
+      Resource: '*'
+      
+functions:
+  producer:
+    name: producer-${opt:stage, "dev"}
+    handler: index.producer
+    package:
+      include:
+        - index.js
+  consumer:
+    name: consumer-${opt:stage, "dev"}
+    handler: index.consumer
+    package:
+      include:
+        - index.js
+
+package:
+  individually: true
+  exclude:
+    - "./**"
+
+resources:
+  Resources:
+    rInputKinesisStream:
+      Type: 'AWS::Kinesis::Stream'
+      Properties:
+        Name: !Sub '${AWS::StackName}-InputKinesisStream'
+        ShardCount: 1
+
+    rOutputKinesisStream:
+      Type: 'AWS::Kinesis::Stream'
+      Properties:
+        Name: !Sub '${AWS::StackName}-OutputKinesisStream'
+        ShardCount: 1
+
+    rLambdaEventSource: 
+      Type: AWS::Lambda::EventSourceMapping
+      Properties: 
+        EventSourceArn: 
+          Fn::Join: 
+            - ""
+            - 
+              - "arn:aws:kinesis:"
+              - 
+                Ref: "AWS::Region"
+              - ":"
+              - 
+                Ref: "AWS::AccountId"
+              - ":stream/"
+              - 
+                Ref: "rOutputKinesisStream"
+        FunctionName:
+          Ref: ConsumerLambdaFunction
+        StartingPosition: "TRIM_HORIZON"
+outputs:
+  InputKinesisDataStreamName: 
+    Ref: rInputKinesisStream
+  InputKinesisDataStream: 
+    Fn::GetAtt: rInputKinesisStream.Arn
+  OutputKinesisDataStreamName: 
+    Ref: rOutputKinesisStream
+  OutputKinesisDataStream: 
+    Fn::GetAtt: rOutputKinesisStream.Arn

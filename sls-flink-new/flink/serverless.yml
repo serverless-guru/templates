@@ -1,0 +1,21 @@
+org: serverlessguru
+app: patterns
+service: sls-flink-new-flink
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stage: ${opt:stage, "dev"}
+  region: ${opt:region, "us-east-2"}
+      
+plugins:
+  - serverless-s3-deploy
+
+custom:
+  assets:
+    auto: true
+    targets:
+      - bucket: ${output:sls-flink-new-s3.S3BucketName}
+        files:
+          - source: target/
+            globs: 'flink-kda-sample-1.0-SNAPSHOT.jar'
