@@ -7,10 +7,6 @@ module.exports.producer = async(event, context) => {
     apiVersion: '2013-12-02'
   });
   
-  console.log('@@@@@@@@@@@@@@')
-  console.log(event)
-  console.log('@@@@@@@@@@@@@@')
-
   try {
     return await new Promise((res, rej) => {
         const record = {
@@ -23,7 +19,7 @@ module.exports.producer = async(event, context) => {
     
         kinesis.putRecords({
             Records: [record],
-            StreamName: 'sls-flink-new-streams-dev-InputKinesisStream'
+            StreamName: process.env.STREAM_NAME
         }, function(err, data) {
             console.log('kinesis insertion finished')
             console.log('>>>>>>>>>>>>>>>>>>>')

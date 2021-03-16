@@ -24,6 +24,9 @@ functions:
     package:
       include:
         - index.js
+    environment:
+      STREAM_NAME: 
+        Ref: rInputKinesisStream
   consumer:
     name: consumer-${opt:stage, "dev"}
     handler: index.consumer

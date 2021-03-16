@@ -26,7 +26,7 @@ resources:
         ApplicationDescription: >-
           This application detects and alerts when wind turbine's avarage speed
           goes above configured threshold
-        RuntimeEnvironment: FLINK-1_8
+        RuntimeEnvironment: FLINK-1_11
         ServiceExecutionRole: !GetAtt 
           - rServiceExecutionRole
           - Arn

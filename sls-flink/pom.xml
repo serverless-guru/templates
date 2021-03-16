@@ -20,7 +20,7 @@
     <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
     <maven-shade-plugin.version>3.2.2</maven-shade-plugin.version>
     <maven-install-plugin.version>3.0.0-M1</maven-install-plugin.version>
-    <flink.version>1.8.2</flink.version>
+    <flink.version>1.11.2</flink.version>
     <scala.binary.version>2.11</scala.binary.version>
     <aws.kda.version>1.1.0</aws.kda.version>
     <aws-java-sdk.version>1.11.319</aws-java-sdk.version>
