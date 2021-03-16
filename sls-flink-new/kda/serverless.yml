@@ -16,7 +16,14 @@ provider:
         - kinesis:DescribeStream
         - kinesis:ListStream
       Resource: '*'
-      
+
+plugins:
+  - serverless-scriptable-plugin
+
+custom:
+  scriptHooks:
+    after:aws:deploy:finalize:cleanup: ./startkda.js
+
 resources:
   Resources:
     rKDAFlinkApplication:
