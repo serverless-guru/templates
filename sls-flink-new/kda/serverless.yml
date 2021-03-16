@@ -31,12 +31,24 @@ resources:
           - rServiceExecutionRole
           - Arn
         ApplicationConfiguration:
+          FlinkApplicationConfiguration:
+            MonitoringConfiguration:
+              ConfigurationType: CUSTOM
+              MetricsLevel: APPLICATION
+              LogLevel: INFO
+            ParallelismConfiguration:
+              ConfigurationType: CUSTOM
+              Parallelism: 1
+              ParallelismPerKPU: 1
+              AutoScalingEnabled: true
           ApplicationCodeConfiguration:
             CodeContent:
               S3ContentLocation:
                 BucketARN: ${output:sls-flink-new-s3.S3BucketArn}
                 FileKey: flink-kda-sample-1.0-SNAPSHOT.jar
             CodeContentType: ZIPFILE
+          ApplicationSnapshotConfiguration:
+            SnapshotsEnabled: true
           EnvironmentProperties:
             PropertyGroups:
               - PropertyGroupId: KinesisSourceProperties
@@ -46,6 +58,34 @@ resources:
                   AggregationEnabled: 'false'
                   aws.kinesis.stream.input.name: ${output:sls-flink-new-streams.InputKinesisDataStreamName}
                   aws.kinesis.stream.output.name: ${output:sls-flink-new-streams.OutputKinesisDataStreamName}
+
+    ApplicationV2CloudWatchLoggingOption:
+      Type: 'AWS::KinesisAnalyticsV2::ApplicationCloudWatchLoggingOption'
+      Properties:
+        ApplicationName: !Ref rKDAFlinkApplication
+        CloudWatchLoggingOption:
+          LogStreamARN: !Join 
+            - ':'
+            - - 'arn:aws:logs'
+              - !Ref 'AWS::Region'
+              - !Ref 'AWS::AccountId'
+              - log-group
+              - !Ref TestCWLogGroup
+              - log-stream
+              - !Ref TestCWLogStream
+          
+    TestCWLogGroup: 
+      Type: AWS::Logs::LogGroup
+      Properties: 
+        RetentionInDays: 7
+        LogGroupName: "exampleLogGroup"
+
+    TestCWLogStream: 
+      Type: AWS::Logs::LogStream
+      Properties: 
+        LogGroupName: 
+          Ref: TestCWLogGroup
+        LogStreamName: "MyAppLogStream"
 
     rServiceExecutionRole:
       Type: 'AWS::IAM::Role'
