@@ -52,20 +52,21 @@ public class StreamingJob {
     // Fetching applicationProperties.
     Map<String, Properties> applicationPropertiesMap = initPropertiesMap(sEnv);
     Properties applicationProperties = applicationPropertiesMap.get(STREAM_PROCESSOR_GROUP_ID_KEY);
+    Properties kinesisProperties = applicationPropertiesMap.get(KINESIS_SOURCE_GROUP_ID_KEY);
 
     // Producer
     Properties producerConfig = new Properties();
-    producerConfig.put(AWSConfigConstants.AWS_REGION, "us-east-2");
+    producerConfig.put(AWSConfigConstants.AWS_REGION, kinesisProperties.get(KINESIS_REGION));
     producerConfig.put("AggregationEnabled", "false");
 
     FlinkKinesisProducer<String> producer = new FlinkKinesisProducer<>(new SimpleStringSchema(), producerConfig);
     producer.setFailOnError(true);
-    producer.setDefaultStream("sls-flink-new-streams-dev-OutputKinesisStream");
+    producer.setDefaultStream(String.valueOf(kinesisProperties.get(KINESIS_OUTPUT_STREAM_NAME_KEY)));
     producer.setDefaultPartition("0");
 
     // ===== Adding Flink Source. =====
     DataStream<String> inputStream =
-        createSource(sEnv, applicationPropertiesMap.get(KINESIS_SOURCE_GROUP_ID_KEY));
+        createSource(sEnv, kinesisProperties);
 
     inputStream.addSink(producer);
 
