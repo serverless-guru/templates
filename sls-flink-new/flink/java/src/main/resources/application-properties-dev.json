@@ -1,0 +1,17 @@
+[
+  {
+    "PropertyGroupId": "KinesisSourceProperties",
+    "PropertyMap": {
+      "flink.stream.initpos": "LATEST",
+      "aws.region": "ap-northeast-1",
+      "AggregationEnabled": "false",
+      "aws.kinesis.stream.name": "stream_name"
+    }
+  },
+  {
+    "PropertyGroupId": "StreamProcessorProperties",
+    "PropertyMap": {
+      "application.greet.keyword": "Welcome"
+    }
+  }
+]

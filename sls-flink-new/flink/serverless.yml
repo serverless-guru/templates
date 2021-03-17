@@ -17,5 +17,5 @@ custom:
     targets:
       - bucket: ${output:sls-flink-new-s3.S3BucketName}
         files:
-          - source: target/
+          - source: java/target/
             globs: 'flink-kda-sample-1.0-SNAPSHOT.jar'
