@@ -1,0 +1,13 @@
+handler: services/generate.handler
+name: ${self:service}-generate-${self:provider.stage}
+environment:
+  ORIGINALS_BUCKET: ${self:custom.originalsBucket}
+  CACHE_BUCKET: ${self:custom.cacheBucket}
+  CACHE_DOMAIN:
+    Fn::GetAtt: [CloudFrontCache, DomainName]
+dependsOn:
+  - CloudFrontCache
+events:
+  - httpApi:
+      path: "/{folder}/{filename}/{version}/{transformations}/{imageName}"
+      method: GET

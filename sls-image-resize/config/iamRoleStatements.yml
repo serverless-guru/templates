@@ -1,0 +1,19 @@
+- Effect: "Allow"
+  Action:
+    - "s3:PutObject"
+    - "s3:PutObjectAcl"
+  Resource:
+    Fn::Join:
+      - ""
+      - - "arn:aws:s3:::"
+        - ${self:custom.cacheBucket}
+        - "/*"
+- Effect: "Allow"
+  Action:
+    - "s3:GetObject"
+  Resource:
+    Fn::Join:
+      - ""
+      - - "arn:aws:s3:::"
+        - ${self:custom.originalsBucket}
+        - "/*"

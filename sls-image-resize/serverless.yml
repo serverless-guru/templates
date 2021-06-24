@@ -1,0 +1,43 @@
+service: image-resize
+# You can pin your service to only deploy with a specific Serverless version
+# Check out our docs for more details
+frameworkVersion: ">=2.0.0 <3.0.0"
+variablesResolutionMode: 20210326
+
+custom:
+  stage: ${file(stages/${self:provider.stage}.yml)}
+# Add custom variables here. You can re-use variables defined in the stage yml
+# customStageVar: ${self:custom.stage.customStageVar}
+  webpack:
+    includeModules:
+      forceExclude:
+        - aws-sdk
+  accountId: ${file(lib/aws.js):accountId}
+  originalsBucket: ${self:service}-originals-${self:custom.accountId}-${self:provider.stage}
+  cacheBucket: ${self:service}-cache-${self:custom.accountId}-${self:provider.stage}
+
+plugins:
+  - serverless-deployment-bucket
+  - serverless-webpack
+package:
+  individually: true
+
+provider:
+  name: aws
+  runtime: nodejs14.x
+  stage: ${opt:stage, 'dev'}
+  region: ${opt:region, self:custom.stage.region}
+  profile: ${self:custom.stage.profile}
+  memorySize: ${self:custom.stage.lambda.memorySize, '128'}
+  timeout: ${self:custom.stage.lambda.timeout, '10'}
+  lambdaHashingVersion: 20201221
+  logRetentionInDays: ${self:custom.stage.lambda.logRetention, 1}
+  iamRoleStatements: ${file(config/iamRoleStatements.yml)}
+  deploymentBucket:
+    name: com.serverless.${self:custom.accountId}.${self:provider.region}.deploys
+    blockPublicAccess: true
+
+functions: ${file(lib/config.js):functions}
+resources:
+  Resources: ${file(lib/config.js):resources}
+  Outputs: ${file(lib/config.js):outputs}

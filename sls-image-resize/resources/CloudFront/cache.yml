@@ -1,0 +1,46 @@
+Type: AWS::CloudFront::Distribution
+DependsOn:
+  - S3BucketCache
+Properties:
+  DistributionConfig:
+    Origins:
+      - DomainName:
+          Fn::Select:
+          - 2
+          - Fn::Split:
+            - "/"
+            - Fn::GetAtt:
+              - S3BucketCache
+              - WebsiteURL
+        Id: S3BucketCacheWebsiteURL
+        CustomOriginConfig:
+          OriginProtocolPolicy: http-only
+    Enabled: true
+    DefaultCacheBehavior:
+      AllowedMethods:
+        - GET
+        - HEAD
+        - OPTIONS
+      TargetOriginId: S3BucketCacheWebsiteURL
+      ForwardedValues:
+        QueryString: 'false'
+      DefaultTTL: 0
+      MaxTTL: 31536000
+      MinTTL: 0
+      ViewerProtocolPolicy: redirect-to-https
+      Compress: true
+    DefaultRootObject: index.html
+    CustomErrorResponses:
+      - ErrorCachingMinTTL: 10
+        ErrorCode: 400
+      - ErrorCachingMinTTL: 10
+        ErrorCode: 403
+      - ErrorCachingMinTTL: 10
+        ErrorCode: 404
+    Comment: ${self:service}-${self:provider.stage}
+    HttpVersion: http2
+Outputs:
+  CacheDomainName:
+    Description: "Cache Domain Name"
+    Value:
+      Fn::GetAtt: [CloudFrontCache, DomainName]

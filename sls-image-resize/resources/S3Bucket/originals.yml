@@ -1,0 +1,17 @@
+Type: AWS::S3::Bucket
+DeletionPolicy: Retain
+Properties:
+  BucketName: ${self:custom.originalsBucket}
+  AccessControl: Private
+  PublicAccessBlockConfiguration:
+    BlockPublicAcls: true
+    BlockPublicPolicy: true
+    IgnorePublicAcls: true
+    RestrictPublicBuckets: true
+  VersioningConfiguration:
+    Status: Enabled
+Outputs:
+  BucketName:
+    Description: "Bucket for storing originals"
+    Value:
+      Ref: S3BucketOriginals
