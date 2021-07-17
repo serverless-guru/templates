@@ -1,0 +1,45 @@
+service: gradual-deployments-csharp
+
+frameworkVersion: '2'
+
+provider:
+  name: aws
+  runtime: dotnetcore3.1
+  lambdaHashingVersion: 20201221
+  apiGateway:
+    shouldStartNameWithService: true
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - codedeploy:*
+          Resource:
+            - "*"
+
+package:
+  artifact: bin/Release/netcoreapp3.1/hello.zip
+
+plugins:
+  - serverless-plugin-canary-deployments
+
+functions:
+
+  hello:
+    handler: CsharpHandlers::AwsDotnetCsharp.Hello::Handler
+    events: 
+      - http:
+          method: get
+          path: hello
+          cors: true
+    deploymentSettings:
+      type: Linear10PercentEvery1Minute
+      alias: LATEST
+      preTrafficHook: before-allow-traffic-hook
+      postTrafficHook: after-allow-traffic-hook
+
+  before-allow-traffic-hook:
+    handler: CsharpHandlers::AwsDotnetCsharp.Before::Handler
+
+  after-allow-traffic-hook:
+    handler: CsharpHandlers::AwsDotnetCsharp.After::Handler

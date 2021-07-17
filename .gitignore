@@ -4,3 +4,5 @@ node_modules
 .serverless
 .DS_Store
 backup/
+obj/
+bin/
