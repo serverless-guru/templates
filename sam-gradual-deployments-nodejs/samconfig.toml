@@ -1,0 +1,10 @@
+version = 0.1
+[default]
+[default.deploy]
+[default.deploy.parameters]
+stack_name = "gradual-deployment-sam"
+s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-1eskjyvgvp076"
+s3_prefix = "gradual-deployment-sam"
+region = "eu-west-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
