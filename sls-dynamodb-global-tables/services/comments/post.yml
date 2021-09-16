@@ -1,0 +1,11 @@
+handler: services/comments/post.handler
+name: ${self:service}-comments-post
+memorySize: ${self:custom.stage.lambda.memorySize}
+timeout: ${self:custom.stage.lambda.timeout}
+environment:
+  COMMENTS_TABLE: ${self:custom.commentsTableName}
+
+events:
+  - httpApi:
+      method: POST
+      path: /place/{id}/comment

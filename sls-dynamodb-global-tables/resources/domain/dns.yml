@@ -1,0 +1,28 @@
+Type: AWS::Route53::RecordSetGroup
+Properties:
+  HostedZoneId: ${self:custom.stage.domain.hostedzoneid}
+  RecordSets:
+    - Name: ${self:custom.stage.domain.api}.${self:custom.stage.domain.name}
+      Type: A
+      AliasTarget:
+        HostedZoneId:
+          Fn::GetAtt: [DomainApi, RegionalHostedZoneId]
+        DNSName:
+          Fn::GetAtt: [DomainApi, RegionalDomainName]
+        EvaluateTargetHealth: true
+      SetIdentifier:
+        Ref: AWS::Region
+      Region:
+        Ref: AWS::Region
+    - Name: ${self:custom.stage.domain.api}.${self:custom.stage.domain.name}
+      Type: AAAA
+      AliasTarget:
+        HostedZoneId:
+          Fn::GetAtt: [DomainApi, RegionalHostedZoneId]
+        DNSName:
+          Fn::GetAtt: [DomainApi, RegionalDomainName]
+        EvaluateTargetHealth: true
+      SetIdentifier:
+        Ref: AWS::Region
+      Region:
+        Ref: AWS::Region

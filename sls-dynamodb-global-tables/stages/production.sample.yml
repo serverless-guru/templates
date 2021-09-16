@@ -1,0 +1,10 @@
+profile: prod
+region: ap-southeast-2
+domain:
+  name: mytld.domain.com
+  api: global.demo
+  hostedzoneid: ZZZZZ # You need to grab this from Route53
+lambda:
+  memorySize: 512
+  timeout: 10
+  logRetention: 1

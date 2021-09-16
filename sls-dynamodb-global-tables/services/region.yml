@@ -1,0 +1,9 @@
+handler: services/region.handler
+name: ${self:service}-region
+memorySize: 128
+timeout: 2
+
+events:
+  - httpApi:
+      method: GET
+      path: /region
