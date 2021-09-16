@@ -1,0 +1,12 @@
+.DS_Store
+stages/*
+!stages/*.sample.yml
+
+# package directories
+node_modules
+jspm_packages
+
+# Serverless directories
+.serverless
+# Webpack folder
+.webpack

@@ -1,0 +1,19 @@
+- Effect: "Allow"
+  Action:
+    - "dynamodb:Get*"
+    - "dynamodb:BatchGet*"
+    - "dynamodb:Query"
+    - "dynamodb:Scan"
+    - "dynamodb:PutItem"
+    - "dynamodb:BatchWrite*"
+    - "dynamodb:Update*"
+    - "dynamodb:Delete*"
+  Resource:
+    - Fn::Join:
+        - ''
+        - - 'arn:aws:dynamodb:'
+          - Ref: AWS::Region
+          - ':'
+          - Ref: AWS::AccountId
+          - ':table/'
+          - ${self:custom.commentsTableName}

@@ -1,0 +1,7 @@
+Type: AWS::ApiGatewayV2::DomainName
+Properties: 
+  DomainName: ${self:custom.stage.domain.api}.${self:custom.stage.domain.name}
+  DomainNameConfigurations:
+    - EndpointType: REGIONAL
+      CertificateArn:
+        Ref: DomainCert

@@ -1,0 +1,11 @@
+handler: services/comments/get.handler
+name: ${self:service}-comments-get
+memorySize: ${self:custom.stage.lambda.memorySize}
+timeout: ${self:custom.stage.lambda.timeout}
+environment:
+  COMMENTS_TABLE: ${self:custom.commentsTableName}
+
+events:
+  - httpApi:
+      method: GET
+      path: /place/{id}/comments
