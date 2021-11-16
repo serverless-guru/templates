@@ -17,7 +17,7 @@
     "request-promise": "^4.2.6"
   },
   "devDependencies": {
-    "aws-sdk": "^2.729.0",
+    "aws-sdk": "^2.814.0",
     "serverless-api-gateway-caching": "^1.4.1",
     "serverless-iam-roles-per-function": "^2.0.2",
     "serverless-offline": "^6.5.0",
