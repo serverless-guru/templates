@@ -1,6 +1,6 @@
 {
   "devDependencies": {
-    "aws-sdk": "^2.392.0",
+    "aws-sdk": "^2.814.0",
     "serverless-appsync-plugin": "^1.2.0",
     "serverless-iam-roles-per-function": "^1.0.1",
     "serverless-pseudo-parameters": "^2.5.0"
