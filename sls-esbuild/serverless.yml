@@ -1,0 +1,27 @@
+service: sls-esbuild
+
+provider:
+  name: aws
+  region: ${env:REGION, 'us-west-2'}
+  stage: ${opt:stage, 'dev'}
+  runtime: nodejs14.x
+  memorySize: 256
+
+custom:
+  esbuild:
+    bundle: true
+    minify: false
+
+plugins:
+  - serverless-esbuild
+
+package:
+  individually: true
+
+functions:
+  hello:
+    handler: src/handlers/hello/index.handler
+    events:
+      - http:
+          path: /hello
+          method: get
