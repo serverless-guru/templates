@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Reduce the size of your lambda package sizes.
+Fast lambda packaging and build.
 
 ## Steps
 
@@ -23,7 +23,7 @@ plugins:
     - serverless-esbuild
 ```
 
-### Review .zip file, it should be much smaller
+### Review pipeline deployment time, it should be less
 
 ### Additional Optimization, add package: individually: true
 
