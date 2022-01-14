@@ -1,7 +1,7 @@
-const { uuid } = require("uuidv4");
+const { v4: uuidv4 } = require('uuid');
 
 exports.handler = async function (event, context) {
-  console.log(`uuid - ${uuid()}`);
+  console.log(`uuid - ${uuidv4()}`);
   return {
     statusCode: 200,
     body: JSON.stringify(

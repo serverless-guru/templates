@@ -21,6 +21,6 @@
     "serverless-esbuild": "^1.23.3"
   },
   "dependencies": {
-    "uuidv4": "^6.2.12"
+    "uuid": "^8.3.2"
   }
 }
