@@ -1,0 +1,103 @@
+service: sls-step-functions
+frameworkVersion: '2'
+
+plugins:
+  - serverless-step-functions
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  lambdaHashingVersion: 20201221
+  stage: dev
+  region: ap-south-1
+
+functions:
+  add:
+    handler: functions/add.handler
+    timeout: 3
+
+  subtract:
+    handler: functions/subtract.handler
+    timeout: 3
+
+  multiply:
+      handler: functions/multiply.handler
+      timeout: 3
+
+  validateResult:
+    handler: functions/validateResult.handler
+    timeout: 3
+
+stepFunctions:
+  stateMachines:
+    LambdaStepFuncDemo:    
+      name: StepFunctionLambdaOrchestrationPOCDemo
+      definition:
+        Comment: "Step Function Lambda Orchestration POC Demo"
+        StartAt: choose
+        States:
+          choose:
+            Type: Choice            
+            Choices:
+              - And:
+                  - Variable: $.operation
+                    StringEquals: "add"
+                  - Variable: $.number1
+                    NumericGreaterThanEquals: 1
+                  - Variable: $.number2
+                    NumericLessThan: 100
+                Next: add
+              - And:
+                  - Variable: $.operation
+                    StringEquals: "subtract"
+                  - Variable: $.number1
+                    NumericGreaterThanEquals: 1
+                  - Variable: $.number2
+                    NumericLessThan: 100
+                Next: subtract              
+              - And:
+                  - Variable: $.operation
+                    StringEquals: "multiply"
+                  - Variable: $.number1
+                    NumericGreaterThanEquals: 1
+                  - Variable: $.number2
+                    NumericLessThan: 100
+                Next: multiply      
+          add:
+            Type: Task
+            Resource: 
+              Fn::GetAtt: [add, Arn]
+            Next: validateResult
+            ResultPath: $.resultNumber
+          subtract:
+            Type: Task
+            Resource: 
+              Fn::GetAtt: [subtract, Arn]
+            Next: validateResult
+            ResultPath: $.resultNumber
+          multiply:
+            Type: Task
+            Resource: 
+              Fn::GetAtt: [multiply, Arn]
+            Next: validateResult
+            ResultPath: $.resultNumber
+          validateResult:
+            Type: Task
+            Resource: 
+              Fn::GetAtt: [validateResult, Arn]              
+            InputPath: $.resultNumber
+            TimeoutSeconds: 1
+            Retry: 
+              - ErrorEquals:
+                  - States.Timeout
+                IntervalSeconds: 1
+                BackoffRate: 2.0
+                MaxAttempts: 2
+            Catch: 
+              - ErrorEquals:
+                  - NumberIsBig
+                ResultPath: $.error
+                Next: numberIsBig
+            End: true
+          numberIsBig:
+            Type: Fail
