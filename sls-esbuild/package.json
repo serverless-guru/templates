@@ -6,16 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/dharmendranegi/esbuild.git"
-  },
-  "author": "dharmendra",
+  "author": "",
   "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/dharmendranegi/esbuild/issues"
-  },
-  "homepage": "https://github.com/dharmendranegi/esbuild#readme",
   "devDependencies": {
     "esbuild": "^0.14.11",
     "serverless-esbuild": "^1.23.3"
