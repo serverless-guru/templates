@@ -1,0 +1,31 @@
+service: notify-slack
+
+provider:
+  name: aws
+  region: ${env:REGION, 'us-west-2'}
+  stage: ${opt:stage, 'dev'}
+  runtime: nodejs14.x
+  memorySize: 256
+
+custom:
+  esbuild:
+    bundle: true
+    minify: false
+
+plugins:
+  - serverless-esbuild
+
+package:
+  individually: true
+
+functions:
+  notify:
+    handler: functions/index.handler
+    name: notify-slack-demo-${self:provider.stage}
+    events:
+      - http:
+          path: /notify
+          method: get
+    environment:
+      SLACK_WEBHOOK_URL: #Your Slack Webhook Url
+      SLACK_CHANNEL_NAME: #Your Slack channel name for notifications
