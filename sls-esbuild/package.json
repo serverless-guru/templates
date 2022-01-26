@@ -1,0 +1,18 @@
+{
+  "name": "sls-esbuild",
+  "version": "1.0.0",
+  "description": "Serverless esbuild demo",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "esbuild": "^0.14.11",
+    "serverless-esbuild": "^1.23.3"
+  },
+  "dependencies": {
+    "uuid": "^8.3.2"
+  }
+}
