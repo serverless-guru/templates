@@ -11,13 +11,14 @@ functions:
   scheduledService:
     handler: handler.scheduledService
     events:
-      - schedule: rate(1 minute)
+      - eventBridge:
+          schedule: rate(1 minute)
 
   invoiceService:
     handler: handler.invoiceService
     events:
-      - cloudwatchEvent:
-          event:            
+      - eventBridge:
+          pattern:
             detail:
               operation:
                 - invoice-service
@@ -25,8 +26,8 @@ functions:
   rewardService:
     handler: handler.rewardService
     events:
-      - cloudwatchEvent:
-          event:            
+      - eventBridge:
+          pattern:
             detail:
               operation:
                 - reward-service
