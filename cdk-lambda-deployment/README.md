@@ -7,7 +7,6 @@ The `cdk.json` file tells the CDK Toolkit how to execute your app. The build ste
 
 ## Useful commands
 
-* `npm run test`         perform the jest unit tests
 * `cdk synth`            emits the synthesized CloudFormation template
 * `cdk bootstrap`        create a stack that includes resources(required only if it is the first time you want to deploy with the CDK)
 * `cdk deploy`           deploy this stack to your default AWS account/region
