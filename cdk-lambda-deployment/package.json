@@ -1,0 +1,23 @@
+{
+  "name": "cdk-lambda-deployment",
+  "version": "0.1.0",
+  "type": "module",
+  "bin": {
+    "cdk-lambda-deployment": "bin/cdk-lambda-deployment.js"
+  },
+  "scripts": {
+    "build": "echo \"The build step is not required when using JavaScript!\" && exit 0",
+    "cdk": "cdk",
+    "test": "jest"
+  },
+  "devDependencies": {
+    "aws-cdk": "2.18.0",
+    "jest": "^26.4.2"
+  },
+  "dependencies": {
+    "@aws-cdk/aws-lambda": "^1.150.0",
+    "aws-cdk-lib": "2.18.0",
+    "constructs": "^10.0.0",
+    "@aws-cdk/core": "1.137.0"
+  }
+}
