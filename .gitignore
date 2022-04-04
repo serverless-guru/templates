@@ -6,3 +6,6 @@ node_modules
 backup/
 obj/
 bin/
+
+# Allow
+!cdk-lambda-deployment/bin
