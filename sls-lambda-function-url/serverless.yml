@@ -1,0 +1,23 @@
+service: sls-lambda-function-url
+frameworkVersion: '3'
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stage: dev
+  region: ap-south-1
+
+functions:
+  lambdaFunctionURLAPI:
+    handler: handler.lambdaFunctionURLAPI    
+    url:      
+      cors: true
+      #authorizer: aws_iam
+
+  lambdaAPIGatewayAPI:
+    handler: handler.lambdaAPIGatewayAPI
+    events:
+      - http:
+          path: lambda-api-gateway-api
+          method: get          
+          cors: true
+          #authorizer: aws_iam
