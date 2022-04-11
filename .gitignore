@@ -7,5 +7,9 @@ backup/
 obj/
 bin/
 
+**/node_modules
+**/.serverless
+**/.idea
+
 # Allow
 !cdk-lambda-deployment/bin
