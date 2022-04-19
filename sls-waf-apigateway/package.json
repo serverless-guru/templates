@@ -1,0 +1,14 @@
+{
+  "name": "sls-waf-apigateway",
+  "version": "1.0.0",
+  "description": "Serverless Framework AWS WAF API Gateway Template",
+  "main": "handler.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Serverless Guru",
+  "license": "ISC",
+  "devDependencies": {
+    "serverless-associate-waf": "^1.2.1"
+  }
+}

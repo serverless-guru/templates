@@ -1,0 +1,31 @@
+service: sls-waf-apigateway
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs14.x
+  region: ${opt:region, "us-east-1"}
+  stage: ${opt:stage, "dev"}
+
+plugins:
+  - serverless-associate-waf
+
+# Associate WAF Web ACL with API Gateway of current stack
+custom:
+  associateWaf:
+    name: ${self:resources.Resources.WAFRegionalWebACL.Properties.Name}
+    version: V2 #(optional) Regional | V2
+
+functions:
+  todolist:
+    handler: handler.todolist
+    events:
+      - http:
+          path: /todo/list
+          method: get
+
+# CloudFormation Resources
+# Create WAF Regional Web ACL with RateBased Rule to Prevent HTTP Flood DDos Attack
+resources:
+  Resources:
+    WAFRegionalWebACL: ${file(resources/waf.yml):WAFRegionalWebACL}
