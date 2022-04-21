@@ -1,0 +1,27 @@
+# CloudFormation Resources
+# Create WAF Regional Web ACL with Rate-Based Rule to Prevent HTTP Flood DDos Attack
+WAFRegionalWebACL:
+  Type: "AWS::WAFv2::WebACL"
+  Properties:
+    Name: ApiGateway-HTTP-Flood-Prevent-Auto-${self:provider.stage}
+    Scope: REGIONAL
+    Description: WAF Regional Web ACL to Prevent HTTP Flood DDos Attack
+    DefaultAction:
+      Allow: {}
+    VisibilityConfig:
+      SampledRequestsEnabled: true
+      CloudWatchMetricsEnabled: true
+      MetricName: ApiGateway-HTTP-Flood-Prevent-Metric
+    Rules:
+      - Name: HTTP-Flood-Prevent-Rule
+        Priority: 0
+        Action:
+          Block: {}
+        VisibilityConfig:
+          SampledRequestsEnabled: true
+          CloudWatchMetricsEnabled: true
+          MetricName: HTTP-Flood-Prevent-Rule-Metric
+        Statement:
+          RateBasedStatement:
+            AggregateKeyType: IP
+            Limit: 2000  # rate limit adjust as per your real traffic
