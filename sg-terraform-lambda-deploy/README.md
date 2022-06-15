@@ -12,6 +12,9 @@ Use Cases Covered:
 #### Terraform Initialization
 `terraform init`
 
+#### Terraform Plan
+`terraform plan`
+
 #### Terraform Apply
 `terraform apply`
 
