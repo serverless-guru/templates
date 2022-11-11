@@ -34,6 +34,6 @@
   },
   "dependencies": {
     "lambda-log": "3.0.0",
-    "sharp": "^0.28.3"
+    "sharp": "^0.30.5"
   }
 }
