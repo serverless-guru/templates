@@ -1,0 +1,14 @@
+---
+more:
+  - name: OrgName
+    ref: https://example.com
+    external: true
+    icon: "gdoc_bookmark"
+  - name: Organization's Github
+    ref: https://github.com/OrgName
+    external: true
+    icon: "gdoc_github"
+  - name: This Documentation's Github
+    ref: https://github.com/OrgName/documentation
+    external: true
+    icon: "gdoc_github"
