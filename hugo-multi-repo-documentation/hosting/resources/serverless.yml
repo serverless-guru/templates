@@ -1,0 +1,113 @@
+Resources:
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        PriceClass: PriceClass_All
+        HttpVersion: http2
+        IPV6Enabled: true
+        Aliases:
+          - ${self:custom.domainName}
+        ViewerCertificate:
+          AcmCertificateArn: !Ref Certificate
+          SslSupportMethod: sni-only
+          MinimumProtocolVersion: TLSv1.2_2021
+        CustomErrorResponses:
+          - ErrorCode: 403
+            ResponseCode: 403
+            ErrorCachingMinTTL: 10
+            ResponsePagePath: /403.html
+          - ErrorCode: 404
+            ResponseCode: 404
+            ErrorCachingMinTTL: 10
+            ResponsePagePath: /404.html
+
+  WebsiteBucketStackSet:
+    Type: AWS::CloudFormation::StackSet
+    Properties:
+      Description: Create Bucket in ${self:custom.bucketRegion}
+      PermissionModel: SELF_MANAGED
+      StackInstancesGroup:
+        - DeploymentTargets:
+            Accounts:
+              - !Ref "AWS::AccountId"
+          Regions:
+            - ${self:custom.bucketRegion}
+      StackSetName: !Sub "${AWS::StackName}-WebsiteBucket"
+      Parameters:
+        - ParameterKey: name
+          ParameterValue: ${self:custom.domainName}
+        - ParameterKey: sourceToken
+          ParameterValue: ${self:custom.sourceToken}
+      TemplateBody: |
+        AWSTemplateFormatVersion: 2010-09-09
+        Description: Create WebsiteBucket
+        Parameters:
+          name:
+            Type: String
+          sourceToken:
+            Type: String
+        Resources:
+          WebsiteBucket:
+            Type: AWS::S3::Bucket
+            DeletionPolicy: Retain
+            Properties:
+              BucketName: !Ref name
+              WebsiteConfiguration:
+                ErrorDocument: 404.html
+                IndexDocument: index.html
+              PublicAccessBlockConfiguration:
+                BlockPublicAcls: false
+                BlockPublicPolicy: false
+                IgnorePublicAcls: false
+                RestrictPublicBuckets: false
+          WebsiteBucketPolicy:
+            Type: AWS::S3::BucketPolicy
+            Properties:
+              Bucket: !Ref WebsiteBucket
+              PolicyDocument:
+                Statement:
+                  - Action:
+                      - "s3:GetObject"
+                      - "s3:ListBucket"
+                    Effect: Allow
+                    Resource:
+                      - Fn::Join:
+                        - ""
+                        - - "arn:aws:s3:::"
+                          - !Ref WebsiteBucket
+                          - /*
+                      - Fn::Join:
+                        - ""
+                        - - "arn:aws:s3:::"
+                          - !Ref WebsiteBucket
+                    Principal: "*"
+                    Condition:
+                      StringEquals:
+                        "aws:Referer":
+                          - !Ref sourceToken
+  DNS:
+    Type: AWS::Route53::RecordSetGroup
+    DependsOn: CloudFrontDistribution
+    Properties:
+      HostedZoneId: ${self:custom.hostedZoneId}
+      RecordSets:
+        - Name: ${self:custom.domainName}
+          Type: A
+          AliasTarget:
+            HostedZoneId: Z2FDTNDATAQYW2
+            DNSName: !GetAtt CloudFrontDistribution.DomainName
+        - Name: ${self:custom.domainName}
+          Type: AAAA
+          AliasTarget:
+            HostedZoneId: Z2FDTNDATAQYW2
+            DNSName: !GetAtt CloudFrontDistribution.DomainName
+  Certificate:
+    Type: AWS::CertificateManager::Certificate
+    Properties:
+      DomainName: ${self:custom.domainName}
+      DomainValidationOptions:
+        - DomainName: ${self:custom.domainName}
+          HostedZoneId: ${self:custom.hostedZoneId}
+      ValidationMethod: DNS

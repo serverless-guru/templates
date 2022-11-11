@@ -1,0 +1,22 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 16
+  pre_build:
+    commands:
+      - echo "Installing node_modules"
+      - npm install
+      - npm run lint
+      - echo "Done with node project"
+    finally:
+      - echo "End of pre-build phase"
+  build:
+    commands:
+      - echo "Deploying Serverless"
+      - cd $CODEBUILD_SRC_DIR
+      - npx sls deploy
+      - echo "Serverless deployed"
+    finally:
+      - echo "End of build phase"

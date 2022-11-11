@@ -1,0 +1,26 @@
+# Dependency directories
+node_modules/
+.history
+# Test Dirs
+test-execs/
+dist/
+
+# Webpack directory
+.esbuild
+
+# Serverless directories
+.serverless/
+
+# dotenv environment variables files
+.env
+.env*
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Terraform
+.terraform
+.terraform.lock.hcl
+packages/service/resources/terraform.json
