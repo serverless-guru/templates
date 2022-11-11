@@ -1,0 +1,6 @@
+{
+  "editor.formatOnSave": true,
+  "yaml.schemas": {
+    "https://raw.githubusercontent.com/lalcebo/json-schema/master/serverless/reference.json": "file:///home/daniel/Documents/serverless-guru/github/templates/hugo-multi-repo-documentation/hosting/src/handlers/serverless.yml"
+  }
+}
