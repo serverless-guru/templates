@@ -1,0 +1,16 @@
+---
+properties:
+  email:
+    required: true
+    type: string
+    description: A valid email address
+  name:
+    type: string
+  accountType:
+    type: ["applicant", "business", "admin"]
+    appro: true
+  birthdate:
+    type: YYYY-MM-DD
+  picture:
+    type: string
+    description: S3 URL of the source profile picture
