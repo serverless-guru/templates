@@ -1,7 +1,7 @@
 {
   "devDependencies": {
-    "serverless": "^1.60.5",
-    "serverless-offline": "^5.12.1"
+    "serverless": "3.24.1",
+    "serverless-offline": "11.3.0"
   },
   "scripts": {
     "test": "bash ./test.bash"
