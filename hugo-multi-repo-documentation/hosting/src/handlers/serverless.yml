@@ -1,0 +1,21 @@
+protect:
+  handler: src/handlers/protect.handler
+  timeout: 5
+  events:
+    - cloudFront:
+        eventType: viewer-request
+        origin: ${self:custom.origin}
+        isDefaultOrigin: true
+        cachePolicy:
+          id: 658327ea-f89d-4fab-a63d-7e88639e58f6
+        behavior:
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods:
+            - "GET"
+            - "HEAD"
+            - "OPTIONS"
+          CachedMethods:
+            - "GET"
+            - "HEAD"
+            - "OPTIONS"
+          Compress: true

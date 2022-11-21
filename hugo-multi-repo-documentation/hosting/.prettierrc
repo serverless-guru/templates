@@ -1,0 +1,23 @@
+{
+    "arrowParens": "always",
+    "bracketSpacing": true,
+    "endOfLine": "lf",
+    "printWidth": 100,
+    "useTabs": false,
+    "trailingComma": "es5",
+    "singleQuote": true,
+    "overrides": [
+        {
+            "files": [
+                "**/*.yaml",
+                "**/*.yml"
+            ],
+            "options": {
+                "singleQuote": false
+            }
+        }
+    ],
+    "semi": true,
+    "tabWidth": 2,
+    "htmlWhitespaceSensitivity": "css"
+}

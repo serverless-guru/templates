@@ -1,0 +1,45 @@
+baseURL = 'https://doc.example.com/'
+languageCode = 'en-us'
+title = 'myOrg Documentation'
+
+theme = "hugo-geekdoc"
+
+pluralizeListTitles = false
+
+# Geekdoc required configuration
+disablePathToLower = true
+pygmentsCodeFences = true
+pygmentsUseClasses = true
+
+# Required if you want to render robots.txt template
+enableRobotsTXT = false
+
+# Needed for mermaid shortcodes
+[markup]
+[markup.highlight]
+style = "monokai"
+[markup.goldmark.renderer]
+# Needed for mermaid shortcode
+unsafe = true
+[markup.tableOfContents]
+endLevel = 9
+startLevel = 1
+
+[taxonomies]
+tag = "tags"
+
+[params]
+geekdocCollapseAllSections = true
+geekdocDarkModeCode = false
+
+[module]
+[[module.imports]]
+path = "github.com/OrgName/repoA"
+[[module.imports.mounts]]
+source = "documentation"
+target = "content/services/service1"
+[[module.imports]]
+path = "github.com/OrgName/repoB"
+[[module.imports.mounts]]
+source = "documentation"
+target = "content/services/service2"

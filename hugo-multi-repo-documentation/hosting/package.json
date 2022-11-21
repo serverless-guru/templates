@@ -1,0 +1,32 @@
+{
+  "name": "documentation",
+  "version": "0.0.1",
+  "private": true,
+  "engines": {
+    "node": ">=16.14 <17"
+  },
+  "scripts": {
+    "lint": "npm run prettier:fix && npm run ts:check && npm run eslint:check",
+    "ts:check": "npx tsc --noEmit",
+    "eslint:fix": "npx eslint src --ext ts,js --fix",
+    "eslint:check": "npx eslint src --ext ts,js",
+    "prettier:fix": "npx prettier --write '**/*.{ts,js,json,yml,yaml,md}'"
+  },
+  "devDependencies": {
+    "@aws-sdk/types": "3.208.0",
+    "@types/aws-lambda": "8.10.108",
+    "@types/eslint": "8.4.10",
+    "@types/node": "^16.0.0",
+    "@typescript-eslint/eslint-plugin": "5.42.1",
+    "@typescript-eslint/parser": "5.42.1",
+    "esbuild": "0.15.13",
+    "eslint": "8.27.0",
+    "eslint-config-prettier": "8.5.0",
+    "eslint-plugin-jsdoc": "39.6.2",
+    "prettier": "2.7.1",
+    "serverless": "3.24.1",
+    "serverless-esbuild": "1.33.1",
+    "ts-loader": "9.4.1",
+    "typescript": "4.8.4"
+  }
+}

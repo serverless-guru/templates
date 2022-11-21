@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    "target": "ES2019",
+    "module": "CommonJS",
+    "esModuleInterop": true,
+    "strict": true,
+    "noImplicitAny": true,
+    "downlevelIteration": true,
+    "moduleResolution": "node",
+    "sourceMap": true,
+    "alwaysStrict": true,
+    "strictFunctionTypes": true,
+    "resolveJsonModule": true,
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "noFallthroughCasesInSwitch": true,
+    "pretty": true,
+    "removeComments": true,
+    "outDir": "dist",
+    "noUnusedLocals": true,
+    "baseUrl": ".",
+    "skipLibCheck": true,
+    "typeRoots": ["node_modules/@types", "src/@types"],
+    "paths": {
+      "*": ["node_modules/*", "src/@types/*"]
+    }
+  },
+  "include": ["src"],
+  "exclude": ["node_modules/*", ".serverless", ".esbuild"]
+}

@@ -1,0 +1,20 @@
+version: 0.2
+
+env:
+  parameter-store:
+    ghtoken: "/cicd/github_oauth_token"
+phases:
+  install:
+    commands:
+      - echo "machine github.com login ${ghtoken}" > ~/.netrc
+      - echo "Install Hugo"
+      - curl -L -o hugo.tar.gz https://github.com/gohugoio/hugo/releases/download/v0.105.0/hugo_0.105.0_Linux-64bit.tar.gz
+      - tar xzfv hugo.tar.gz
+      - mv hugo /usr/local/bin/hugo
+  build:
+    commands:
+      - cd site
+      - hugo mod get -u
+      - hugo -v
+      - aws s3 sync --cache-control "public, max-age=3600, s-maxage=31536000" public/ s3://doc.example.com/
+      - aws cloudfront create-invalidation --distribution-id $(aws cloudfront list-distributions --output text --query 'DistributionList.Items[?Aliases.Items[0]==`doc.example.com`].Id') --paths "/*"

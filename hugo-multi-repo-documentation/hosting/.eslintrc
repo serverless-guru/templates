@@ -1,0 +1,77 @@
+{
+  "parser": "@typescript-eslint/parser",
+  "extends": ["plugin:@typescript-eslint/recommended", "prettier"],
+  "parserOptions": {
+    "ecmaVersion": 2018,
+    "sourceType": "module"
+  },
+  "plugins": ["jsdoc"],
+  "rules": {
+    "no-eq-null": "error",
+    "eqeqeq": ["error", "always"],
+    "no-extra-boolean-cast": ["error", { "enforceForLogicalOperands": true }],
+    "no-return-await": "error",
+    "no-sequences": "error",
+    "no-throw-literal": "error",
+    "no-var": "error",
+    "prefer-const": "error",
+    "require-await": "error",
+    "sort-imports": [
+      "error",
+      {
+        "allowSeparatedGroups": true,
+        "memberSyntaxSortOrder": ["multiple", "single", "none", "all"],
+        "ignoreMemberSort": true,
+        "ignoreDeclarationSort": true
+      }
+    ],
+    "no-irregular-whitespace": "error",
+    "camelcase": ["error", { "properties": "never" }],
+    // "capitalized-comments": [
+    //   "error",
+    //   "always",
+    //   {
+    //     "ignoreInlineComments": true,
+    //     "ignoreConsecutiveComments": true
+    //   }
+    // ],
+    "default-case-last": "error",
+    "dot-notation": ["error"],
+    "func-name-matching": "error",
+    "func-names": ["error", "always"],
+    "new-cap": ["error", { "newIsCap": true }],
+    "no-delete-var": "error",
+    "no-loop-func": "error",
+    "valid-jsdoc": "off",
+    "no-multi-assign": "error",
+    "no-unneeded-ternary": "error",
+    "no-useless-return": "error",
+    "spaced-comment": ["error", "always"],
+    "jsdoc/require-description": "error",
+    "jsdoc/require-jsdoc": "error",
+    "@typescript-eslint/no-namespace": ["error", { "allowDefinitionFiles": true }],
+    "@typescript-eslint/no-empty-interface": "off",
+    "@typescript-eslint/no-require-imports": "error",
+    "@typescript-eslint/no-explicit-any": "error",
+    "@typescript-eslint/explicit-function-return-type": ["error", { "allowExpressions": true }],
+    "@typescript-eslint/naming-convention": [
+      "error",
+      {
+        "selector": "interface",
+        "format": ["PascalCase"]
+      },
+      {
+        "selector": "function",
+        "format": ["camelCase"],
+        "leadingUnderscore": "allow"
+      }
+    ],
+    "@typescript-eslint/no-inferrable-types": [
+      "warn",
+      {
+        "ignoreParameters": true
+      }
+    ],
+    "@typescript-eslint/no-unused-vars": ["error", { "args": "none" }]
+  }
+}

@@ -1,0 +1,39 @@
+service: documentation
+package:
+  individually: true
+frameworkVersion: "3.24.1"
+configValidationMode: error
+
+plugins:
+  - serverless-esbuild
+
+custom:
+  domainName: doc.example.com
+  hostedZoneId: ABCD01234567
+  bucketRegion: eu-central-1
+  sourceToken: "oosuipav6Roo"
+  origin:
+    DomainName: ${self:custom.domainName}.s3-website.${self:custom.bucketRegion}.amazonaws.com
+    CustomOriginConfig:
+      OriginProtocolPolicy: http-only
+    OriginCustomHeaders:
+      - HeaderName: "Referer"
+        HeaderValue: ${self:custom.sourceToken}
+provider:
+  name: aws
+  deploymentBucket:
+    blockPublicAccess: true
+    skipPolicySetup: true
+    name: serverless-deployment-${aws:accountId}-us-east-1
+
+  runtime: nodejs16.x
+  stage: ${env:STAGE, 'dev'}
+  region: us-east-1
+  endpointType: REGIONAL
+  stackTags:
+    Service: ${self:service}
+  logRetentionInDays: 14
+functions:
+  - ${file(./src/handlers/serverless.yml)}
+resources:
+  - ${file(./resources/serverless.yml)}
