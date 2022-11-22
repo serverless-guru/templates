@@ -1,0 +1,52 @@
+Type: AWS::CloudFront::Distribution
+Properties:
+  DistributionConfig:
+    Enabled: true
+    IPV6Enabled: true
+    HttpVersion: 'http2and3'
+    DefaultCacheBehavior:
+      ViewerProtocolPolicy: redirect-to-https
+      AllowedMethods:
+        - GET
+        - HEAD
+        - OPTIONS
+      CachedMethods:
+        - GET
+        - HEAD
+        - OPTIONS
+      CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
+      TargetOriginId: S3
+    CacheBehaviors:
+      - ViewerProtocolPolicy: redirect-to-https
+        AllowedMethods:
+          - GET
+          - HEAD
+          - OPTIONS
+        CachedMethods:
+          - GET
+          - HEAD
+          - OPTIONS
+        CachePolicyId: 08627262-05a9-4f76-9ded-b50ca2e3a84f
+        TargetOriginId: MediaPackage
+        PathPattern: 'out/*'
+    Origins:
+      - Id: MediaPackage
+        DomainName:
+          e94688c0b3e37197173125f411cd3209.egress.mediapackage-vod.eu-central-1.amazonaws.com
+          # Fn::GetAtt:
+          #   - MediaPackagePackagingGroup
+          #   - DomainName
+        CustomOriginConfig:
+          HTTPSPort: 443
+          OriginProtocolPolicy: https-only
+      - Id: S3
+        DomainName:
+          Fn::GetAtt:
+            - S3BucketMezzanine
+            - DomainName
+        S3OriginConfig:
+          OriginAccessIdentity: ''
+        OriginAccessControlId:
+          Fn::GetAtt:
+            - CloudfrontOac
+            - Id

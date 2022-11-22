@@ -1,0 +1,27 @@
+name: Package
+type: EXPRESS
+loggingConfig:
+  level: ALL
+  includeExecutionData: true
+  destinations:
+    - Fn::GetAtt: [LogGroupStepSmil, Arn]
+definition:
+  Comment: 'Create SMIL'
+  StartAt: cleanInput
+  States:
+    cleanInput:
+      Type: Pass
+      Parameters:
+        id.$: '$.detail.userMetadata.id'
+        outputDetails.$: '$.detail.outputGroupDetails[0].outputDetails'
+        frames.$: '$.detail.outputGroupDetails[1].outputDetails'
+      Next: parallel1
+    parallel1:
+      Type: Parallel
+      Next: success
+      Branches:
+        - ${file(stepFunctions/package/smil.yml)}
+        - ${file(stepFunctions/package/mp4.yml)}
+        - ${file(stepFunctions/package/frames.yml)}
+    success:
+      Type: 'Succeed'

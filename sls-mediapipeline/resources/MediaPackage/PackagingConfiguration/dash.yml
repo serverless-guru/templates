@@ -1,0 +1,14 @@
+Type: AWS::MediaPackage::PackagingConfiguration
+Properties:
+  Id: dash
+  PackagingGroupId: ${self:service}${self:custom.stage.suffix}-group
+  DashPackage:
+    DashManifests:
+      - ManifestName: index
+        ManifestLayout: FULL
+        MinBufferTimeSeconds: 30
+        StreamSelection:
+          StreamOrder: VIDEO_BITRATE_DESCENDING
+    SegmentDurationSeconds: 2
+    SegmentTemplateFormat: NUMBER_WITH_TIMELINE
+DependsOn: MediaPackagePackagingGroup

@@ -1,0 +1,8 @@
+handler: src/handlers/mediapackage.handler
+name: ${self:service}-mediapackage${self:custom.stage.suffix}
+memorySize: ${self:custom.stage.lambda.memorySize}
+timeout: ${self:custom.stage.lambda.timeout}
+environment:
+  mezzanineBucket: ${self:custom.mezzanineBucket}
+  mediaPackageRole: 'arn:aws:iam::${aws:accountId}:role/${self:service}MediaPackageRole${self:custom.stage.suffix}'
+  packagingGroupId: ${self:custom.packagingGroupId}

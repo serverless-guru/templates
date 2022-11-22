@@ -1,0 +1,48 @@
+service: mediapipeline
+frameworkVersion: 3.25.0
+configValidationMode: error
+
+custom:
+  stage: ${file(config/stages/${opt:stage, self:provider.stage}.yml)}
+  esbuild:
+    packager: 'npm'
+    exclude:
+      - '@aws-sdk'
+    # sourcemap: true
+    # minify: true
+  incomingBucket: ${self:service}-incoming-${aws:accountId}-${aws:region}-${self:provider.stage}
+  mezzanineBucket: ${self:service}-mezzanine-${aws:accountId}-${aws:region}-${self:provider.stage}
+  videoTable: ${self:service}-video-${self:provider.stage}
+  packagingGroupId: ${self:service}${self:custom.stage.suffix}-group
+
+plugins:
+  - serverless-deployment-bucket
+  - serverless-esbuild
+  - serverless-step-functions
+package:
+  individually: true
+
+stepFunctions:
+  stateMachines:
+    convert: ${file(stepFunctions/convert.yml)}
+    package: ${file(stepFunctions/package.yml)}
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  stage: ${opt:stage, 'dev'}
+  region: ${opt:region, self:custom.stage.region}
+  profile: ${self:custom.stage.profile}
+  memorySize: ${self:custom.stage.lambda.memorySize, '128'}
+  timeout: ${self:custom.stage.lambda.timeout, '10'}
+  logRetentionInDays: ${self:custom.stage.lambda.logRetention, 1}
+  iam: ${file(serverless.iam.yml)}
+  deploymentBucket:
+    name: com.serverless.${aws:accountId}.${self:provider.region}.deploys
+    blockPublicAccess: true
+    skipPolicySetup: true
+    serverSideEncryption: AES256
+functions: ${file(helpers/main.js):getFunctions}
+resources:
+  Resources: ${file(helpers/main.js):getResources}
+#   Outputs: ${file(helpers/main.js):outputs}

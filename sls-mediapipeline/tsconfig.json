@@ -1,0 +1,34 @@
+{
+  "compilerOptions": {
+    "target": "ES2021",
+    "module": "CommonJS",
+    "esModuleInterop": true,
+    "strict": true,
+    "noImplicitAny": true,
+    "downlevelIteration": true,
+    "moduleResolution": "node",
+    "sourceMap": true,
+    "alwaysStrict": true,
+    "strictFunctionTypes": true,
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "noFallthroughCasesInSwitch": true,
+    "pretty": true,
+    "removeComments": true,
+    "outDir": "dist",
+    "noUnusedLocals": true,
+    "baseUrl": ".",
+    "skipLibCheck": true,
+    "typeRoots": ["node_modules/@types", "src/@types"],
+    "paths": {
+      "@@handlers/*": ["src/handlers/*"],
+      "@@controllers/*": ["src/controllers/*"],
+      "@@services/*": ["src/services/*"],
+      "@@shared/*": ["src/shared/*"],
+      "*": ["node_modules/*", "src/@types/*"]
+    }
+  },
+  "include": ["src"],
+  "exclude": ["node_modules/*", ".serverless", ".webpack"]
+}

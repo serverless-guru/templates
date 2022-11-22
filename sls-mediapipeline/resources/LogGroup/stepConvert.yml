@@ -1,0 +1,4 @@
+Type: AWS::Logs::LogGroup
+Properties:
+  LogGroupName: '/aws/states/${self:service}-convert-${self:provider.stage}'
+  RetentionInDays: 7

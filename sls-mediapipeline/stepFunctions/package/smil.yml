@@ -1,0 +1,91 @@
+StartAt: smil
+States:
+  smil:
+    Type: Task
+    Resource: !GetAtt SmilLambdaFunction.Arn
+    Parameters:
+      id.$: '$.id'
+      outputDetails.$: '$.outputDetails'
+    ResultPath: '$.smilKey'
+    Next: storeSmilKey
+  storeSmilKey:
+    Type: Task
+    ResultPath: null
+    Next: mediaPackage
+    Resource: arn:aws:states:::dynamodb:putItem
+    Parameters:
+      TableName: !Ref DynamoDbVideo
+      Item:
+        videoId:
+          S.$: '$.id'
+        infoType:
+          S: 'smil'
+        smil:
+          M:
+            bucket:
+              S: ${self:custom.mezzanineBucket}
+            key:
+              S.$: '$.smilKey'
+  mediaPackage:
+    Type: Task
+    Resource: !GetAtt MediapackageLambdaFunction.Arn
+    Parameters:
+      id.$: '$.id'
+      smilKey.$: '$.smilKey'
+    ResultPath: '$.mediapackage'
+    Next: storeAssets
+  storeAssets:
+    Type: Parallel
+    ResultPath: null
+    Next: publish
+    Branches:
+      - StartAt: storeHls
+        States:
+          storeHls:
+            Type: Task
+            ResultPath: null
+            End: true
+            Resource: arn:aws:states:::dynamodb:putItem
+            Parameters:
+              TableName: !Ref DynamoDbVideo
+              Item:
+                videoId:
+                  S.$: '$.id'
+                infoType:
+                  S: 'hls'
+                url:
+                  S.$: '$.mediapackage.hls'
+      - StartAt: storeDash
+        States:
+          storeDash:
+            Type: Task
+            ResultPath: null
+            End: true
+            Resource: arn:aws:states:::dynamodb:putItem
+            Parameters:
+              TableName: !Ref DynamoDbVideo
+              Item:
+                videoId:
+                  S.$: '$.id'
+                infoType:
+                  S: 'dash'
+                url:
+                  S.$: '$.mediapackage.hls'
+  publish:
+    Type: Task
+    ResultPath: null
+    End: true
+    Resource: arn:aws:states:::dynamodb:updateItem
+    Parameters:
+      TableName: !Ref DynamoDbVideo
+      Key:
+        videoId:
+          S.$: '$.id'
+        infoType:
+          S: 'main'
+      UpdateExpression: 'SET #status = :status'
+      ExpressionAttributeNames:
+        '#status': 'status'
+      ExpressionAttributeValues:
+        ':status':
+          S: 'published'

@@ -1,0 +1,24 @@
+Type: AWS::Events::Rule
+Properties:
+  State: ENABLED
+  Name: ${self:service}-after-transcode
+  Description: 'Transcoding Done'
+  EventPattern:
+    source:
+      - aws.mediaconvert
+    detail-type:
+      - MediaConvert Job State Change
+    detail:
+      userMetadata:
+        initiator:
+          - ${self:service}
+      status:
+        - COMPLETE
+  Targets:
+    - Arn:
+        Ref: Package
+      Id: 'InvokeStepFunctionsPackage'
+      RoleArn:
+        Fn::GetAtt:
+          - EventBridgeInvokeStateRole
+          - Arn

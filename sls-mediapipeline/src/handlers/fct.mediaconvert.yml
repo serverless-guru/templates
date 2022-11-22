@@ -1,0 +1,8 @@
+handler: src/handlers/mediaconvert.handler
+name: ${self:service}-mediaconvert${self:custom.stage.suffix}
+memorySize: ${self:custom.stage.lambda.memorySize}
+timeout: ${self:custom.stage.lambda.timeout}
+environment:
+  mezzanineBucket: ${self:custom.mezzanineBucket}
+  mediaConvertRole: 'arn:aws:iam::${aws:accountId}:role/${self:service}MediaConvertRole${self:custom.stage.suffix}'
+  service: ${self:service}

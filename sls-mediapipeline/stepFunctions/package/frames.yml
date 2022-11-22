@@ -1,0 +1,29 @@
+StartAt: getStillArray
+States:
+  getStillArray:
+    Type: Task
+    Resource: !GetAtt StillDetailLambdaFunction.Arn
+    Parameters:
+      filename.$: '$.frames[0].outputFilePaths[0]'
+    ResultPath: '$.stills'
+    Next: storeStill
+  storeStill:
+    Type: Task
+    ResultPath: null
+    End: true
+    Resource: arn:aws:states:::dynamodb:putItem
+    Parameters:
+      TableName: !Ref DynamoDbVideo
+      Item:
+        videoId:
+          S.$: '$.id'
+        infoType:
+          S: 'stills'
+        bucket:
+          S.$: '$.stills.bucket'
+        keys:
+          SS.$: '$.stills.stillKeys'
+        width:
+          N.$: "States.Format('{}', $.frames[0].videoDetails.widthInPx)"
+        height:
+          N.$: "States.Format('{}', $.frames[0].videoDetails.heightInPx)"

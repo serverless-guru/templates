@@ -1,0 +1,29 @@
+role:
+  statements:
+    - Effect: 'Allow'
+      Action:
+        - 'mediaconvert:DescribeEndpoints'
+        - 'mediaconvert:CreateJob'
+      Resource: '*'
+    - Effect: 'Allow'
+      Action:
+        - iam:PassRole
+        - iam:ListRoles
+      Resource:
+        - arn:aws:iam::${aws:accountId}:role/${self:service}MediaConvertRole${self:custom.stage.suffix}
+        - arn:aws:iam::${aws:accountId}:role/${self:service}MediaPackageRole${self:custom.stage.suffix}
+    - Effect: 'Allow'
+      Action:
+        - s3:GetObject
+      Resource:
+        - arn:aws:s3:::${self:custom.incomingBucket}/*
+    - Effect: 'Allow'
+      Action:
+        - s3:PutObject
+      Resource:
+        - arn:aws:s3:::${self:custom.mezzanineBucket}/*
+    - Effect: 'Allow'
+      Action:
+        - mediapackage-vod:CreateAsset
+      Resource:
+        - '*'

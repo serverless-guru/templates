@@ -1,0 +1,46 @@
+{
+  "name": "transcode",
+  "version": "0.0.1",
+  "description": "Change name and description",
+  "main": "handler.js",
+  "scripts": {
+    "test": "npm run lint",
+    "lint": "eslint .",
+    "lintfix": "eslint --fix",
+    "deploy": "npm run lint && sls -s production deploy",
+    "dev": "npm run lint && sls deploy"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@aws-sdk/types": "3.188.0",
+    "@serverless-guru/prettier-plugin-import-order": "0.2.0",
+    "@serverless/typescript": "3.21.0",
+    "@types/aws-lambda": "8.10.108",
+    "@types/lambda-log": "2.2.1",
+    "@typescript-eslint/eslint-plugin": "5.44.0",
+    "@typescript-eslint/parser": "5.44.0",
+    "esbuild": "0.15.15",
+    "eslint": "8.28.0",
+    "eslint-config-prettier": "8.5.0",
+    "eslint-config-standard": "17.0.0",
+    "eslint-plugin-import": "2.26.0",
+    "eslint-plugin-jsdoc": "39.6.2",
+    "eslint-plugin-n": "15.5.1",
+    "eslint-plugin-promise": "6.1.1",
+    "prettier": "2.7.1",
+    "serverless": "3.25.0",
+    "serverless-deployment-bucket": "1.6.0",
+    "serverless-esbuild": "1.33.2",
+    "serverless-step-functions": "3.11.1",
+    "ts-loader": "9.4.1",
+    "typescript": "4.9.3",
+    "@aws-sdk/client-mediaconvert": "3.188.0",
+    "@aws-sdk/client-mediapackage-vod": "3.188.0",
+    "@aws-sdk/client-s3": "3.188.0",
+    "@aws-sdk/s3-request-presigner": "3.188.0"
+  },
+  "dependencies": {
+    "lambda-log": "3.1.0"
+  }
+}

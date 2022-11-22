@@ -1,0 +1,4 @@
+handler: src/handlers/renditionDetail.handler
+name: ${self:service}-renditionDetail${self:custom.stage.suffix}
+memorySize: ${self:custom.stage.lambda.memorySize}
+timeout: ${self:custom.stage.lambda.timeout}

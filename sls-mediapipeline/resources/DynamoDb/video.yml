@@ -1,0 +1,15 @@
+Type: AWS::DynamoDB::Table
+Properties:
+  TableName: ${self:custom.videoTable}
+  AttributeDefinitions:
+    - AttributeName: 'videoId'
+      AttributeType: 'S'
+    - AttributeName: 'infoType'
+      AttributeType: 'S'
+  KeySchema:
+    - AttributeName: 'videoId'
+      KeyType: 'HASH'
+    - AttributeName: 'infoType'
+      KeyType: 'RANGE'
+  BillingMode: PAY_PER_REQUEST
+  TableClass: STANDARD_INFREQUENT_ACCESS

@@ -1,0 +1,5 @@
+handler: src/handlers/analyze.handler
+name: ${self:service}-analyze${self:custom.stage.suffix}
+memorySize: ${self:custom.stage.lambda.memorySize}
+timeout: ${self:custom.stage.lambda.timeout}
+layers: arn:aws:lambda:${aws:region}:${aws:accountId}:layer:ffmpeg:1

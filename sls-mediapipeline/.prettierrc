@@ -1,0 +1,20 @@
+{
+  "arrowParens": "always",
+  "bracketSpacing": true,
+  "endOfLine": "lf",
+  "printWidth": 100,
+  "useTabs": false,
+  "trailingComma": "all",
+  "singleQuote": true,
+  "semi": false,
+  "tabWidth": 2,
+  "htmlWhitespaceSensitivity": "css",
+  "importOrder": ["^@core/(.*)$", "^@server/(.*)$", "^@ui/(.*)$", "^[./]"],
+  "importOrderTypeImportsToTop": true,
+  "importOrderBuiltinModulesToTop": true,
+  "importOrderCaseInsensitive": false,
+  "importOrderParserPlugins": ["typescript", "jsx", "decorators-legacy"],
+  "importOrderMergeDuplicateImports": true,
+  "importOrderSeparation": true,
+  "importOrderSortIndividualImports": true
+}

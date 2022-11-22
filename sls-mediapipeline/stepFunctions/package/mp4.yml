@@ -1,0 +1,43 @@
+StartAt: renditions
+States:
+  renditions:
+    Type: Map
+    ItemsPath: $.outputDetails
+    Parameters:
+      id.$: '$.id'
+      rendition.$: '$$.Map.Item.Value'
+    Iterator:
+      StartAt: getRenditionDetail
+      States:
+        getRenditionDetail:
+          Type: Task
+          Resource: !GetAtt RenditionDetailLambdaFunction.Arn
+          Parameters:
+            filename.$: '$.rendition.outputFilePaths[0]'
+          ResultPath: '$.details'
+          Next: storeRendition
+        storeRendition:
+          Type: Task
+          ResultPath: null
+          End: true
+          Resource: arn:aws:states:::dynamodb:putItem
+          Parameters:
+            TableName: !Ref DynamoDbVideo
+            Item:
+              videoId:
+                S.$: '$.id'
+              infoType:
+                S.$: "States.Format('mp4#{}',$.details.rendId)"
+              url:
+                S.$: '$.rendition.outputFilePaths[0]'
+              file:
+                M:
+                  bucket:
+                    S.$: '$.details.bucket'
+                  key:
+                    S.$: '$.details.key'
+              width:
+                N.$: "States.Format('{}', $.rendition.videoDetails.widthInPx)"
+              height:
+                N.$: "States.Format('{}', $.rendition.videoDetails.heightInPx)"
+    End: true
