@@ -1,0 +1,111 @@
+{
+  "folders": [
+    {
+      "name": "@@root",
+      "path": "../"
+    },
+    {
+      "name": "@@src",
+      "path": "../src"
+    },
+    {
+      "name": "@@resources",
+      "path": "../resources"
+    },
+    {
+      "name": "@@stepFunctions",
+      "path": "../stepFunctions"
+    },
+    {
+      "name": "@@outputs",
+      "path": "../outputs"
+    }
+  ],
+  "settings": {
+    "typescript.tsdk": "@@root/node_modules/typescript/lib",
+    "typescript.enablePromptUseWorkspaceTsdk": true,
+    "javascript.validate.enable": false,
+    "files.exclude": {
+      "**/.DS_Store": true,
+      "**/.git": true,
+      "**/.hg": true,
+      "**/.svn": true,
+      "**/build": true,
+      "**/CVS": true,
+      "**/node_modules": true,
+      "/dist/": true,
+      "/node_modules/": true
+    },
+    "yaml.customTags": [
+      "!And",
+      "!If sequence",
+      "!If",
+      "!Not",
+      "!Not sequence",
+      "!Equals sequence",
+      "!Or",
+      "!FindInMap sequence",
+      "!Base64",
+      "!Base64 mapping",
+      "!Cidr",
+      "!Ref",
+      "!Sub",
+      "!GetAtt",
+      "!GetAtt sequence",
+      "!GetAZs",
+      "!ImportValue",
+      "!Select",
+      "!Select sequence",
+      "!Split sequence",
+      "!Join sequence",
+      "!And sequence",
+      "!Equals",
+      "!Or sequence",
+      "!FindInMap",
+      "!Join",
+      "!Sub sequence",
+      "!ImportValue sequence",
+      "!Split"
+    ],
+    "yaml.format.enable": true,
+    "javascript.updateImportsOnFileMove.enabled": "always",
+    "files.eol": "\n",
+    "explorer.sortOrder": "type",
+    "files.trimFinalNewlines": true,
+    "[javascript]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[json]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "search.exclude": {
+      "**/build": true,
+      "**/dist": true
+    },
+    "[html]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[typescript]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[jsonc]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "typescript.updateImportsOnFileMove.enabled": "always",
+    "[javascriptreact]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[typescriptreact]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[yaml]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    // "prettier.requireConfig": true,
+    // "prettier.singleQuote": true,
+    // "prettier.trailingComma": "all",
+    "yaml.format.singleQuote": true,
+    "yaml.validate": false,
+    "editor.formatOnSave": true
+  }
+}

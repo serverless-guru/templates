@@ -1,0 +1,103 @@
+name: Convert
+type: EXPRESS
+loggingConfig:
+  level: ALL
+  includeExecutionData: true
+  destinations:
+    - Fn::GetAtt: [LogGroupStepConvert, Arn]
+definition:
+  Comment: 'Process a video file'
+  StartAt: cleanInput
+  States:
+    cleanInput:
+      Type: Pass
+      Parameters:
+        uuid.$: 'States.UUID()'
+        bucket.$: '$.detail.bucket.name'
+        key.$: '$.detail.object.key'
+        createdAt.$: '$.time'
+      Next: analyze
+    analyze:
+      Type: Task
+      Resource: !GetAtt AnalyzeLambdaFunction.Arn
+      Parameters:
+        bucket.$: '$.bucket'
+        key.$: '$.key'
+      ResultPath: '$.sourceInfo'
+      Next: isValidVideo?
+    isValidVideo?:
+      Type: Choice
+      Choices:
+        - And:
+            - Variable: '$.sourceInfo.width'
+              NumericGreaterThan: 360
+            - Variable: '$.sourceInfo.height'
+              NumericGreaterThan: 270
+            - Variable: '$.sourceInfo.duration'
+              NumericGreaterThan: 1
+          Next: getName
+      Default: success
+    getName:
+      Type: Task
+      Resource: !GetAtt NameLambdaFunction.Arn
+      Parameters:
+        filename.$: '$.key'
+      ResultPath: '$.name'
+      Next: store
+    store:
+      Type: Task
+      ResultPath: null
+      Next: parallel1
+      Resource: arn:aws:states:::dynamodb:putItem
+      Parameters:
+        TableName: !Ref DynamoDbVideo
+        Item:
+          videoId:
+            S.$: '$.uuid'
+          infoType:
+            S: 'main'
+          source:
+            M:
+              bucket:
+                S.$: '$.bucket'
+              key:
+                S.$: '$.key'
+              width:
+                N.$: "States.Format('{}',$.sourceInfo.width)"
+              height:
+                N.$: "States.Format('{}',$.sourceInfo.height)"
+          name:
+            S.$: '$.name'
+          duration:
+            N.$: "States.Format('{}',$.sourceInfo.duration)"
+          status:
+            S: 'processing'
+          createdAt:
+            S.$: '$.createdAt'
+          executionId:
+            S.$: '$$.Execution.Name'
+    parallel1:
+      Type: Parallel
+      Next: success
+      Branches:
+        - StartAt: convert
+          States:
+            convert:
+              Type: Task
+              Resource: !GetAtt MediaconvertLambdaFunction.Arn
+              Parameters:
+                bucket.$: '$.bucket'
+                key.$: '$.key'
+                id.$: '$.uuid'
+                duration.$: '$.sourceInfo.duration'
+                dimensions:
+                  width.$: '$.sourceInfo.width'
+                  height.$: '$.sourceInfo.height'
+              End: true
+        - StartAt: rekognition
+          States:
+            rekognition:
+              Type: Pass
+              End: true
+    success:
+      Type: 'Succeed'

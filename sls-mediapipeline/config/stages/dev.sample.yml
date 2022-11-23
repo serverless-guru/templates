@@ -1,0 +1,26 @@
+profile: my-dev-profile  # Set to your developent AWS profile
+region: us-east-1 # Set to your region
+suffix: "-dev"
+bucket: my-dev=bucket
+inPrefix: auto
+outPrefix: out
+bucketTags:
+  -
+    Key: "project"
+    Value: "transcode"
+  -
+    Key: "role"
+    Value: "in-out"
+  -
+    Key: "service"
+    Value: "storage"
+  -
+    Key: "billing_entity"
+    Value: "content"
+  -
+    Key: "Name"
+    Value: ${self:custom.stage.bucket}
+lambda:
+  memorySize: 128
+  timeout: 10
+  logRetention: "1"

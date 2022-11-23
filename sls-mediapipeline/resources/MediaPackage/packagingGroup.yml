@@ -1,0 +1,3 @@
+Type: AWS::MediaPackage::PackagingGroup
+Properties:
+  Id: ${self:custom.packagingGroupId}

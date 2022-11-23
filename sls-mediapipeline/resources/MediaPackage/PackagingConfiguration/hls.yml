@@ -1,0 +1,13 @@
+Type: AWS::MediaPackage::PackagingConfiguration
+Properties:
+  Id: hls
+  PackagingGroupId: ${self:service}${self:custom.stage.suffix}-group
+  HlsPackage:
+    HlsManifests:
+      - ManifestName: index
+        IncludeIFrameOnlyStream: true
+        StreamSelection:
+          StreamOrder: VIDEO_BITRATE_DESCENDING
+    SegmentDurationSeconds: 6
+    UseAudioRenditionGroup: false
+DependsOn: MediaPackagePackagingGroup

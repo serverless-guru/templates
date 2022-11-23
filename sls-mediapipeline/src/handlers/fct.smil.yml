@@ -1,0 +1,6 @@
+handler: src/handlers/smil.handler
+name: ${self:service}-smil${self:custom.stage.suffix}
+memorySize: ${self:custom.stage.lambda.memorySize}
+timeout: ${self:custom.stage.lambda.timeout}
+environment:
+  mezzanineBucket: ${self:custom.mezzanineBucket}

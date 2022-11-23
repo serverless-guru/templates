@@ -1,0 +1,22 @@
+Type: AWS::Events::Rule
+Properties:
+  State: ENABLED
+  Name: ${self:service}-incoming-created
+  Description: 'Object Created on Incoming Bucket'
+  EventPattern:
+    source:
+      - aws.s3
+    detail-type:
+      - Object Created
+    detail:
+      bucket:
+        name:
+          - ${self:custom.incomingBucket}
+  Targets:
+    - Arn:
+        Ref: Convert
+      Id: 'InvokeStepFunctions'
+      RoleArn:
+        Fn::GetAtt:
+          - EventBridgeInvokeStateRole
+          - Arn

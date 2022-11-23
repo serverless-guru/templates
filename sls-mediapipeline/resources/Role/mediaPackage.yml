@@ -1,0 +1,27 @@
+Type: AWS::IAM::Role
+Properties:
+  RoleName: ${self:service}MediaPackageRole${self:custom.stage.suffix}
+  AssumeRolePolicyDocument:
+    Version: '2012-10-17'
+    Statement:
+      - Effect: 'Allow'
+        Principal:
+          Service:
+            - 'mediapackage.amazonaws.com'
+        Action:
+          - 'sts:AssumeRole'
+  Description: 'Allows Mediapackage service to access S3'
+  Policies:
+    - PolicyName: mediapipelineS3MezzanineAccess
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - s3:GetObject
+              - s3:GetBucketLocation
+              - s3:GetBucketRequestPayment
+              - s3:ListBucket
+            Resource:
+              - arn:aws:s3:::${self:custom.mezzanineBucket}
+              - arn:aws:s3:::${self:custom.mezzanineBucket}/*

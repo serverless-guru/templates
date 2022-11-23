@@ -1,0 +1,18 @@
+Type: AWS::S3::BucketPolicy
+Properties:
+  Bucket:
+    Ref: S3BucketMezzanine
+  PolicyDocument:
+    Version: '2012-10-17'
+    Statement:
+      Sid: AllowCloudFrontServicePrincipalReadOnly
+      Effect: Allow
+      Principal:
+        Service: cloudfront.amazonaws.com
+      Action: s3:GetObject
+      Resource:
+        Fn::Sub: 'arn:aws:s3:::${S3BucketMezzanine}/*'
+      Condition:
+        StringEquals:
+          AWS:SourceArn:
+            Fn::Sub: 'arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudfrontAssets}'

@@ -1,0 +1,4 @@
+handler: src/handlers/name.handler
+name: ${self:service}-name${self:custom.stage.suffix}
+memorySize: ${self:custom.stage.lambda.memorySize}
+timeout: ${self:custom.stage.lambda.timeout}

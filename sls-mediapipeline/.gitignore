@@ -1,0 +1,14 @@
+.DS_Store
+config/stages/*
+!config/stages/*.sample.yml
+
+# package directories
+node_modules
+jspm_packages
+
+# Serverless directories
+.serverless
+# ESBuild folder
+.esbuild
+
+events

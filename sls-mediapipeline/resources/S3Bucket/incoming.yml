@@ -1,0 +1,17 @@
+Type: AWS::S3::Bucket
+Properties:
+  BucketName: ${self:custom.incomingBucket}
+  AccelerateConfiguration:
+    AccelerationStatus: Enabled
+  PublicAccessBlockConfiguration:
+    BlockPublicAcls: true
+    BlockPublicPolicy: true
+    IgnorePublicAcls: true
+    RestrictPublicBuckets: true
+  NotificationConfiguration:
+    EventBridgeConfiguration:
+      EventBridgeEnabled: true
+  BucketEncryption:
+    ServerSideEncryptionConfiguration:
+      - ServerSideEncryptionByDefault:
+          SSEAlgorithm: 'AES256'

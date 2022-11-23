@@ -1,0 +1,32 @@
+Type: AWS::IAM::Role
+Properties:
+  RoleName: ${self:service}MediaConvertRole${self:custom.stage.suffix}
+  AssumeRolePolicyDocument:
+    Version: '2012-10-17'
+    Statement:
+      - Effect: 'Allow'
+        Principal:
+          Service:
+            - 'mediaconvert.amazonaws.com'
+        Action:
+          - 'sts:AssumeRole'
+  Description: 'Allows MediaConvert service to call S3 APIs and API Gateway on your behalf'
+  Policies:
+    - PolicyName: mediapipelineS3MezzanineAccess
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - s3:PutObject
+            Resource:
+              - arn:aws:s3:::${self:custom.mezzanineBucket}/*
+    - PolicyName: mediapipelineS3IncomingAccess
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - s3:GetObject
+            Resource:
+              - arn:aws:s3:::${self:custom.incomingBucket}/*
