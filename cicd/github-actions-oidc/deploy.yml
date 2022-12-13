@@ -1,9 +1,6 @@
-name: Deploy to AWS
+name: Deploy branch to AWS
 
 on:
-  push:
-    branches:
-      - main
   pull_request:
     branches:
       - main
