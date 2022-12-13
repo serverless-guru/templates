@@ -1,4 +1,4 @@
-This templates show an example of how to authenticate against AWS using Open ID Connect (OIDC) and deploy/destroy a stack
+These templates show an example of how to authenticate against AWS using Open ID Connect (OIDC) and deploy/destroy a stack
 
 For more info on how to configure your AWS account, read [this blog post](https://benoitboure.com/securely-access-your-aws-resources-from-github-actions).
 
