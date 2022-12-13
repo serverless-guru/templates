@@ -35,4 +35,4 @@ jobs:
           role-duration-seconds: 3600
 
       - name: Destroy
-        run: sls remove --stage ci${{ github.event.pull_request.number }} # or cdk destroy --all or whatever
+        run: sls remove --stage ci${{ github.event.pull_request.number }} # or cdk destroy --all --force or whatever

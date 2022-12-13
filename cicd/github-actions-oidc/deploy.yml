@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
 
 # avoid running several deplyments in parallel
 concurrency: ${{ github.ref }}
@@ -35,3 +38,7 @@ jobs:
 
       - name: Deploy
         run: sls deploy --stage ci${{ github.event.pull_request.number }} # or cdk deploy --all or whatever
+
+      # optional: run integration tests
+      # - name: Integration tests
+      #   run: npm run test
