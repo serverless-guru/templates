@@ -14,6 +14,6 @@
     "graphql": "^15.3.0"
   },
   "devDependencies": {
-    "serverless-offline": "^6.5.0"
+    "serverless-offline": "^12.0.3"
   }
 }
