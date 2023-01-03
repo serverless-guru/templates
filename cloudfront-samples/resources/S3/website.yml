@@ -1,0 +1,11 @@
+Type: AWS::S3::Bucket
+Properties:
+  BucketName: demo-website-${aws:accountId}-${aws:region}
+  WebsiteConfiguration:
+    ErrorDocument: 404.html
+    IndexDocument: index.html
+  PublicAccessBlockConfiguration:
+    BlockPublicAcls: false
+    BlockPublicPolicy: false
+    IgnorePublicAcls: false
+    RestrictPublicBuckets: false

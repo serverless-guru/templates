@@ -1,0 +1,20 @@
+Type: AWS::S3::BucketPolicy
+Properties:
+  Bucket:
+    Ref: S3Website
+  PolicyDocument:
+    Statement:
+      - Action:
+          - 's3:GetObject'
+        Effect: Allow
+        Resource:
+          Fn::Join:
+            - ''
+            - - 'arn:aws:s3:::'
+              - Ref: S3Website
+              - /*
+        Principal: '*'
+        Condition:
+          StringEquals:
+            'aws:UserAgent':
+              - ${self:custom.mySecretHeader}

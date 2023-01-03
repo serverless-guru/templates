@@ -1,0 +1,3 @@
+Type: AWS::S3::Bucket
+Properties:
+  BucketName: demo-${aws:accountId}-${aws:region}

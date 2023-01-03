@@ -1,0 +1,31 @@
+Type: AWS::CloudFront::ResponseHeadersPolicy
+Properties:
+  ResponseHeadersPolicyConfig:
+    Name: Cors
+    CustomHeadersConfig:
+      Items:
+        - Header: x-processor
+          Override: true
+          Value: ResponseHeadersPolicy
+        - Header: x-app
+          Override: true
+          Value: Cloudfront Demo
+    CorsConfig:
+      AccessControlAllowCredentials: false
+      AccessControlAllowHeaders:
+        Items:
+          - 'x-app'
+          - 'x-processor'
+      AccessControlAllowMethods:
+        Items:
+          - GET
+          - OPTIONS
+      AccessControlAllowOrigins:
+        Items:
+          - example.com
+      AccessControlExposeHeaders:
+        Items:
+          - 'x-app'
+          - 'x-processor'
+      AccessControlMaxAgeSec: 5
+      OriginOverride: true

@@ -1,0 +1,18 @@
+Type: AWS::CloudFront::CachePolicy
+Properties:
+  CachePolicyConfig:
+    DefaultTTL: 10
+    MinTTL: 0
+    MaxTTL: 3600
+    Name: Locale
+    ParametersInCacheKeyAndForwardedToOrigin:
+      CookiesConfig:
+        CookieBehavior: none
+      EnableAcceptEncodingBrotli: true
+      EnableAcceptEncodingGzip: true
+      HeadersConfig:
+        HeaderBehavior: whitelist
+        Headers:
+          - x-locale
+      QueryStringsConfig:
+        QueryStringBehavior: none

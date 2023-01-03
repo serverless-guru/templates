@@ -1,0 +1,12 @@
+{
+  "arrowParens": "always",
+  "bracketSpacing": true,
+  "endOfLine": "lf",
+  "printWidth": 100,
+  "useTabs": false,
+  "trailingComma": "all",
+  "singleQuote": true,
+  "semi": false,
+  "tabWidth": 2,
+  "htmlWhitespaceSensitivity": "css"
+}
