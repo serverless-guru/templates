@@ -1,0 +1,28 @@
+Type: AWS::CloudFront::Function
+Properties:
+  Name:
+    Fn::Sub: '${AWS::StackName}-Private'
+  AutoPublish: true
+  FunctionCode: |
+    function handler(event) {
+      var authHeaders = event.request.headers.authorization
+      // Replace XXXXX with base64encode(username + ':' + password)
+      var expected = "Basic XXXXX"
+      if (authHeaders && authHeaders.value === expected) {
+        return event.request
+      }
+
+      var response = {
+        statusCode: 401,
+        statusDescription: "Unauthorized",
+        headers: {
+          "www-authenticate": {
+            value: "Basic realm='Enter your credentials'"
+          }
+        }
+      }
+      return response
+    }
+  FunctionConfig:
+    Comment: Rewrite URI to load index.html
+    Runtime: cloudfront-js-1.0

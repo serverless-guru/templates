@@ -1,0 +1,21 @@
+Type: AWS::S3::BucketPolicy
+Properties:
+  Bucket:
+    Ref: S3Assets
+  PolicyDocument:
+    Statement:
+      - Action:
+          - 's3:GetObject'
+        Effect: Allow
+        Resource:
+          Fn::Join:
+            - ''
+            - - 'arn:aws:s3:::'
+              - Ref: S3Assets
+              - /*
+        Principal:
+          Service: cloudfront.amazonaws.com
+        Condition:
+          StringEquals:
+            'AWS:SourceArn':
+              Fn::Sub: 'arn:aws:cloudfront::${aws:accountId}:distribution/${CloudfrontApp}'

@@ -1,0 +1,20 @@
+Type: AWS::CloudFront::Function
+Properties:
+  Name:
+    Fn::Sub: '${AWS::StackName}-IndexRewrite'
+  AutoPublish: true
+  FunctionCode: |
+    function handler(event) {
+      var request = event.request
+      var uri = request.uri
+      if (uri.endsWith('/')) {
+        request.uri += 'index.html';
+      }
+      else if (!uri.includes('.')) {
+        request.uri += '/index.html';
+      }
+      return request;
+    }
+  FunctionConfig:
+    Comment: Rewrite URI to load index.html
+    Runtime: cloudfront-js-1.0

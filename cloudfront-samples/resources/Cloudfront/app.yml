@@ -1,0 +1,133 @@
+Type: AWS::CloudFront::Distribution
+Properties:
+  DistributionConfig:
+    Enabled: true
+    HttpVersion: http2
+    IPV6Enabled: true
+    DefaultCacheBehavior:
+      TargetOriginId: APIGW
+      AllowedMethods:
+        - GET
+        - HEAD
+        - OPTIONS
+      ViewerProtocolPolicy: 'redirect-to-https'
+      # "Managed-CachingOptimized" from https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/using-managed-cache-policies.html
+      CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
+      ResponseHeadersPolicyId:
+        Ref: CloudfrontCorsResponsePolicy
+      Compress: true
+      # FunctionAssociations:
+      #   - EventType: viewer-request
+      #     FunctionARN: !GetAtt RedirectFunction.FunctionMetadata.FunctionARN
+    CacheBehaviors:
+      - PathPattern: 'airport/*'
+        TargetOriginId: S3Assets
+        ViewerProtocolPolicy: 'redirect-to-https'
+        CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
+        Compress: true
+        LambdaFunctionAssociations:
+          - EventType: origin-request
+            IncludeBody: false
+            LambdaFunctionARN: ${self:custom.getObjectFunction}
+      - PathPattern: 'blog/*'
+        TargetOriginId: S3Website
+        ViewerProtocolPolicy: 'redirect-to-https'
+        CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
+        Compress: true
+      - PathPattern: 'private'
+        TargetOriginId: S3Website
+        ViewerProtocolPolicy: 'redirect-to-https'
+        CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
+        Compress: true
+        FunctionAssociations:
+          - EventType: viewer-request
+            FunctionARN:
+              Fn::GetAtt:
+                - CloudfrontFunctionsPrivate
+                - FunctionMetadata.FunctionARN
+      - PathPattern: 'private/*'
+        TargetOriginId: S3Website
+        ViewerProtocolPolicy: 'redirect-to-https'
+        CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
+        Compress: true
+        FunctionAssociations:
+          - EventType: viewer-request
+            FunctionARN:
+              Fn::GetAtt:
+                - CloudfrontFunctionsPrivate
+                - FunctionMetadata.FunctionARN
+      - PathPattern: 'assets/*'
+        TargetOriginId: S3Assets
+        ViewerProtocolPolicy: 'redirect-to-https'
+        CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
+        Compress: true
+      - PathPattern: 'html/locale/*'
+        TargetOriginId: S3Assets
+        ViewerProtocolPolicy: 'redirect-to-https'
+        CachePolicyId:
+          Ref: CloudfrontLocaleCachePolicy
+        Compress: true
+        FunctionAssociations:
+          - EventType: viewer-request
+            FunctionARN:
+              Fn::GetAtt:
+                - CloudfrontFunctionsLocale
+                - FunctionMetadata.FunctionARN
+      - PathPattern: 'html/*'
+        TargetOriginId: S3Assets
+        ViewerProtocolPolicy: 'redirect-to-https'
+        CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
+        Compress: true
+        FunctionAssociations:
+          - EventType: viewer-request
+            FunctionARN:
+              Fn::GetAtt:
+                - CloudfrontFunctionsIndex
+                - FunctionMetadata.FunctionARN
+      - PathPattern: 'country'
+        TargetOriginId: APIGW
+        ViewerProtocolPolicy: 'redirect-to-https'
+        CachePolicyId:
+          Ref: CloudfrontCountryCachePolicy
+        Compress: true
+    Origins:
+      - Id: S3Assets
+        DomainName:
+          Fn::GetAtt:
+            - S3Assets
+            - DomainName
+        S3OriginConfig:
+          OriginAccessIdentity: ''
+        OriginAccessControlId:
+          Fn::GetAtt:
+            - CloudfrontOriginAccessControl
+            - Id
+      - Id: APIGW
+        DomainName:
+          Fn::Select:
+            - 2
+            - Fn::Split:
+                - '/'
+                - Fn::GetAtt:
+                    - HttpApi
+                    - ApiEndpoint
+        CustomOriginConfig:
+          HTTPPort: 80
+          HTTPSPort: 443
+          OriginProtocolPolicy: 'https-only'
+      - Id: S3Website
+        DomainName:
+          Fn::Select:
+            - 2
+            - Fn::Split:
+                - '/'
+                - Fn::GetAtt:
+                    - S3Website
+                    - WebsiteURL
+        CustomOriginConfig:
+          HTTPPort: 80
+          HTTPSPort: 443
+          OriginProtocolPolicy: 'http-only'
+        OriginCustomHeaders:
+          - HeaderName: 'user-agent'
+            HeaderValue: ${self:custom.mySecretHeader}

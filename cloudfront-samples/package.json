@@ -1,0 +1,46 @@
+{
+  "name": "cloudfront",
+  "version": "0.2.0",
+  "description": "Boilerplate for Serverless.com framework",
+  "engines": {
+    "node": ">=18.12 <19"
+  },
+  "scripts": {
+    "test": "npm run lint",
+    "lint": "npm run prettier:fix && npm run ts:check && npm run eslint:check",
+    "ts:check": "npx tsc --noEmit",
+    "eslint:fix": "npx eslint src --ext ts,js --fix",
+    "eslint:check": "npx eslint src --ext ts,js",
+    "prettier:fix": "npx prettier --write '**/*.{ts,js,json,yml,yaml,md}'",
+    "deploy": "npm run lint && sls -s production deploy",
+    "dev": "npm run lint && sls deploy"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@aws-sdk/types": "3.188.0",
+    "@serverless/typescript": "3.25.0",
+    "@types/aws-lambda": "8.10.109",
+    "@types/lambda-log": "2.2.1",
+    "@typescript-eslint/eslint-plugin": "5.45.0",
+    "@typescript-eslint/parser": "5.45.0",
+    "aws-sdk": "2.1269.0",
+    "esbuild": "0.15.16",
+    "eslint": "8.28.0",
+    "eslint-config-prettier": "8.5.0",
+    "eslint-config-standard": "17.0.0",
+    "eslint-plugin-import": "2.26.0",
+    "eslint-plugin-jsdoc": "39.6.4",
+    "eslint-plugin-n": "15.5.1",
+    "eslint-plugin-promise": "6.1.1",
+    "prettier": "2.8.0",
+    "serverless": "3.25.1",
+    "serverless-deployment-bucket": "1.6.0",
+    "serverless-esbuild": "1.33.2",
+    "ts-loader": "9.4.2",
+    "typescript": "4.9.3"
+  },
+  "dependencies": {
+    "lambda-log": "3.1.0"
+  }
+}

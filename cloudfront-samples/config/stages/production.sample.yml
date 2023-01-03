@@ -1,0 +1,10 @@
+profile: prod # Replace with the profile from ~/.aws/credentials used for production
+region: ap-southeast-1 # Replace with your favorite region
+secretHeader: 'changeme'
+## Add any additional stage related variables. You can re-use the definition in serverless.yml:custom
+# customStageVar: customStageValue
+## Default Lambda related configs. Can be overwritten in each function
+lambda:
+  memorySize: 128
+  timeout: 10
+  logRetention: 30

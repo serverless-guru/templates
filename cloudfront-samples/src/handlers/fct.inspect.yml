@@ -1,0 +1,6 @@
+handler: src/handlers/inspect.handler
+name: ${self:service}-inspect
+memorySize: 128
+timeout: 5
+events:
+  - httpApi: 'GET /hello'

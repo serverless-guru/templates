@@ -1,0 +1,79 @@
+service: cloudfrontLambdaEdge
+# You can pin your service to only deploy with a specific Serverless version
+# Check out our docs for more details
+frameworkVersion: '3.25.1'
+configValidationMode: error
+
+custom:
+  stage: ${file(config/stages/${self:provider.stage}.yml)}
+  # Add custom variables here. You can re-use variables defined in the stage yml
+  # customStageVar: ${self:custom.stage.customStageVar}
+  esbuild:
+    packager: 'npm'
+    sourcemap: false
+    bundle: true
+    minify: false
+    keepNames: true
+    exclude:
+      - 'aws-sdk'
+
+plugins:
+  - serverless-esbuild
+  - serverless-deployment-bucket
+package:
+  individually: true
+
+provider:
+  name: aws
+  runtime: nodejs16.x
+  stage: ${opt:stage, 'dev'}
+  region: us-east-1
+  profile: ${self:custom.stage.profile}
+  memorySize: ${self:custom.stage.lambda.memorySize, '128'}
+  timeout: ${self:custom.stage.lambda.timeout, '10'}
+  logRetentionInDays: ${self:custom.stage.lambda.logRetention, 1}
+  iam: ${file(serverless.edge.iam.yml)}
+  deploymentBucket:
+    name: com.serverless.${aws:accountId}.${aws:region}.deploys
+    blockPublicAccess: true
+    skipPolicySetup: true
+    serverSideEncryption: AES256
+functions: ${file(src/lambdaEdge/serverless.yml)}
+resources:
+  Resources:
+    RoleDefault:
+      Type: AWS::IAM::Role
+      Properties:
+        Path: /
+        RoleName: ${self:service}-${self:provider.stage}-${aws:region}-lambdaEdgeRole
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - lambda.amazonaws.com
+                  - edgelambda.amazonaws.com
+              Action: sts:AssumeRole
+        Policies:
+          - PolicyName: Logs
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - logs:CreateLogGroup
+                    - logs:CreateLogStream
+                    - logs:PutLogEvents
+                  Resource:
+                    - 'Fn::Join':
+                        - ':'
+                        - - 'arn:aws:logs'
+                          - '*'
+                          - Ref: 'AWS::AccountId'
+                          - 'log-group:/aws/lambda/*:*:*'
+                - Effect: 'Allow'
+                  Action:
+                    - 'dynamodb:GetItem'
+                  Resource:
+                    - 'arn:aws:dynamodb:eu-central-1:${aws:accountId}:table/demoContent'

@@ -1,0 +1,6 @@
+handler: src/handlers/country.handler
+name: ${self:service}-country
+memorySize: 128
+timeout: 5
+events:
+  - httpApi: 'GET /country'
