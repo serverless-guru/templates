@@ -26,7 +26,7 @@
     "eslint-plugin-standard": "5.0.0",
     "js-yaml": "4.1.0",
     "lodash": "4.17.21",
-    "serverless": "2.46.0",
+    "serverless": "3.26.0",
     "serverless-deployment-bucket": "1.5.1",
     "serverless-webpack": "5.5.1",
     "webpack": "5.39.0",
