@@ -20,7 +20,7 @@
     "aws-sdk": "^2.814.0",
     "serverless-api-gateway-caching": "^1.4.1",
     "serverless-iam-roles-per-function": "^2.0.2",
-    "serverless-offline": "^6.5.0",
+    "serverless-offline": "^12.0.4",
     "serverless-prune-plugin": "^1.4.3",
     "serverless-webpack": "^5.3.3",
     "webpack": "^5.75.0"
