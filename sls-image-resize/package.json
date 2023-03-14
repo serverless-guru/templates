@@ -29,7 +29,7 @@
     "serverless": "3.26.0",
     "serverless-deployment-bucket": "1.5.1",
     "serverless-webpack": "5.5.1",
-    "webpack": "5.39.0",
+    "webpack": "5.76.0",
     "webpack-node-externals": "3.0.0"
   },
   "dependencies": {
