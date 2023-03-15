@@ -5,6 +5,6 @@
   },
   "devDependencies": {
     "serverless-webpack": "^5.3.2",
-    "webpack": "^5.75.0"
+    "webpack": "^5.76.0"
   }
 }
