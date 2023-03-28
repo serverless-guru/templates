@@ -11,5 +11,7 @@ bin/
 **/.serverless
 **/.idea
 
+**/.aws-sam
+
 # Allow
 !cdk-lambda-deployment/bin
