@@ -1,0 +1,337 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Transform: AWS::Serverless-2016-10-31
+
+Description: >
+  sam-cloudwatch-dashboard-use-and-red-monitoring
+
+  Sample SAM Template for sam-cloudwatch-dashboard-use-and-red-monitoring
+
+Parameters:
+  RestApiName:
+    Type: String
+  RestApiStageName:
+    Type: String
+  ApiLambdaFunctionName:
+    Type: String
+  EmailAlarmsTopic:
+    Type: String
+
+Resources:
+  #
+  # Alarms notification via email
+  #
+  AlarmsTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub ${RestApiName}-AlarmsTopic
+
+  AlarmsSubscriptionEmail:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Protocol: "email"
+      Endpoint: !Ref EmailAlarmsTopic
+      TopicArn: !Ref AlarmsTopic
+
+  #
+  # Rate, Errors, and Duration (RED) metrics
+  # Utilization, Saturation, and Errors (USE) metrics
+  #
+  # API Gateway provides the following metrics for monitoring the performance of your APIs:
+  # https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-metrics-and-dimensions.html
+  #
+  # AWS Lambda provides the following metrics for monitoring the performance of your functions:
+  # https://docs.aws.amazon.com/lambda/latest/dg/monitoring-metrics.html
+  #
+  ApiGateway4XXErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmActions:
+        - !Ref AlarmsTopic
+      AlarmDescription: Trigger an alarm if the API Gateway has too many 5xx errors
+      AlarmName: !Sub ${RestApiName}-${RestApiStageName}-ApiGateway4XXErrorAlarm
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: ApiName
+          Value: !Ref RestApiName
+      EvaluationPeriods: 5
+      MetricName: 4XXError
+      Namespace: AWS/ApiGateway
+      Period: 60
+      Statistic: Sum
+      Threshold: 5
+      TreatMissingData: notBreaching
+
+  ApiGateway5XXErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmActions:
+        - !Ref AlarmsTopic
+      AlarmDescription: Trigger an alarm if the API Gateway has too many 5xx errors
+      AlarmName: !Sub ${RestApiName}-${RestApiStageName}-ApiGateway5XXErrorAlarm
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: ApiName
+          Value: !Ref RestApiName
+      EvaluationPeriods: 3
+      MetricName: 5XXError
+      Namespace: AWS/ApiGateway
+      Period: 60
+      Statistic: Sum
+      Threshold: 3
+      TreatMissingData: notBreaching
+
+  LambdaErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmActions:
+        - !Ref AlarmsTopic
+      AlarmDescription: Trigger an alarm if the Lambda function has too many errors
+      AlarmName: !Sub ${ApiLambdaFunctionName}-LambdaErrorsAlarm
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref ApiLambdaFunctionName
+      EvaluationPeriods: 1
+      MetricName: Errors
+      Namespace: AWS/Lambda
+      Period: 60
+      Statistic: Sum
+      Threshold: 1
+      TreatMissingData: notBreaching
+
+  LambdaThrottleAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmActions:
+        - !Ref AlarmsTopic
+      AlarmDescription: Trigger an alarm if the Lambda function is throttled
+      AlarmName: !Sub ${ApiLambdaFunctionName}-LambdaThrottleAlarm
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref ApiLambdaFunctionName
+      EvaluationPeriods: 5
+      MetricName: Throttles
+      Namespace: AWS/Lambda
+      Period: 60
+      Statistic: Sum
+      Threshold: 1
+      TreatMissingData: notBreaching
+
+  LambdaConcurrentExecutionsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmActions:
+        - !Ref AlarmsTopic
+      AlarmDescription: Trigger an alarm if the Lambda function has too many concurrent executions
+      AlarmName: !Sub ${ApiLambdaFunctionName}-LambdaConcurrentExecutionsAlarm
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref ApiLambdaFunctionName
+      EvaluationPeriods: 1
+      MetricName: ConcurrentExecutions
+      Namespace: AWS/Lambda
+      Period: 60
+      Statistic: Maximum
+      Threshold: 100
+      TreatMissingData: notBreaching
+
+  #
+  # https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/CloudWatch-Dashboard-Body-Structure.html
+  #
+  CloudWatchDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardName: !Sub ${RestApiName}-${RestApiStageName}-Dashboard
+      DashboardBody: !Sub |
+        {
+            "widgets": [
+                {
+                    "type": "metric",
+                    "width": 12,
+                    "height": 6,
+                    "properties": {
+                        "legend": { "position": "right" },
+                        "liveData": false,
+                        "metrics": [
+                            ["AWS/ApiGateway", "Latency", "ApiName", "${RestApiName}", { "label": "${RestApiName}" }]
+                        ],
+                        "period": 60,
+                        "region": "${AWS::Region}",
+                        "stacked": false,
+                        "stat": "Average",
+                        "title": "Latency - Average",
+                        "view": "timeSeries"
+                    }
+                },
+                {
+                    "type": "metric",
+                    "width": 12,
+                    "height": 6,
+                    "properties": {
+                        "legend": { "position": "right" },
+                        "liveData": false,
+                        "metrics": [
+                            ["AWS/ApiGateway", "IntegrationLatency", "ApiName", "${RestApiName}", { "label": "${RestApiName}" }]
+                        ],
+                        "period": 60,
+                        "region": "${AWS::Region}",
+                        "stacked": false,
+                        "stat": "Average",
+                        "title": "IntegrationLatency - Average",
+                        "view": "timeSeries"
+                    }
+                },
+                {
+                    "type": "metric",
+                    "width": 12,
+                    "height": 6,
+                    "properties": {
+                        "legend": { "position": "right" },
+                        "liveData": false,
+                        "metrics": [
+                            ["AWS/ApiGateway", "Count", "ApiName", "${RestApiName}", { "label": "${RestApiName}" }]
+                        ],
+                        "period": 60,
+                        "region": "${AWS::Region}",
+                        "stacked": false,
+                        "stat": "Sum",
+                        "title": "Count - Sum",
+                        "view": "timeSeries"
+                    }
+                },
+                {
+                    "type": "metric",
+                    "width": 12,
+                    "height": 6,
+                    "properties": {
+                        "legend": { "position": "right" },
+                        "liveData": false,
+                        "metrics": [
+                            ["AWS/ApiGateway", "4XXError", "ApiName", "${RestApiName}", { "label": "${RestApiName}" }]
+                        ],
+                        "period": 60,
+                        "region": "${AWS::Region}",
+                        "stacked": false,
+                        "stat": "Sum",
+                        "title": "4XXError - Sum",
+                        "view": "timeSeries"
+                    }
+                },
+                {
+                    "type": "metric",
+                    "width": 12,
+                    "height": 6,
+                    "properties": {
+                        "legend": { "position": "right" },
+                        "liveData": false,
+                        "metrics": [
+                            ["AWS/ApiGateway", "5XXError", "ApiName", "${RestApiName}", { "label": "${RestApiName}" }]
+                        ],
+                        "period": 60,
+                        "region": "${AWS::Region}",
+                        "stacked": false,
+                        "stat": "Sum",
+                        "title": "5XXError - Sum",
+                        "view": "timeSeries"
+                    }
+                },
+                {
+                    "type": "metric",
+                    "width": 12,
+                    "height": 6,
+                    "properties": {
+                        "legend": { "position": "right" },
+                        "liveData": false,
+                        "metrics": [
+                            ["AWS/Lambda", "Invocations", "FunctionName", "${ApiLambdaFunctionName}", { "label": "${ApiLambdaFunctionName}" }]
+                        ],
+                        "period": 60,
+                        "region": "${AWS::Region}",
+                        "stacked": false,
+                        "stat": "Sum",
+                        "title": "Invocations - Sum",
+                        "view": "timeSeries"
+                    }
+                },
+                {
+                    "type": "metric",
+                    "width": 12,
+                    "height": 6,
+                    "properties": {
+                        "legend": { "position": "right" },
+                        "liveData": false,
+                        "metrics": [
+                            ["AWS/Lambda", "Duration", "FunctionName", "${ApiLambdaFunctionName}", { "label": "${ApiLambdaFunctionName}" }]
+                        ],
+                        "period": 60,
+                        "region": "${AWS::Region}",
+                        "stacked": false,
+                        "stat": "Average",
+                        "title": "Duration - Average",
+                        "view": "timeSeries"
+                    }
+                },
+                {
+                    "type": "metric",
+                    "width": 12,
+                    "height": 6,
+                    "properties": {
+                        "legend": { "position": "right" },
+                        "liveData": false,
+                        "metrics": [
+                            ["AWS/Lambda", "Errors", "FunctionName", "${ApiLambdaFunctionName}", { "label": "${ApiLambdaFunctionName}" }]
+                        ],
+                        "period": 60,
+                        "region": "${AWS::Region}",
+                        "stacked": false,
+                        "stat": "Sum",
+                        "title": "Errors - Sum",
+                        "view": "timeSeries"
+                    }
+                },
+                {
+                    "type": "metric",
+                    "width": 12,
+                    "height": 6,
+                    "properties": {
+                        "legend": { "position": "right" },
+                        "liveData": false,
+                        "metrics": [
+                            ["AWS/Lambda", "Throttles", "FunctionName", "${ApiLambdaFunctionName}", { "label": "${ApiLambdaFunctionName}" }]
+                        ],
+                        "period": 60,
+                        "region": "${AWS::Region}",
+                        "stacked": false,
+                        "stat": "Sum",
+                        "title": "Throttles - Sum",
+                        "view": "timeSeries"
+                    }
+                },
+                {
+                    "type": "metric",
+                    "width": 12,
+                    "height": 6,
+                    "properties": {
+                        "legend": { "position": "right" },
+                        "liveData": false,
+                        "metrics": [
+                            ["AWS/Lambda", "ConcurrentExecutions", "FunctionName", "${ApiLambdaFunctionName}", { "label": "${ApiLambdaFunctionName}" }]
+                        ],
+                        "period": 300,
+                        "region": "${AWS::Region}",
+                        "stacked": false,
+                        "stat": "Maximum",
+                        "title": "ConcurrentExecutions - Average",
+                        "view": "timeSeries"
+                    }
+                }
+            ]
+        }
+
+Outputs:
+  TopicAlarmsName:
+    Description: "Topic for Stack Alarms Name"
+    Value: !Ref AlarmsTopic

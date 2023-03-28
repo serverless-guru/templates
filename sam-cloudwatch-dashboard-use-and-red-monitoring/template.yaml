@@ -1,0 +1,71 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Transform: AWS::Serverless-2016-10-31
+
+Description: >
+  sam-cloudwatch-dashboard-use-and-red-monitoring
+
+  Sample SAM Template for sam-cloudwatch-dashboard-use-and-red-monitoring
+
+Parameters:
+  RestApiName:
+    Type: String
+    Description: API Gateway Rest API Name
+    Default: sam-cloudwatch-dashboard-use-and-red-api
+  RestApiStageName:
+    Type: String
+    Description: API Gateway Rest API Name
+    Default: v0
+  EmailAlarmsTopic:
+    Type: String
+    Description: Email Alarms Topic
+    Default: placeholder-email@placeholder-email.com
+
+Globals:
+  Function:
+    Timeout: 20
+
+Resources:
+  RestApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: !Ref RestApiName
+      StageName: !Ref RestApiStageName
+
+  ApiLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: api/
+      Handler: app.handler
+      Runtime: nodejs18.x
+      Architectures:
+        - x86_64
+      Events:
+        RestApiEvent:
+          Type: Api
+          Properties:
+            Path: /{proxy+}
+            Method: any
+            RestApiId:
+              Ref: RestApi
+
+  StackAlarms:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: template.cloudwatch-dashboard.yaml
+      Parameters:
+        RestApiName: !Ref RestApiName
+        RestApiStageName: !Ref RestApiStageName
+        ApiLambdaFunctionName: !Ref ApiLambdaFunction
+        EmailAlarmsTopic: !Ref EmailAlarmsTopic
+
+Outputs:
+  RestApiUrl:
+    Description: "API Gateway RESTA API URL"
+    Value: !Sub "https://${RestApi}.execute-api.${AWS::Region}.amazonaws.com/${RestApiStageName}"
+  ApiLambdaFunctionArn:
+    Description: "API Lambda Function ARN"
+    Value: !GetAtt ApiLambdaFunction.Arn
+  ApiLambdaFunctionIamRole:
+    Description: "Implicit IAM Role created for lambda function"
+    Value: !GetAtt ApiLambdaFunctionRole.Arn
