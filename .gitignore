@@ -13,3 +13,4 @@ bin/
 
 # Allow
 !cdk-lambda-deployment/bin
+.vscode/
