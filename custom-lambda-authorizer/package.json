@@ -10,7 +10,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "jsonwebtoken": "^8.5.1",
+    "jsonwebtoken": "^9.0.0",
     "jwk-to-pem": "^2.0.4",
     "jwt-decode": "^2.2.0",
     "request": "^2.88.2",
@@ -23,6 +23,6 @@
     "serverless-offline": "^6.5.0",
     "serverless-prune-plugin": "^1.4.3",
     "serverless-webpack": "^5.3.3",
-    "webpack": "^4.44.1"
+    "webpack": "^5.75.0"
   }
 }

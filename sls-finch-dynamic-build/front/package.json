@@ -15,9 +15,9 @@
   "license": "ISC",
   "devDependencies": {
     "copy-webpack-plugin": "^6.0.2",
-    "html-webpack-plugin": "^4.0.4",
+    "html-webpack-plugin": "^5.5.0",
     "serverless-finch": "^2.5.2",
-    "webpack": "^4.42.1",
-    "webpack-cli": "^3.3.11"
+    "webpack": "^5.75.0",
+    "webpack-cli": "^5.0.1"
   }
 }

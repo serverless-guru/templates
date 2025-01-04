@@ -1,0 +1,36 @@
+Type: AWS::CloudFront::Function
+Properties:
+  Name:
+    Fn::Sub: '${AWS::StackName}-LocaleRewrite'
+  AutoPublish: true
+  FunctionCode: |
+    function handler(event) {
+      var request = event.request
+
+      if (request.uri.endsWith('/')) {
+        request.uri += 'index.html';
+      }
+      else if (!request.uri.includes('.')) {
+        request.uri += '/index.html';
+      }
+
+      var locale = 'en'
+      var translations = ['fr', 'de']
+
+      if (request.headers['accept-language'] && request.headers['accept-language'].value) {
+        console.log(request.headers['accept-language'].value)
+        var language = request.headers['accept-language'].value.split(',')[0].split(';')[0].substring(0,2).toLowerCase()
+        if (translations.indexOf(language) > -1) {
+          locale = language
+        }
+      }
+
+      request.headers['x-locale'] = {
+        value: locale
+      }
+      request.uri = request.uri.replace('locale/', `locale/${locale}/`)
+      return request;
+    }
+  FunctionConfig:
+    Comment: Rewrite URI to load index.html
+    Runtime: cloudfront-js-1.0

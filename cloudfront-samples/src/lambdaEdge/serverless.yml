@@ -1,0 +1,10 @@
+getObject:
+  handler: src/lambdaEdge/getObject.handler
+  name: ${self:service}-getObject
+  memorySize: 256
+  timeout: 5
+originResponse:
+  handler: src/lambdaEdge/originResponse.handler
+  name: ${self:service}-originResponse
+  memorySize: 256
+  timeout: 5
