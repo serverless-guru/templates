@@ -1,0 +1,41 @@
+name: Deploy branch to AWS
+
+on:
+  pull_request:
+    branches:
+      - main
+
+# avoid running several deplyments in parallel
+concurrency: ${{ github.ref }}
+
+# Grant GA the required permissions to assume the role
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - uses: actions/setup-node@v3
+        with:
+          node-version: "16.x"
+      
+      - name: Install dependencies
+        run: npm ci
+    
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1-node16
+        with:
+          # for more options see https://github.com/aws-actions/configure-aws-credentials
+          role-to-assume: arn:aws:iam::123456789012:role/github-deployer # the role to assume
+          role-duration-seconds: 3600
+
+      - name: Deploy
+        run: sls deploy --stage ci${{ github.event.pull_request.number }} # or cdk deploy --all or whatever
+
+      # optional: run integration tests
+      # - name: Integration tests
+      #   run: npm run test
