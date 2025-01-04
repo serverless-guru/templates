@@ -9,7 +9,7 @@
   "author": "Nadtakan Jones",
   "license": "ISC",
   "dependencies": {
-    "mysql2": "^2.2.5"
+    "mysql2": "^3.9.8"
   },
   "devDependencies": {
     "aws-sdk": "^2.771.0"
