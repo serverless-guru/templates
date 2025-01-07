@@ -1,7 +1,10 @@
-
+resource "random_pet" "secret_pet_name" {
+}
 module "secrets-manager" {
   source  = "terraform-aws-modules/secrets-manager/aws"
   version = "1.3.1"
+  secret_string = random_pet.secret_pet_name.id
+  name_prefix             =  "demo"
 }
 
 data "aws_region" "current" {}
@@ -154,7 +157,7 @@ resource "aws_apigatewayv2_route" "set_secret" {
   api_id             = aws_apigatewayv2_api.azure_aws_secrets_replication_demo.id
 
   route_key          = "POST /set-secret"
-  target             = "integrations/${aws_lambda_function.lambda_update_secrets.id}"
+  target             = "integrations/${aws_apigatewayv2_integration.update_secrets.id}"
   authorization_type = "AWS_IAM"
 
 }

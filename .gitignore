@@ -20,3 +20,7 @@ bin/
 .terraform.lock.hcl
 .terraform.tfplan
 *.zip
+*.lock
+*.tfstate
+*.tfstate.backup
+biggerplan

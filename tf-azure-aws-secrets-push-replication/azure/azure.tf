@@ -16,7 +16,7 @@ resource "azurerm_key_vault" "kv" {
   access_policy {
     tenant_id = data.azurerm_client_config.current.tenant_id
 
-    object_id = azurerm_linux_function_app.secrets-azure-aws-function-app.identity[0].principal_id
+    object_id = azurerm_linux_function_app.secrets_azure_aws_function_app.identity[0].principal_id
 
     secret_permissions = [
       "Get",
@@ -47,7 +47,7 @@ resource "azurerm_key_vault" "kv" {
   }
 }
 
-resource "azurerm_eventgrid_system_topic" "secret-update-topic" {
+resource "azurerm_eventgrid_system_topic" "secret_update_topic" {
   name                   = "secrets-azure-aws-topic"
   resource_group_name    = azurerm_resource_group.rg.name
   location               = azurerm_resource_group.rg.location
@@ -89,13 +89,13 @@ resource "azurerm_service_plan" "asp" {
   }
 }
 
-resource "azurerm_storage_container" "secrets-azure-aws-function-container-code" {
+resource "azurerm_storage_container" "secrets_azure_aws_function_container_code" {
   name                  = "secrets-azure-aws-function-code"
   storage_account_id    = azurerm_storage_account.sa.id
   container_access_type = "private"
 }
 
-resource "archive_file" "secrets-azure-aws-function-archive" {
+resource "archive_file" "secrets_azure_aws_function_archive" {
   type             = "zip"
   source_dir      = "${path.module}/secrets-azure-aws-function/"
   output_file_mode = "0666"
@@ -103,16 +103,16 @@ resource "archive_file" "secrets-azure-aws-function-archive" {
 }
 
 
-resource "azurerm_storage_blob" "secrets-azure-aws-function-zip" {
-  name                   = "c.zip"
+resource "azurerm_storage_blob" "secrets_azure_aws_function_zip" {
+  name                   = "secrets_azure_aws_function_zip"
   storage_account_name   = azurerm_storage_account.sa.name
-  storage_container_name = azurerm_storage_container.secrets-azure-aws-function-container-code.name
+  storage_container_name = azurerm_storage_container.secrets_azure_aws_function_container_code.name
   type                   = "Block"
   source                 = "${path.module}/secrets-azure-aws-function/secrets-azure-aws-function.zip"
 }
 
 
-resource "azurerm_linux_function_app" "secrets-azure-aws-function-app" {
+resource "azurerm_linux_function_app" "secrets_azure_aws_function_app" {
   name                       = "secrets-azure-aws-function-app"
   location                   = azurerm_resource_group.rg.location
   resource_group_name        = azurerm_resource_group.rg.name
@@ -126,7 +126,7 @@ resource "azurerm_linux_function_app" "secrets-azure-aws-function-app" {
 
   app_settings = {
     "FUNCTIONS_WORKER_RUNTIME" = "node"
-    "WEBSITE_RUN_FROM_PACKAGE" = "https://${azurerm_storage_account.sa.name}.blob.core.windows.net/${azurerm_storage_container.secrets-azure-aws-function-container-code.name}/${azurerm_storage_blob.secrets-azure-aws-function-zip.name}"
+    "WEBSITE_RUN_FROM_PACKAGE" = "https://${azurerm_storage_account.sa.name}.blob.core.windows.net/${azurerm_storage_container.secrets_azure_aws_function_container_code.name}/${azurerm_storage_blob.secrets_azure_aws_function_zip.name}"
     "AzureWebJobsStorage"      = azurerm_storage_account.sa.primary_connection_string
     "AWS_ROLE_ARN"             = var.azure_function_role_arn
     "AWS_REGION"               = var.aws_region
@@ -145,27 +145,26 @@ resource "azurerm_linux_function_app" "secrets-azure-aws-function-app" {
 
 }
 
-resource "azurerm_key_vault_access_policy" "secret-vault-function-access" {
+resource "azurerm_key_vault_access_policy" "secret_vault_function_access" {
   key_vault_id = azurerm_key_vault.kv.id
   tenant_id = data.azurerm_client_config.current.tenant_id
 
-  object_id = azurerm_linux_function_app.secrets-azure-aws-function-app.identity[0].principal_id
+  object_id = azurerm_linux_function_app.secrets_azure_aws_function_app.identity[0].principal_id
 
   secret_permissions = ["Get", "List"]
 
 }
 
-resource "azurerm_eventgrid_event_subscription" "secret-update-subscription" {
+resource "azurerm_eventgrid_event_subscription" "secret_update_subscription" {
   name  = "secrets-azure-aws-subscription"
-  scope = azurerm_eventgrid_system_topic.secret-update-topic.id
-
+  scope = azurerm_eventgrid_system_topic.secret_update_topic.id
   webhook_endpoint {
-    url = azurerm_linux_function_app.secrets-azure-aws-function-app.default_hostname
+    url = "https://${azurerm_linux_function_app.secrets_azure_aws_function_app.default_hostname}"
   }
 
   storage_blob_dead_letter_destination {
     storage_account_id          = azurerm_storage_account.sa.id
-    storage_blob_container_name = azurerm_storage_container.secrets-azure-aws-function-container-code.name
+    storage_blob_container_name = azurerm_storage_container.secrets_azure_aws_function_container_code.name
   }
 
   retry_policy {
@@ -176,7 +175,9 @@ resource "azurerm_eventgrid_event_subscription" "secret-update-subscription" {
   included_event_types = [
     "Microsoft.KeyVault.SecretNewVersionCreated",
     "Microsoft.KeyVault.SecretUpdated",
-    "Microsoft.KeyVault.SecretDeleted",
   ]
+
+  event_delivery_schema = "EventGridSchema"
+
 
 }
