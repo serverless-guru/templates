@@ -16,3 +16,7 @@ bin/
 # Allow
 !cdk-lambda-deployment/bin
 .vscode/
+.terraform/
+.terraform.lock.hcl
+.terraform.tfplan
+*.zip
