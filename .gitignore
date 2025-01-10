@@ -15,7 +15,7 @@ bin/
 
 # Allow
 !cdk-lambda-deployment/bin
-.vscode/
+
 .terraform/
 .terraform.lock.hcl
 .terraform.tfplan
@@ -23,4 +23,8 @@ bin/
 *.lock
 *.tfstate
 *.tfstate.backup
-biggerplan
+*.tfstate.lock.*
+**/bigerplan
+.vscode
+templates.sln
+my.tfplan

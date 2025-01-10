@@ -1,8 +1,9 @@
 {
-  "name": "",
+  "name": "set-aws-secret-function",
+ 
   "version": "1.0.0",
   "description": "",
-  "main": "src/functions/*.js",
+  "main": "index.js",
   "scripts": {
     "start": "func start",
     "test": "echo \"No tests yet...\""
@@ -14,8 +15,5 @@
     "@azure/functions": "^4.0.0",
     "@azure/identity": "^4.5.0",
     "@azure/keyvault-secrets": "^4.9.0"
-  },
-  "devDependencies": {
-    "azure-functions-core-tools": "^4.x"
   }
 }

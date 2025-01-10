@@ -53,6 +53,9 @@ resource "azurerm_eventgrid_system_topic" "secret_update_topic" {
   location               = azurerm_resource_group.rg.location
   topic_type             = "Microsoft.KeyVault.vaults"
   source_arm_resource_id = azurerm_key_vault.kv.id
+  identity {
+    type = "SystemAssigned"
+  }
 
   tags = {
     Environment = "Development"
@@ -90,27 +93,28 @@ resource "azurerm_service_plan" "asp" {
 }
 
 resource "azurerm_storage_container" "secrets_azure_aws_function_container_code" {
-  name                  = "secrets-azure-aws-function-code"
+  name                  = "secrets-azure-aws-function"
   storage_account_id    = azurerm_storage_account.sa.id
   container_access_type = "private"
 }
 
 resource "archive_file" "secrets_azure_aws_function_archive" {
   type             = "zip"
-  source_dir      = "${path.module}/secrets-azure-aws-function/"
+  source_dir      = "${path.module}/secrets-azure-aws-function/set-aws-secret-function"
   output_file_mode = "0666"
-  output_path      = "${path.module}/secrets-azure-aws-function/secrets-azure-aws-function.zip"
+  output_path      = "${path.module}/secrets-azure-aws-function.zip"
 }
 
 
 resource "azurerm_storage_blob" "secrets_azure_aws_function_zip" {
-  name                   = "secrets_azure_aws_function_zip"
+  name                   = "secrets-azure-aws-function.zip"
   storage_account_name   = azurerm_storage_account.sa.name
   storage_container_name = azurerm_storage_container.secrets_azure_aws_function_container_code.name
   type                   = "Block"
-  source                 = "${path.module}/secrets-azure-aws-function/secrets-azure-aws-function.zip"
-}
+  source                 = "${path.module}/secrets-azure-aws-function.zip"
+  depends_on = [archive_file.secrets_azure_aws_function_archive]
 
+}
 
 resource "azurerm_linux_function_app" "secrets_azure_aws_function_app" {
   name                       = "secrets-azure-aws-function-app"
@@ -135,6 +139,9 @@ resource "azurerm_linux_function_app" "secrets_azure_aws_function_app" {
 
   site_config {
     always_on = false
+    application_stack {
+      node_version = 20 
+    }
   }
 
   tags = {
@@ -143,6 +150,13 @@ resource "azurerm_linux_function_app" "secrets_azure_aws_function_app" {
     Article     = "Cross-Cloud Secrets Replication, Sharing, and Best Practices"
   }
 
+  depends_on = [azurerm_storage_blob.secrets_azure_aws_function_zip]
+}
+
+resource "azurerm_role_assignment" "sa_reader" {
+  principal_id         = azurerm_linux_function_app.secrets_azure_aws_function_app.identity[0].principal_id
+  role_definition_name = "Storage Blob Data Reader"
+  scope                = azurerm_storage_account.sa.id
 }
 
 resource "azurerm_key_vault_access_policy" "secret_vault_function_access" {
@@ -155,29 +169,35 @@ resource "azurerm_key_vault_access_policy" "secret_vault_function_access" {
 
 }
 
-resource "azurerm_eventgrid_event_subscription" "secret_update_subscription" {
-  name  = "secrets-azure-aws-subscription"
-  scope = azurerm_eventgrid_system_topic.secret_update_topic.id
-  webhook_endpoint {
-    url = "https://${azurerm_linux_function_app.secrets_azure_aws_function_app.default_hostname}"
-  }
+# resource "azurerm_eventgrid_system_topic_event_subscription" "secret_update_subscription" {
+#   resource_group_name = azurerm_resource_group.rg.name
+#   system_topic = azurerm_eventgrid_system_topic.secret_update_topic.name
+#   name  = "secrets-azure-aws-topic-subscription"
 
-  storage_blob_dead_letter_destination {
-    storage_account_id          = azurerm_storage_account.sa.id
-    storage_blob_container_name = azurerm_storage_container.secrets_azure_aws_function_container_code.name
-  }
+#   webhook_endpoint {
+#     url = "https://${azurerm_linux_function_app.secrets_azure_aws_function_app.default_hostname}/api/set-aws-secret-function"
+#   }
 
-  retry_policy {
-    max_delivery_attempts = 3
-    event_time_to_live    = 5 # minutes
-  }
+#   depends_on = [
+#     azurerm_linux_function_app.secrets_azure_aws_function_app,
+#     azurerm_storage_blob.secrets_azure_aws_function_zip
+#   ]
+#   storage_blob_dead_letter_destination {
+#     storage_account_id          = azurerm_storage_account.sa.id
+#     storage_blob_container_name = azurerm_storage_container.secrets_azure_aws_function_container_code.name
+#   }
 
-  included_event_types = [
-    "Microsoft.KeyVault.SecretNewVersionCreated",
-    "Microsoft.KeyVault.SecretUpdated",
-  ]
+#   retry_policy {
+#     max_delivery_attempts = 3
+#     event_time_to_live    = 5 # minutes
+#   }
 
-  event_delivery_schema = "EventGridSchema"
+#   included_event_types = [
+#     "Microsoft.KeyVault.SecretNewVersionCreated",
+#     "Microsoft.KeyVault.SecretUpdated",
+#   ]
+
+#   event_delivery_schema = "EventGridSchema" 
 
 
-}
+# }
