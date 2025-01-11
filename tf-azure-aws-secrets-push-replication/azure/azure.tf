@@ -122,24 +122,24 @@ resource "azurerm_service_plan" "asp" {
   }
 }
 resource "azurerm_storage_container" "secrets_azure_aws_function_container_code" {
-  name                  = "secrets-azure-aws-function"
+  name                  = "set-aws-secret-function"
   storage_account_id    = azurerm_storage_account.sa.id
   container_access_type = "private"
 }
 
 resource "archive_file" "secrets_azure_aws_function_archive" {
   type             = "zip"
-  source_dir      = "${path.module}/secrets-azure-aws-function"
+  source_dir      = "${path.module}/set-aws-secret-function"
   output_file_mode = "0666"
-  output_path      = "${path.module}/functions.zip"
+  output_path      = "${path.module}/set-aws-secret-function.zip"
 }
 
 resource "azurerm_storage_blob" "secrets_azure_aws_function_zip" {
-  name                   = "functions.zip"
+  name                   = "set-aws-secret-function.zip"
   storage_account_name   = azurerm_storage_account.sa.name
   storage_container_name = azurerm_storage_container.secrets_azure_aws_function_container_code.name
   type                   = "Block"
-  source                 = "${path.module}/functions.zip"
+  source                 = "${path.module}/set-aws-secret-function.zip"
   depends_on = [archive_file.secrets_azure_aws_function_archive]
 
 }
@@ -159,16 +159,10 @@ data "azurerm_storage_account_blob_container_sas" "sas_token" {
     delete = false
     list   = true
   }
-
-  cache_control       = "max-age=5"
-  content_disposition = "inline"
-  content_encoding    = "deflate"
-  content_language    = "en-US"
-  content_type        = "application/json"
 }
 
 resource "azurerm_application_insights" "secrets_azure_aws_function_app_insights" {
-  name                = "secrets-azure-aws-function-app-insights"
+  name                = "functions-app-insights"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
   application_type    = "Node.JS"
@@ -181,7 +175,7 @@ resource "azurerm_application_insights" "secrets_azure_aws_function_app_insights
 }
 
 resource "azurerm_linux_function_app" "secrets_azure_aws_function_app" {
-  name                       = "secrets-azure-aws-function-app"
+  name                       = "functions-app-azure"
   location                   = azurerm_resource_group.rg.location
   resource_group_name        = azurerm_resource_group.rg.name
   service_plan_id            = azurerm_service_plan.asp.id
@@ -223,7 +217,7 @@ resource "azurerm_eventgrid_system_topic_event_subscription" "secret_update_subs
   system_topic = azurerm_eventgrid_system_topic.secret_update_topic.name
   name  = "secrets-azure-aws-topic-subscription"
   azure_function_endpoint {
-    function_id = "/subscriptions/${data.azurerm_client_config.current.subscription_id}/resourceGroups/${azurerm_resource_group.rg.name}/providers/Microsoft.Web/sites/${azurerm_linux_function_app.secrets_azure_aws_function_app.name}/functions/set-aws-secret-function" 
+    function_id = "${azurerm_linux_function_app.secrets_azure_aws_function_app.id}/functions/set-aws-secret-function"
   }
 
   depends_on = [

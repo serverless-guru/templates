@@ -5,7 +5,7 @@ module "secrets-manager" {
   version = "1.3.1"
   secret_string = random_pet.secret_pet_name.id
   description             = "Demo secret"
-  name = "demo/secret"
+  name = "demo/secret/${random_pet.secret_pet_name.id}"
 }
 
 data "aws_region" "current" {}
