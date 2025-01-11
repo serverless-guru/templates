@@ -4,4 +4,5 @@ export ARM_CLIENT_ID=$(az ad signed-in-user show --query id -o tsv)
 export ARM_TENANT_ID=$(az account show --query tenantId -o tsv)
 terraform init
 terraform validate
-terraform plan -out=bigerplan -input=false
+terraform plan -out=my.tfplan 
+terraform apply my.tfplan

@@ -174,9 +174,8 @@ resource "aws_lambda_permission" "api_gw" {
   function_name = aws_lambda_function.lambda_update_secrets.function_name
   principal     = "apigateway.amazonaws.com"
 
-    source_arn = "arn:aws:execute-api:${var.aws_region}:${data.aws_caller_identity.current.account_id}:${aws_apigatewayv2_api.azure_aws_secrets_replication_demo.id}/*/*"
+  source_arn = "arn:aws:execute-api:${var.aws_region}:${data.aws_caller_identity.current.account_id}:${aws_apigatewayv2_api.azure_aws_secrets_replication_demo.id}/*/*"
 
-  # source_arn = "${aws_lambda_function.lambda_update_secrets.invoke_arn}"
 }
 
 resource "aws_iam_role" "azure_function_role" {
@@ -196,4 +195,24 @@ resource "aws_iam_role" "azure_function_role" {
     ]
   }
   EOF
+}
+
+resource "aws_iam_policy" "azure_function_api_invoke_policy" {
+  name        = "azure-function-api-invoke-policy"
+  description = "Policy for Azure Function to invoke API Gateway"
+  policy      = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect   = "Allow",
+        Action   = "execute-api:Invoke",
+        Resource = "arn:aws:execute-api:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:${aws_apigatewayv2_api.azure_aws_secrets_replication_demo.id}/*/POST/set-secret"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "azure_function_api_invoke_attachment" {
+  role       = aws_iam_role.azure_function_role.name
+  policy_arn = aws_iam_policy.azure_function_api_invoke_policy.arn
 }

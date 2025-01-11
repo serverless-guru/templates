@@ -12,7 +12,6 @@ variable "account_id" {
   type = string
   default = null  
 }
-
 variable "azure_function_role_arn" {
   type = string
   default = null  
