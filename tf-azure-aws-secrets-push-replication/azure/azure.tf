@@ -201,7 +201,7 @@ resource "azurerm_linux_function_app" "secrets_azure_aws_function_app" {
     "AWS_REGION"               = var.aws_region
     "AWS_API_ID"               = var.aws_api_id
   }
-  
+
   site_config {
     always_on = false
     application_stack {
@@ -223,7 +223,7 @@ resource "azurerm_eventgrid_system_topic_event_subscription" "secret_update_subs
   system_topic = azurerm_eventgrid_system_topic.secret_update_topic.name
   name  = "secrets-azure-aws-topic-subscription"
   azure_function_endpoint {
-    function_id = "${azurerm_linux_function_app.secrets_azure_aws_function_app.id}/functions/set-aws-secret-function"
+    function_id = "/subscriptions/${data.azurerm_client_config.current.subscription_id}/resourceGroups/${azurerm_resource_group.rg.name}/providers/Microsoft.Web/sites/${azurerm_linux_function_app.secrets_azure_aws_function_app.name}/functions/set-aws-secret-function" 
   }
 
   depends_on = [

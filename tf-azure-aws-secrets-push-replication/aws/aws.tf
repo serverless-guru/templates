@@ -4,7 +4,8 @@ module "secrets-manager" {
   source  = "terraform-aws-modules/secrets-manager/aws"
   version = "1.3.1"
   secret_string = random_pet.secret_pet_name.id
-  name_prefix             =  "demo"
+  description             = "Demo secret"
+  name = "demo/secret"
 }
 
 data "aws_region" "current" {}
