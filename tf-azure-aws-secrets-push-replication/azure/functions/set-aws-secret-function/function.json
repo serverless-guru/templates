@@ -3,7 +3,7 @@
     {
       "type": "eventGridTrigger",
       "direction": "in",
-      "name": "eventGridEvent"
+      "name": "event"
     }
   ]
 }

@@ -129,7 +129,7 @@ resource "azurerm_storage_container" "secrets_azure_aws_function_container_code"
 
 resource "archive_file" "secrets_azure_aws_function_archive" {
   type             = "zip"
-  source_dir      = "${path.module}/set-aws-secret-function"
+  source_dir      = "${path.module}/functions"
   output_file_mode = "0666"
   output_path      = "${path.module}/set-aws-secret-function.zip"
 }
@@ -222,7 +222,7 @@ resource "azurerm_eventgrid_system_topic_event_subscription" "secret_update_subs
 
   depends_on = [
     azurerm_linux_function_app.secrets_azure_aws_function_app,
-    azurerm_storage_blob.secrets_azure_aws_function_zip
+    azurerm_eventgrid_system_topic.secret_update_topic,
   ]
   storage_blob_dead_letter_destination {
     storage_account_id          = azurerm_storage_account.sa.id
