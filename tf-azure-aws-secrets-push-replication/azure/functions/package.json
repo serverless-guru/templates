@@ -13,8 +13,7 @@
     "@aws-sdk/signature-v4": "^3.370.0",
     "@azure/functions": "^4.0.0",
     "@azure/identity": "^4.5.0",
-    "@azure/keyvault-secrets": "^4.9.0",
-    "production": "^0.0.2"
+    "@azure/keyvault-secrets": "^4.9.0"
   },
   "devDependencies": {
     "azure-functions-core-tools": "^4.x"
