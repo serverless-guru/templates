@@ -1,3 +1,4 @@
+
 const { app } = require('@azure/functions');
 const { STSClient, AssumeRoleCommand } = require('@aws-sdk/client-sts');
 const { SignatureV4 } = require('@aws-sdk/signature-v4');
@@ -7,8 +8,9 @@ const { SecretClient } = require('@azure/keyvault-secrets');
 const { DefaultAzureCredential } = require('@azure/identity');
 
 app.eventGrid('set-aws-secret-function', {
-	handler: async (event, context) => {
+	handler: async (eventGridEvent, context) => {
 		try {
+			context.log(`eventGridEvent: ${JSON.stringify(eventGridEvent)}`);
 			const roleArn = process.env.AWS_ROLE_ARN;
 			const region = process.env.AWS_REGION;
 			const apiId = process.env.AWS_API_ID;
@@ -24,7 +26,7 @@ app.eventGrid('set-aws-secret-function', {
 			const assumedRole = await stsClient.send(assumeRoleCommand);
 			const { AccessKeyId, SecretAccessKey, SessionToken } = assumedRole.Credentials;
 
-			const { vaultName, objectName: secretName, version } = event.data;
+			const { vaultName, objectName: secretName, version } = eventGridEvent.data;
 			const keyVaultUrl = `https://${vaultName}.vault.azure.net`;
 
 			const credential = new DefaultAzureCredential();

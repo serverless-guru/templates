@@ -2,7 +2,7 @@
   "name": "",
   "version": "1.0.0",
   "description": "",
-  "main": "",
+  "main": "{index.js,set-aws-secret-function/*.js}",
   "scripts": {
     "start": "func start",
     "test": "echo \"No tests yet...\""
@@ -13,7 +13,8 @@
     "@aws-sdk/signature-v4": "^3.370.0",
     "@azure/functions": "^4.0.0",
     "@azure/identity": "^4.5.0",
-    "@azure/keyvault-secrets": "^4.9.0"
+    "@azure/keyvault-secrets": "^4.9.0",
+    "production": "^0.0.2"
   },
   "devDependencies": {
     "azure-functions-core-tools": "^4.x"

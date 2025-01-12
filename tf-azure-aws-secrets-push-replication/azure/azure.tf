@@ -95,19 +95,6 @@ resource "azurerm_eventgrid_system_topic" "secret_update_topic" {
   }
 }
 
-resource "azurerm_storage_account" "sa" {
-  name                     = "secretsazureaws"
-  resource_group_name      = azurerm_resource_group.rg.name
-  location                 = azurerm_resource_group.rg.location
-  account_tier             = "Standard"
-  account_replication_type = "LRS"
-
-  tags = {
-    Environment = "Development"
-    Purpose     = "Demo"
-    Article     = "Cross-Cloud Secrets Replication, Sharing, and Best Practices"
-  }
-}
 resource "azurerm_service_plan" "asp" {
   name                = "secrets-azure-aws-asp"
   location            = azurerm_resource_group.rg.location
@@ -119,45 +106,6 @@ resource "azurerm_service_plan" "asp" {
     Environment = "Development"
     Purpose     = "Demo"
     Article     = "Cross-Cloud Secrets Replication, Sharing, and Best Practices"
-  }
-}
-resource "azurerm_storage_container" "secrets_azure_aws_function_container_code" {
-  name                  = "set-aws-secret-function"
-  storage_account_id    = azurerm_storage_account.sa.id
-  container_access_type = "private"
-}
-
-resource "archive_file" "secrets_azure_aws_function_archive" {
-  type             = "zip"
-  source_dir      = "${path.module}/functions"
-  output_file_mode = "0666"
-  output_path      = "${path.module}/set-aws-secret-function.zip"
-}
-
-resource "azurerm_storage_blob" "secrets_azure_aws_function_zip" {
-  name                   = "set-aws-secret-function.zip"
-  storage_account_name   = azurerm_storage_account.sa.name
-  storage_container_name = azurerm_storage_container.secrets_azure_aws_function_container_code.name
-  type                   = "Block"
-  source                 = "${path.module}/set-aws-secret-function.zip"
-  depends_on = [archive_file.secrets_azure_aws_function_archive]
-
-}
-
-data "azurerm_storage_account_blob_container_sas" "sas_token" {
-  connection_string = azurerm_storage_account.sa.primary_connection_string
-  container_name    = azurerm_storage_container.secrets_azure_aws_function_container_code.name
-  https_only        = true
-
-  start  = timestamp()
-  expiry = timeadd(timestamp(), "24h")
-  permissions {
-    read   = true
-    add    = true
-    create = false
-    write  = false
-    delete = false
-    list   = true
   }
 }
 
@@ -174,22 +122,34 @@ resource "azurerm_application_insights" "secrets_azure_aws_function_app_insights
   }
 }
 
+resource "azurerm_storage_account" "secrets_azure_aws_storage_account" {
+  name                     = "secretsazureawsstorage"
+  resource_group_name      = azurerm_resource_group.rg.name
+  location                 = azurerm_resource_group.rg.location
+  account_tier             = "Standard"
+  account_replication_type = "LRS"
+
+  tags = {
+    Environment = "Development"
+    Purpose     = "Demo"
+    Article     = "Cross-Cloud Secrets Replication, Sharing, and Best Practices"
+  }
+}
 resource "azurerm_linux_function_app" "secrets_azure_aws_function_app" {
   name                       = "functions-app-azure"
   location                   = azurerm_resource_group.rg.location
   resource_group_name        = azurerm_resource_group.rg.name
   service_plan_id            = azurerm_service_plan.asp.id
-  storage_account_name       = azurerm_storage_account.sa.name
-  storage_account_access_key = azurerm_storage_account.sa.primary_access_key
-
+  storage_account_name       = azurerm_storage_account.secrets_azure_aws_storage_account.name
+  storage_account_access_key = azurerm_storage_account.secrets_azure_aws_storage_account.primary_access_key
   identity {
     type = "SystemAssigned"
   }
 
   app_settings = {
+    "WEBSITE_RUN_FROM_PACKAGE" = "1"
     "FUNCTIONS_WORKER_RUNTIME" = "node"
-    "WEBSITE_RUN_FROM_PACKAGE" = "https://${azurerm_storage_account.sa.name}.blob.core.windows.net/${azurerm_storage_container.secrets_azure_aws_function_container_code.name}/${azurerm_storage_blob.secrets_azure_aws_function_zip.name}?${data.azurerm_storage_account_blob_container_sas.sas_token.sas}"
-    "AzureWebJobsStorage"      = azurerm_storage_account.sa.primary_connection_string
+    "SCM_DO_BUILD_DURING_DEPLOYMENT" = "true"
     "APPLICATIONINSIGHTS_CONNECTION_STRING" = azurerm_application_insights.secrets_azure_aws_function_app_insights.connection_string
     "AWS_ROLE_ARN"             = var.azure_function_role_arn
     "AWS_REGION"               = var.aws_region
@@ -209,9 +169,8 @@ resource "azurerm_linux_function_app" "secrets_azure_aws_function_app" {
     Purpose     = "Demo"
     Article     = "Cross-Cloud Secrets Replication, Sharing, and Best Practices"
   }
-
-  depends_on = [azurerm_storage_blob.secrets_azure_aws_function_zip]
 }
+
 resource "azurerm_eventgrid_system_topic_event_subscription" "secret_update_subscription" {
   resource_group_name = azurerm_resource_group.rg.name
   system_topic = azurerm_eventgrid_system_topic.secret_update_topic.name
@@ -223,12 +182,8 @@ resource "azurerm_eventgrid_system_topic_event_subscription" "secret_update_subs
   depends_on = [
     azurerm_linux_function_app.secrets_azure_aws_function_app,
     azurerm_eventgrid_system_topic.secret_update_topic,
+    null_resource.deploy_function_cli
   ]
-  storage_blob_dead_letter_destination {
-    storage_account_id          = azurerm_storage_account.sa.id
-    storage_blob_container_name = azurerm_storage_container.secrets_azure_aws_function_container_code.name
-  }
-
   retry_policy {
     max_delivery_attempts = 3
     event_time_to_live    = 5 # minutes
@@ -240,4 +195,26 @@ resource "azurerm_eventgrid_system_topic_event_subscription" "secret_update_subs
   ]
 
   event_delivery_schema = "EventGridSchema" 
+}
+
+resource "null_resource" "deploy_function_cli" {
+  provisioner "local-exec" {
+    command = <<EOT
+      set -e
+      cd azure/functions 
+      rm -rf functions.zip
+      zip -r functions.zip . -x "node_modules/*" ".git/*" ".vscode/*" "*.log" "local.settings.json"
+      az functionapp deployment source config-zip --resource-group secrets-azure-aws --name functions-app-azure --src ./functions.zip
+      cd ../..
+    EOT
+  }
+
+  depends_on = [azurerm_linux_function_app.secrets_azure_aws_function_app]
+
+}
+
+resource "azurerm_role_assignment" "eventgrid_to_functionapp" {
+  scope                = azurerm_linux_function_app.secrets_azure_aws_function_app.id
+  role_definition_name = "EventGrid Contributor"
+  principal_id         = azurerm_eventgrid_system_topic.secret_update_topic.identity[0].principal_id
 }
