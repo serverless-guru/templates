@@ -147,9 +147,8 @@ resource "azurerm_linux_function_app" "secrets_azure_aws_function_app" {
   }
 
   app_settings = {
-    "WEBSITE_RUN_FROM_PACKAGE" = "1"
+    "WEBSITE_RUN_FROM_PACKAGE" = 1
     "FUNCTIONS_WORKER_RUNTIME" = "node"
-    "SCM_DO_BUILD_DURING_DEPLOYMENT" = "true"
     "APPLICATIONINSIGHTS_CONNECTION_STRING" = azurerm_application_insights.secrets_azure_aws_function_app_insights.connection_string
     "AWS_ROLE_ARN"             = var.azure_function_role_arn
     "AWS_REGION"               = var.aws_region
@@ -199,17 +198,14 @@ resource "azurerm_eventgrid_system_topic_event_subscription" "secret_update_subs
 
 resource "null_resource" "deploy_function_cli" {
   provisioner "local-exec" {
-    command = <<EOT
-      set -e
-      cd azure/functions 
-      rm -rf functions.zip
-      zip -r functions.zip . -x "node_modules/*" ".git/*" ".vscode/*" "*.log" "local.settings.json"
-      az functionapp deployment source config-zip --resource-group secrets-azure-aws --name functions-app-azure --src ./functions.zip
-      cd ../..
-    EOT
+    command = "./fn-deploy.sh"
   }
 
   depends_on = [azurerm_linux_function_app.secrets_azure_aws_function_app]
+
+  triggers = {
+    redeploy = timestamp()
+  }
 
 }
 

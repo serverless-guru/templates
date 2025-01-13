@@ -6,7 +6,5 @@ terraform init
 terraform validate
 terraform plan -out=my.tfplan 
 terraform apply my.tfplan
-terraform apply -replace="null_resource.deploy_function_cli"
-
 
 
