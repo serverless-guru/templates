@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "@aws-cdk/aws-lambda": "^1.150.0",
-    "aws-cdk-lib": "2.18.0",
+    "aws-cdk-lib": "2.177.0",
     "constructs": "^10.0.0",
     "@aws-cdk/core": "1.137.0"
   }
